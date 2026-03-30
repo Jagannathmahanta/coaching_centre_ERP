@@ -1,0 +1,2 @@
+ALTER TABLE teacher_salary_slips
+  ADD COLUMN IF NOT EXISTS paid_amount NUMERIC(10,2) NOT NULL DEFAULT 0;

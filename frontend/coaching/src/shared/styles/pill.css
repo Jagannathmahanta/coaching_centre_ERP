@@ -1,0 +1,25 @@
+/* shared/styles/pill.css */
+
+.pill {
+  display: inline-block;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* variants */
+.pill-danger {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.pill-warning {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.pill-success {
+  background: #dcfce7;
+  color: #15803d;
+}
