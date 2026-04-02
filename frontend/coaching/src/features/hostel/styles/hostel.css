@@ -1,0 +1,19 @@
+.tableWrapper {
+  display: block;
+}
+
+.cardList {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .tableWrapper {
+    display: none;
+  }
+
+  .cardList {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+}

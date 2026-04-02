@@ -54,7 +54,7 @@ export default function AttendancePage() {
         </p>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 16 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 16 }}>
         <StatCard label="Total" value={stats.total} accent="#2563eb" />
         <StatCard label="Present" value={stats.present} accent="#059669" />
         <StatCard label="Absent" value={stats.absent} accent="#be123c" />
@@ -85,36 +85,36 @@ export default function AttendancePage() {
         />
       </section>
 
-      <section style={cardStyle}>
-        {canEdit ? (
-          <AttendanceRoster
-            className={filters.className}
-            isLoading={rosterQuery.isLoading}
-            rows={rows}
-            setRows={setRows}
-            onSave={() => {
-              setMessage("");
-              setError("");
-              saveAttendanceMutation.mutate();
-            }}
-            isSaving={saveAttendanceMutation.isPending}
-          />
-        ) : (
-          <>
-            <div style={{ marginBottom: 18 }}>
-              <h2 style={{ margin: 0 }}>My Attendance Details</h2>
-              <p style={{ color: "#6b7280", marginTop: 8 }}>
-                Your attendance record is shown here based on the selected filters.
-              </p>
-            </div>
-            <AttendanceHistory
-              studentId={filters.studentId}
-              isLoading={historyQuery.isLoading}
-              rows={historyQuery.data || []}
-            />
-          </>
-        )}
-      </section>
+      <section style={{ ...cardStyle, padding: 0, overflow: "hidden" }}>
+  {canEdit ? (
+    <AttendanceRoster
+      className={filters.className}
+      isLoading={rosterQuery.isLoading}
+      rows={rows}
+      setRows={setRows}
+      onSave={() => {
+        setMessage("");
+        setError("");
+        saveAttendanceMutation.mutate();
+      }}
+      isSaving={saveAttendanceMutation.isPending}
+    />
+  ) : (
+    <div style={{ padding: 22 }}>
+      <div style={{ marginBottom: 18 }}>
+        <h2 style={{ margin: 0 }}>My Attendance Details</h2>
+        <p style={{ color: "#6b7280", marginTop: 8 }}>
+          Your attendance record is shown here based on the selected filters.
+        </p>
+      </div>
+      <AttendanceHistory
+        studentId={filters.studentId}
+        isLoading={historyQuery.isLoading}
+        rows={historyQuery.data || []}
+      />
+    </div>
+  )}
+</section>
     </div>
   );
 }

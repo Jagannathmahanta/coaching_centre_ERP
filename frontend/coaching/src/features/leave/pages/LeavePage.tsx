@@ -16,6 +16,7 @@ const inputStyle = {
   borderRadius: 12,
   border: "1px solid #d1d5db",
   marginTop: 6,
+  boxSizing: "border-box" as const,
 };
 
 const buttonStyle = {
@@ -26,6 +27,14 @@ const buttonStyle = {
   padding: "12px 16px",
   fontWeight: 700,
   cursor: "pointer",
+};
+
+const fieldStyle: React.CSSProperties = {
+  display: "flex",
+  flexDirection: "column",
+  color: "#374151",
+  fontWeight: 700,
+  fontSize: 14,
 };
 
 function StatCard({ accent, label, value }: { accent: string; label: string; value: number }) {
@@ -65,6 +74,8 @@ export default function LeavePage() {
 
   return (
     <div style={{ display: "grid", gap: 20 }}>
+
+      {/* Page title */}
       <div>
         <h1 style={{ margin: 0, fontSize: 28 }}>Leave Module</h1>
         <p style={{ color: "#6b7280", marginTop: 8 }}>
@@ -74,15 +85,16 @@ export default function LeavePage() {
         </p>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 16 }}>
-        <StatCard label="Total Requests" value={leaveStats.total} accent="#2563eb" />
-        <StatCard label="Pending" value={leaveStats.pending} accent="#d97706" />
-        <StatCard label="Approved" value={leaveStats.approved} accent="#059669" />
-        <StatCard label="Rejected" value={leaveStats.rejected} accent="#be123c" />
+      {/* Stats */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 16 }}>
+        <StatCard label="Total Requests" value={leaveStats.total}    accent="#2563eb" />
+        <StatCard label="Pending"        value={leaveStats.pending}  accent="#d97706" />
+        <StatCard label="Approved"       value={leaveStats.approved} accent="#059669" />
+        <StatCard label="Rejected"       value={leaveStats.rejected} accent="#be123c" />
       </div>
 
       {message && <div style={{ ...cardStyle, background: "#f0fdf4", color: "#166534" }}>{message}</div>}
-      {error && <div style={{ ...cardStyle, background: "#fef2f2", color: "#b91c1c" }}>{error}</div>}
+      {error   && <div style={{ ...cardStyle, background: "#fef2f2", color: "#b91c1c" }}>{error}</div>}
 
       <LeaveReviewModal
         reviewDraft={reviewDraft}
@@ -95,12 +107,20 @@ export default function LeavePage() {
         isPending={updateStatusMutation.isPending}
       />
 
-      <div style={{ display: "grid", gridTemplateColumns: isManager ? "1fr" : "1.1fr 0.9fr", gap: 20, alignItems: "start" }}>
+      {/* Apply form + Summary/Filters — stacks on mobile */}
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: isManager ? "1fr" : "repeat(auto-fit, minmax(280px, 1fr))",
+        gap: 20,
+        alignItems: "start",
+      }}>
+
+        {/* Apply Leave form — non-manager only */}
         {!isManager && (
           <form
             style={cardStyle}
-            onSubmit={(event) => {
-              event.preventDefault();
+            onSubmit={(e) => {
+              e.preventDefault();
               setMessage("");
               setError("");
               createLeaveMutation.mutate();
@@ -108,47 +128,70 @@ export default function LeavePage() {
           >
             <div style={{ marginBottom: 18 }}>
               <h2 style={{ margin: 0 }}>Apply Leave</h2>
-              <p style={{ color: "#6b7280", marginTop: 8 }}>Submit your leave request here and track approval from the same page.</p>
+              <p style={{ color: "#6b7280", marginTop: 8 }}>
+                Submit your leave request here and track approval from the same page.
+              </p>
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 14 }}>
-              <label style={{ display: "block", color: "#374151", fontWeight: 700, fontSize: 14 }}>
+            {/* Applicant Type + Student/Teacher */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 14 }}>
+              <label style={fieldStyle}>
                 Applicant Type
-                <input value={selfApplicantType === "teacher" ? "Teacher" : "Student"} style={{ ...inputStyle, background: "#f8fafc" }} readOnly />
+                <input
+                  value={selfApplicantType === "teacher" ? "Teacher" : "Student"}
+                  style={{ ...inputStyle, background: "#f8fafc" }}
+                  readOnly
+                />
               </label>
 
               {selfApplicantType === "student" ? (
-                <label style={{ display: "block", color: "#374151", fontWeight: 700, fontSize: 14 }}>
+                <label style={fieldStyle}>
                   Student
                   {linkedStudentId ? (
                     <input
-                      value={activeStudents.find((student) => String(student.id) === linkedStudentId) ? `${activeStudents.find((student) => String(student.id) === linkedStudentId)?.name} | ${activeStudents.find((student) => String(student.id) === linkedStudentId)?.class}` : "Linked student account"}
+                      value={
+                        activeStudents.find((s) => String(s.id) === linkedStudentId)
+                          ? `${activeStudents.find((s) => String(s.id) === linkedStudentId)?.name} | ${activeStudents.find((s) => String(s.id) === linkedStudentId)?.class}`
+                          : "Linked student account"
+                      }
                       style={{ ...inputStyle, background: "#f8fafc" }}
                       readOnly
                     />
                   ) : (
-                    <select value={form.student_id} onChange={(event) => setForm((current) => ({ ...current, student_id: event.target.value }))} style={inputStyle} required>
+                    <select
+                      value={form.student_id}
+                      onChange={(e) => setForm((c) => ({ ...c, student_id: e.target.value }))}
+                      style={inputStyle}
+                      required
+                    >
                       <option value="">Select your name</option>
-                      {activeStudents.map((student) => (
-                        <option key={student.id} value={student.id}>
-                          {student.name} | {student.class} | {student.roll_number || "No admission no"}
+                      {activeStudents.map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {s.name} | {s.class} | {s.roll_number || "No admission no"}
                         </option>
                       ))}
                     </select>
                   )}
                 </label>
               ) : (
-                <label style={{ display: "block", color: "#374151", fontWeight: 700, fontSize: 14 }}>
+                <label style={fieldStyle}>
                   Teacher
                   {linkedTeacherId ? (
-                    <input value={activeTeachers.find((teacher) => String(teacher.id) === linkedTeacherId)?.name || "Linked teacher account"} style={{ ...inputStyle, background: "#f8fafc" }} readOnly />
+                    <input
+                      value={activeTeachers.find((t) => String(t.id) === linkedTeacherId)?.name || "Linked teacher account"}
+                      style={{ ...inputStyle, background: "#f8fafc" }}
+                      readOnly
+                    />
                   ) : (
-                    <select value={form.teacher_id} onChange={(event) => setForm((current) => ({ ...current, teacher_id: event.target.value }))} style={inputStyle} required>
+                    <select
+                      value={form.teacher_id}
+                      onChange={(e) => setForm((c) => ({ ...c, teacher_id: e.target.value }))}
+                      style={inputStyle}
+                      required
+                    >
                       <option value="">Select your name</option>
-                      {activeTeachers.map((teacher) => (
-                        <option key={teacher.id} value={teacher.id}>
-                          {teacher.name}
-                        </option>
+                      {activeTeachers.map((t) => (
+                        <option key={t.id} value={t.id}>{t.name}</option>
                       ))}
                     </select>
                   )}
@@ -156,31 +199,55 @@ export default function LeavePage() {
               )}
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 14 }}>
-              <label style={{ display: "block", color: "#374151", fontWeight: 700, fontSize: 14 }}>
+            {/* Leave Type + From + To */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 14, marginTop: 14 }}>
+              <label style={fieldStyle}>
                 Leave Type
-                <select value={form.leave_type} onChange={(event) => setForm((current) => ({ ...current, leave_type: event.target.value }))} style={inputStyle}>
+                <select
+                  value={form.leave_type}
+                  onChange={(e) => setForm((c) => ({ ...c, leave_type: e.target.value }))}
+                  style={inputStyle}
+                >
                   {LEAVE_TYPES.map((type) => (
-                    <option key={type} value={type}>
-                      {type}
-                    </option>
+                    <option key={type} value={type}>{type}</option>
                   ))}
                 </select>
               </label>
-              <label style={{ display: "block", color: "#374151", fontWeight: 700, fontSize: 14 }}>
+              <label style={fieldStyle}>
                 From Date
-                <input type="date" value={form.from_date} onChange={(event) => setForm((current) => ({ ...current, from_date: event.target.value }))} style={inputStyle} required />
+                <input
+                  type="date"
+                  value={form.from_date}
+                  onChange={(e) => setForm((c) => ({ ...c, from_date: e.target.value }))}
+                  style={inputStyle}
+                  required
+                />
               </label>
-              <label style={{ display: "block", color: "#374151", fontWeight: 700, fontSize: 14 }}>
+              <label style={fieldStyle}>
                 To Date
-                <input type="date" value={form.to_date} onChange={(event) => setForm((current) => ({ ...current, to_date: event.target.value }))} style={inputStyle} required />
+                <input
+                  type="date"
+                  value={form.to_date}
+                  onChange={(e) => setForm((c) => ({ ...c, to_date: e.target.value }))}
+                  style={inputStyle}
+                  required
+                />
               </label>
             </div>
 
-            <label style={{ display: "block", color: "#374151", fontWeight: 700, fontSize: 14 }}>
-              Reason
-              <textarea rows={4} value={form.reason} onChange={(event) => setForm((current) => ({ ...current, reason: event.target.value }))} style={{ ...inputStyle, resize: "vertical" as const }} placeholder="Add the leave reason here" />
-            </label>
+            {/* Reason */}
+            <div style={{ marginTop: 14 }}>
+              <label style={fieldStyle}>
+                Reason
+                <textarea
+                  rows={4}
+                  value={form.reason}
+                  onChange={(e) => setForm((c) => ({ ...c, reason: e.target.value }))}
+                  style={{ ...inputStyle, resize: "vertical" as const }}
+                  placeholder="Add the leave reason here"
+                />
+              </label>
+            </div>
 
             <div style={{ marginTop: 18 }}>
               <button type="submit" style={buttonStyle} disabled={createLeaveMutation.isPending}>
@@ -190,54 +257,82 @@ export default function LeavePage() {
           </form>
         )}
 
+        {/* Summary / Filters card */}
         <section style={cardStyle}>
           <div style={{ marginBottom: 18 }}>
             <h2 style={{ margin: 0 }}>{isManager ? "Leave Filters" : "My Leave Summary"}</h2>
             <p style={{ color: "#6b7280", marginTop: 8 }}>
-              {isManager ? "Narrow the admin queue by applicant type or approval status." : "Choose your profile first so the page shows only your leave requests."}
+              {isManager
+                ? "Narrow the admin queue by applicant type or approval status."
+                : "Choose your profile first so the page shows only your leave requests."}
             </p>
           </div>
 
-          {isManager ? (
-            <>
-              <label style={{ display: "block", color: "#374151", fontWeight: 700, fontSize: 14 }}>
-                Applicant Type
-                <select value={filters.applicant_type} onChange={(event) => setFilters((current) => ({ ...current, applicant_type: event.target.value }))} style={inputStyle}>
-                  <option value="all">All</option>
-                  <option value="student">Student</option>
-                  <option value="teacher">Teacher</option>
-                </select>
-              </label>
-              <label style={{ display: "block", color: "#374151", fontWeight: 700, fontSize: 14 }}>
-                Status
-                <select value={filters.status} onChange={(event) => setFilters((current) => ({ ...current, status: event.target.value }))} style={inputStyle}>
-                  <option value="all">All</option>
-                  <option value="pending">Pending</option>
-                  <option value="approved">Approved</option>
-                  <option value="rejected">Rejected</option>
-                </select>
-              </label>
-            </>
-          ) : (
-            <>
-              <label style={{ display: "block", color: "#374151", fontWeight: 700, fontSize: 14 }}>
-                Request Status
-                <input value={!form.student_id && !form.teacher_id ? "Select your profile to see your leave history" : `${leaveStats.pending} pending | ${leaveStats.approved} approved | ${leaveStats.rejected} rejected`} style={{ ...inputStyle, background: "#f8fafc" }} readOnly />
-              </label>
-              <label style={{ display: "block", color: "#374151", fontWeight: 700, fontSize: 14 }}>
-                Current Role
-                <input value={selfApplicantType === "teacher" ? "Teacher Login" : "Student Login"} style={{ ...inputStyle, background: "#f8fafc" }} readOnly />
-              </label>
-            </>
-          )}
+          <div style={{ display: "grid", gap: 14 }}>
+            {isManager ? (
+              <>
+                <label style={fieldStyle}>
+                  Applicant Type
+                  <select
+                    value={filters.applicant_type}
+                    onChange={(e) => setFilters((c) => ({ ...c, applicant_type: e.target.value }))}
+                    style={inputStyle}
+                  >
+                    <option value="all">All</option>
+                    <option value="student">Student</option>
+                    <option value="teacher">Teacher</option>
+                  </select>
+                </label>
+                <label style={fieldStyle}>
+                  Status
+                  <select
+                    value={filters.status}
+                    onChange={(e) => setFilters((c) => ({ ...c, status: e.target.value }))}
+                    style={inputStyle}
+                  >
+                    <option value="all">All</option>
+                    <option value="pending">Pending</option>
+                    <option value="approved">Approved</option>
+                    <option value="rejected">Rejected</option>
+                  </select>
+                </label>
+              </>
+            ) : (
+              <>
+                <label style={fieldStyle}>
+                  Request Status
+                  <input
+                    value={
+                      !form.student_id && !form.teacher_id
+                        ? "Select your profile to see your leave history"
+                        : `${leaveStats.pending} pending | ${leaveStats.approved} approved | ${leaveStats.rejected} rejected`
+                    }
+                    style={{ ...inputStyle, background: "#f8fafc" }}
+                    readOnly
+                  />
+                </label>
+                <label style={fieldStyle}>
+                  Current Role
+                  <input
+                    value={selfApplicantType === "teacher" ? "Teacher Login" : "Student Login"}
+                    style={{ ...inputStyle, background: "#f8fafc" }}
+                    readOnly
+                  />
+                </label>
+              </>
+            )}
+          </div>
         </section>
       </div>
 
-      <section style={cardStyle}>
+      {/* Leave Requests table */}
+      <section style={{ ...cardStyle, minWidth: 0, overflow: "hidden" }}>
         <div style={{ marginBottom: 18 }}>
           <h2 style={{ margin: 0 }}>{isManager ? "Leave Requests" : "My Leave Requests"}</h2>
           <p style={{ color: "#6b7280", marginTop: 8 }}>
-            {isManager ? "Review recent requests, focus on pending items, and take approval action from one list." : "Track your submitted leave requests and see the latest review status here."}
+            {isManager
+              ? "Review recent requests, focus on pending items, and take approval action from one list."
+              : "Track your submitted leave requests and see the latest review status here."}
           </p>
         </div>
 

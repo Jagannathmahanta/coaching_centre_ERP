@@ -36,6 +36,15 @@ exports.updateStudent = async (req, res) => {
   }
 };
 
+exports.deactivateStudent = async (req, res) => {
+  try {
+    const data = await service.deactivateStudent(req);
+    res.json(data);
+  } catch (error) {
+    res.status(error.statusCode || 500).json({ error: error.message });
+  }
+};
+
 exports.deleteStudent = async (req, res) => {
   try {
     const data = await service.deleteStudent(req);

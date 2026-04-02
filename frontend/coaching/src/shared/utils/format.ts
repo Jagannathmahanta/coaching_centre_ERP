@@ -14,5 +14,5 @@ export const shortDate = (value: string) => {
 export const isNewBatch = (value?: string | null) => {
   if (!value) return false;
   const updatedAt = new Date(value).getTime();
-  return Date.now() - updatedAt <= 3 * 24 * 60 * 60 * 1000;
+  return Date.now() - updatedAt <= 7 * 24 * 60 * 60 * 1000;
 };

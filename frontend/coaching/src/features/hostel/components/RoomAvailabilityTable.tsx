@@ -1,4 +1,5 @@
 import type { Hostel, Room } from "../types/hostel.types";
+import Content from "../../../assets/Content.png";
 
 const cellHeader = {
   textAlign: "left" as const,
@@ -9,17 +10,6 @@ const cellHeader = {
 const cell = {
   padding: "12px 14px",
   borderBottom: "1px solid #e5e7eb",
-};
-
-const menuButton = {
-  background: "#fff",
-  color: "#1f2937",
-  border: "1px solid #cbd5e1",
-  borderRadius: 8,
-  padding: "8px 12px",
-  fontWeight: 700,
-  cursor: "pointer",
-  minWidth: 42,
 };
 
 const menuStyle = {
@@ -105,32 +95,76 @@ export function RoomAvailabilityTable({
                 <td style={cell}>{room.type || "-"}</td>
                 <td style={cell}>{Number(room.vacant_seats || 0) > 0 ? `Vacant ${room.vacant_seats}` : "Full"}</td>
                 <td style={cell}>
-                  <div style={{ position: "relative", display: "inline-block" }}>
-                    <button type="button" onClick={() => setOpenRoomActionId((current) => current === room.id ? null : room.id)} style={menuButton}>...</button>
+                  <div
+                    style={{ position: "relative", display: "inline-block" }}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setOpenRoomActionId((current) =>
+                          current === room.id ? null : room.id
+                        );
+                      }}
+                      style={{
+                        background: "transparent",
+                        border: "none",
+                        padding: 6,
+                        cursor: "pointer",
+                        borderRadius: 6,
+                      }}
+                    >
+                      <img
+                        src={Content}
+                        alt="menu"
+                        style={{ width: 18, height: 18 }}
+                      />
+                    </button>
+
                     {openRoomActionId === room.id && (
                       <div style={menuStyle}>
-                        <button type="button" onClick={() => {
-                          setOpenRoomActionId(null);
-                          onEditHostel(room.hostel_id);
-                        }} style={menuItemButton}>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setOpenRoomActionId(null);
+                            onEditHostel(room.hostel_id);
+                          }}
+                          style={menuItemButton}
+                        >
                           Edit Hostel
                         </button>
-                        <button type="button" onClick={() => {
-                          setOpenRoomActionId(null);
-                          onEditRoom(room);
-                        }} style={menuItemButton}>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setOpenRoomActionId(null);
+                            onEditRoom(room);
+                          }}
+                          style={menuItemButton}
+                        >
                           Edit Room
                         </button>
-                        <button type="button" onClick={() => {
-                          setOpenRoomActionId(null);
-                          onDeleteRoom(room.id);
-                        }} style={dangerMenuItemButton}>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setOpenRoomActionId(null);
+                            onDeleteRoom(room.id);
+                          }}
+                          style={dangerMenuItemButton}
+                        >
                           Delete Room
                         </button>
-                        <button type="button" onClick={() => {
-                          setOpenRoomActionId(null);
-                          onDeleteHostel(room.hostel_id);
-                        }} style={dangerMenuItemButton}>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setOpenRoomActionId(null);
+                            onDeleteHostel(room.hostel_id);
+                          }}
+                          style={dangerMenuItemButton}
+                        >
                           Delete Hostel
                         </button>
                       </div>

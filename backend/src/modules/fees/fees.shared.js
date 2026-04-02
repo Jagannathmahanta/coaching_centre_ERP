@@ -148,12 +148,16 @@ const getFeeStructure = async (client, centerId, filters) => {
     SELECT *
     FROM fee_structures
     WHERE center_id = $1
-      AND class_name = $2
-      AND academic_year = $3
+      AND (
+        ($2::int IS NOT NULL AND class_id = $2)
+        OR
+        ($3::text IS NOT NULL AND class_name = $3)
+      )
+      AND ($4::text IS NULL OR academic_year = $4)
     ORDER BY created_at DESC
     LIMIT 1
     `,
-    [centerId, filters.className, filters.academicYear]
+    [centerId, filters.class_id || null, filters.className || null, filters.academicYear || null]
   );
 
   if (!rows[0]) {

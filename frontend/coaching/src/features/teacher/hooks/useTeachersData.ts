@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  createTeacherLogin,
+  getTeacherAbsencesToday,
   getTeacherClassExams,
   getTeacherClassStructures,
   getTeachers,
@@ -11,7 +11,6 @@ import {
 import type { Teacher, TeacherStat } from "../types/teacher.types";
 import {
   initialTeacherForm,
-  initialTeacherLoginDraft,
   SUBJECT_OPTIONS,
   type TeacherFormState,
 } from "../types/teacher.types";
@@ -25,11 +24,11 @@ export function useTeachersData() {
   const [form, setForm] = useState<TeacherFormState>(initialTeacherForm);
   const [editingTeacherId, setEditingTeacherId] = useState<number | null>(null);
   const [showForm, setShowForm] = useState(false);
-  const [accountDraft, setAccountDraft] = useState(initialTeacherLoginDraft);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
   const teachersQuery = useQuery({ queryKey: ["teachers"], queryFn: getTeachers });
+  const absentTeachersQuery = useQuery({ queryKey: ["teacher-absences-today"], queryFn: getTeacherAbsencesToday });
   const feeStructuresQuery = useQuery({ queryKey: ["teacher-class-structures"], queryFn: getTeacherClassStructures });
   const examsQuery = useQuery({ queryKey: ["teacher-class-exams"], queryFn: getTeacherClassExams });
 
@@ -50,10 +49,11 @@ export function useTeachersData() {
     return {
       total: teachers.length,
       active: teachers.filter((item) => item.status === "active").length,
+      absentToday: Number(absentTeachersQuery.data || 0),
       classes: new Set(teachers.flatMap((item) => item.assigned_classes || [])).size,
       subjects: new Set(teachers.flatMap((item) => item.assigned_subjects || [])).size,
     };
-  }, [teachersQuery.data]);
+  }, [absentTeachersQuery.data, teachersQuery.data]);
 
   const resetForm = () => {
     setEditingTeacherId(null);
@@ -88,20 +88,6 @@ export function useTeachersData() {
     },
   });
 
-  const createAccountMutation = useMutation({
-    mutationFn: () => createTeacherLogin(accountDraft),
-    onSuccess: async () => {
-      setMessage(`Login account created for ${accountDraft.teacherName}.`);
-      setError("");
-      setAccountDraft(initialTeacherLoginDraft);
-      await queryClient.invalidateQueries({ queryKey: ["teachers"] });
-    },
-    onError: (mutationError: any) => {
-      setError(mutationError.response?.data?.error || "Failed to create teacher login.");
-      setMessage("");
-    },
-  });
-
   const startEditTeacher = (teacher: Teacher) => {
     setEditingTeacherId(teacher.id);
     setForm({
@@ -115,23 +101,8 @@ export function useTeachersData() {
       join_date: teacher.join_date ? String(teacher.join_date).slice(0, 10) : new Date().toISOString().slice(0, 10),
       status: teacher.status || "active",
       notes: teacher.notes || "",
-      create_login: false,
-      login_email: "",
-      login_phone: "",
-      login_password: "",
     });
     setShowForm(true);
-  };
-
-  const openTeacherLogin = (teacher: Teacher) => {
-    setAccountDraft({
-      open: true,
-      teacherId: teacher.id,
-      teacherName: teacher.name,
-      email: teacher.login_email || teacher.email || "",
-      phone: teacher.login_phone || teacher.phone || "",
-      password: "",
-    });
   };
 
   return {
@@ -141,8 +112,6 @@ export function useTeachersData() {
     setEditingTeacherId,
     showForm,
     setShowForm,
-    accountDraft,
-    setAccountDraft,
     message,
     setMessage,
     error,
@@ -153,9 +122,7 @@ export function useTeachersData() {
     resetForm,
     saveTeacherMutation,
     deleteTeacherMutation,
-    createAccountMutation,
     startEditTeacher,
-    openTeacherLogin,
     subjectOptions: SUBJECT_OPTIONS,
   };
 }

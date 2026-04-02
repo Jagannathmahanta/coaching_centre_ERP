@@ -33,6 +33,7 @@ CREATE TABLE users (
   student_id    INT,
   teacher_id    INT,
   parent_id     INT,
+  must_change_password BOOLEAN NOT NULL DEFAULT FALSE,
   created_at    TIMESTAMPTZ DEFAULT NOW()
 );
 CREATE UNIQUE INDEX idx_users_student_id_unique ON users(student_id) WHERE student_id IS NOT NULL;
@@ -53,13 +54,67 @@ CREATE TABLE parents (
   UNIQUE(phone, center_id)
 );
 
+-- ─── Admission Catalog ────────────────────────────────────────────
+CREATE TABLE class_definitions (
+  id SERIAL PRIMARY KEY,
+  center_id INT NOT NULL REFERENCES coaching_centers(id) ON DELETE CASCADE,
+  class_name VARCHAR(50) NOT NULL,
+  status VARCHAR(20) NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'inactive')),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE(center_id, class_name)
+);
+CREATE INDEX idx_class_definitions_center_status ON class_definitions(center_id, status);
+
+CREATE TABLE course_definitions (
+  id SERIAL PRIMARY KEY,
+  center_id INT NOT NULL REFERENCES coaching_centers(id) ON DELETE CASCADE,
+  course_name VARCHAR(120) NOT NULL,
+  description TEXT,
+  status VARCHAR(20) NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'inactive')),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE(center_id, course_name)
+);
+CREATE INDEX idx_course_definitions_center_status ON course_definitions(center_id, status);
+
+CREATE TABLE batch_definitions (
+  id SERIAL PRIMARY KEY,
+  center_id INT NOT NULL REFERENCES coaching_centers(id) ON DELETE CASCADE,
+  program_type VARCHAR(20) NOT NULL CHECK (program_type IN ('academic', 'non_academic')),
+  board VARCHAR(50),
+  class_id INT REFERENCES class_definitions(id) ON DELETE CASCADE,
+  course_id INT REFERENCES course_definitions(id) ON DELETE CASCADE,
+  shift VARCHAR(20) NOT NULL CHECK (shift IN ('morning', 'afternoon', 'evening')),
+  batch_name VARCHAR(120) NOT NULL,
+  start_time TIME NOT NULL,
+  end_time TIME NOT NULL,
+  capacity INT,
+  status VARCHAR(20) NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'inactive')),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CHECK (
+    (program_type = 'academic' AND class_id IS NOT NULL AND course_id IS NULL)
+    OR
+    (program_type = 'non_academic' AND course_id IS NOT NULL AND class_id IS NULL)
+  ),
+  CHECK (end_time > start_time)
+);
+CREATE INDEX idx_batch_definitions_center_program_status ON batch_definitions(center_id, program_type, status);
+
 -- ─── Students ─────────────────────────────────────────────────────
 CREATE TABLE students (
   id           SERIAL PRIMARY KEY,
   name         VARCHAR(150) NOT NULL,
   roll_number  VARCHAR(30),
   class        VARCHAR(30) NOT NULL,  -- 'Class X', 'Class XII', etc.
+  program_type VARCHAR(20),
+  board        VARCHAR(50),
+  class_id     INT REFERENCES class_definitions(id) ON DELETE SET NULL,
+  course_id    INT REFERENCES course_definitions(id) ON DELETE SET NULL,
+  batch_id     INT REFERENCES batch_definitions(id) ON DELETE SET NULL,
   phone        VARCHAR(15),
+  email        VARCHAR(150),
   address      TEXT,
   city         VARCHAR(100),
   dob          DATE,
@@ -67,8 +122,11 @@ CREATE TABLE students (
   parent_id    INT REFERENCES parents(id) ON DELETE SET NULL,
   center_id    INT REFERENCES coaching_centers(id) ON DELETE CASCADE,
   status       VARCHAR(20) DEFAULT 'active',  -- active | inactive | left
+  left_date    DATE,
+  left_reason  TEXT,
   photo_url    TEXT,
   join_date    DATE DEFAULT CURRENT_DATE,
+  admission_year INT,
   advance_fee_balance NUMERIC(10,2) NOT NULL DEFAULT 0 CHECK (advance_fee_balance >= 0),
   created_at   TIMESTAMPTZ DEFAULT NOW(),
   updated_at   TIMESTAMPTZ DEFAULT NOW(),
@@ -76,6 +134,11 @@ CREATE TABLE students (
 );
 CREATE INDEX idx_students_center ON students(center_id);
 CREATE INDEX idx_students_class  ON students(class);
+CREATE INDEX idx_students_center_join_date ON students(center_id, join_date DESC);
+CREATE INDEX idx_students_center_program_type ON students(center_id, program_type);
+CREATE INDEX idx_students_center_class_id ON students(center_id, class_id);
+CREATE INDEX idx_students_center_course_id ON students(center_id, course_id);
+CREATE INDEX idx_students_center_batch_id ON students(center_id, batch_id);
 
 ALTER TABLE users
   ADD CONSTRAINT users_student_id_fkey FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE SET NULL;
@@ -88,10 +151,13 @@ CREATE TABLE fee_structures (
   id                     SERIAL PRIMARY KEY,
   center_id              INT REFERENCES coaching_centers(id) ON DELETE CASCADE,
   name                   VARCHAR(150) NOT NULL,
-  program_type           VARCHAR(20) NOT NULL CHECK (program_type IN ('academic', 'course')),
+  program_type           VARCHAR(20) NOT NULL CHECK (program_type IN ('academic', 'non_academic')),
   board                  VARCHAR(50),
   class_name             VARCHAR(30),
   course_name            VARCHAR(100),
+  class_id               INT REFERENCES class_definitions(id) ON DELETE SET NULL,
+  course_id              INT REFERENCES course_definitions(id) ON DELETE SET NULL,
+  batch_id               INT REFERENCES batch_definitions(id) ON DELETE SET NULL,
   academic_year          VARCHAR(20),
   duration_months        INT NOT NULL CHECK (duration_months BETWEEN 1 AND 24),
   session_start_month    INT CHECK (session_start_month BETWEEN 1 AND 12),
@@ -108,10 +174,14 @@ CREATE TABLE fee_structures (
   CHECK (
     (program_type = 'academic' AND class_name IS NOT NULL AND academic_year IS NOT NULL AND session_start_month IS NOT NULL AND session_end_month IS NOT NULL)
     OR
-    (program_type = 'course' AND course_name IS NOT NULL)
+    (program_type = 'non_academic' AND course_name IS NOT NULL)
   )
 );
 CREATE INDEX idx_fee_structures_center_program ON fee_structures(center_id, program_type, academic_year);
+CREATE INDEX idx_fee_structures_center_program_course ON fee_structures(center_id, program_type, course_name);
+CREATE INDEX idx_fee_structures_center_class_id ON fee_structures(center_id, class_id);
+CREATE INDEX idx_fee_structures_center_course_id ON fee_structures(center_id, course_id);
+CREATE INDEX idx_fee_structures_center_batch_id ON fee_structures(center_id, batch_id);
 
 -- ─── Student Fee Plans ─────────────────────────────────────────────
 CREATE TABLE student_fee_profiles (
@@ -135,6 +205,9 @@ CREATE TABLE student_fee_profiles (
 );
 CREATE UNIQUE INDEX idx_student_fee_profiles_active
 ON student_fee_profiles(student_id)
+WHERE status = 'active';
+CREATE INDEX idx_student_fee_profiles_center_structure_active
+ON student_fee_profiles(center_id, fee_structure_id)
 WHERE status = 'active';
 
 -- ─── Fees / Installments ──────────────────────────────────────────
@@ -174,6 +247,7 @@ CREATE TABLE fees (
 CREATE INDEX idx_fees_center_status ON fees(center_id, status);
 CREATE INDEX idx_fees_student_due ON fees(student_id, due_date);
 CREATE INDEX idx_fees_profile ON fees(fee_profile_id);
+CREATE INDEX idx_fees_center_due_date ON fees(center_id, due_date DESC);
 
 -- ─── Transport Routes ─────────────────────────────────────────────
 CREATE TABLE transport_routes (
@@ -323,6 +397,11 @@ CREATE TABLE notices (
   title           VARCHAR(200) NOT NULL,
   content         TEXT NOT NULL,
   target_audience VARCHAR(50) DEFAULT 'all',  -- all | students | parents | class-x | class-xii
+  target_scope    VARCHAR(20) NOT NULL DEFAULT 'all' CHECK (target_scope IN ('all', 'filtered')),
+  program_type    VARCHAR(20) CHECK (program_type IN ('academic', 'non_academic')),
+  class_id        INT REFERENCES class_definitions(id) ON DELETE SET NULL,
+  course_id       INT REFERENCES course_definitions(id) ON DELETE SET NULL,
+  batch_id        INT REFERENCES batch_definitions(id) ON DELETE SET NULL,
   priority        VARCHAR(20) DEFAULT 'medium',  -- high | medium | low
   expires_at      DATE,
   center_id       INT REFERENCES coaching_centers(id) ON DELETE CASCADE,
@@ -330,6 +409,7 @@ CREATE TABLE notices (
   created_at      TIMESTAMPTZ DEFAULT NOW()
 );
 CREATE INDEX idx_notices_center ON notices(center_id);
+CREATE INDEX idx_notices_center_scope ON notices(center_id, target_scope, target_audience, created_at DESC);
 
 CREATE TABLE holidays (
   id          SERIAL PRIMARY KEY,
@@ -431,6 +511,7 @@ CREATE TABLE fee_payments (
 );
 CREATE INDEX idx_fee_payments_fee ON fee_payments(fee_id);
 CREATE INDEX idx_fee_payments_student ON fee_payments(student_id, payment_date DESC);
+CREATE INDEX idx_fee_payments_center_date ON fee_payments(center_id, payment_date DESC);
 
 -- ─── Attendance ───────────────────────────────────────────────────
 CREATE TABLE attendance (
@@ -460,7 +541,7 @@ INSERT INTO fee_structures (
   (1, 'Class IX CBSE', 'academic', 'CBSE', 'Class IX', '2026-2027', 12, 3, 2, 22000, 15000, 12000, 'CBSE academic session'),
   (1, 'Class X CBSE', 'academic', 'CBSE', 'Class X', '2026-2027', 12, 3, 2, 24000, 18000, 18000, 'CBSE board batch'),
   (1, 'Class XII State Board', 'academic', 'State Board', 'Class XII', '2026-2027', 12, 3, 2, 26000, 18000, 15000, 'State board senior secondary'),
-  (1, 'PGDCA', 'course', NULL, NULL, NULL, 6, NULL, NULL, 18000, 9000, 0, 'Six month computer course');
+  (1, 'PGDCA', 'non_academic', NULL, NULL, NULL, 6, NULL, NULL, 18000, 9000, 0, 'Six month computer course');
 
 -- ─── Useful Views ─────────────────────────────────────────────────
 DROP VIEW IF EXISTS fee_summary;

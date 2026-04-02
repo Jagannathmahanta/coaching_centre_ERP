@@ -1,0 +1,329 @@
+/* ============================= */
+/* BASE LAYOUT */
+/* ============================= */
+
+.appLayout {
+  position: fixed;   
+  inset: 0; 
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100%;
+  overflow: hidden;
+  background: #f5f6fa;
+}
+.appLayout__topbar {
+  flex-shrink: 0;          /* never shrink — always 60px */
+  width: 100%;
+}
+
+.appLayout,
+.appLayout__body,
+.appLayout__main {
+  width: 100%;
+}
+.appLayout__body {
+  display: flex;
+  flex: 1;                 /* fill remaining height exactly */
+  overflow: hidden;        /* clip children, don't scroll here */
+  width: 100%;
+}
+
+.appLayout__main {
+  flex: 1;
+  overflow-y: auto;
+  background: #f5f6fa;
+    overflow-x: hidden; 
+  -webkit-overflow-scrolling: touch;
+  min-width: 0;            /* prevents flex blowout */
+}
+
+.appLayout__content {
+padding: 32px;
+}
+
+.appLayout__backdrop {
+display: none;
+}
+
+/* ============================= */
+/* SIDEBAR (DESKTOP - FLEX BASED) */
+/* ============================= */
+
+.appSidebar {
+  width: 240px;
+  flex-shrink: 0;
+  background: linear-gradient(180deg, #6d28d9 0%, #7c3aed 100%);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow-y: auto;
+}
+
+.appSidebar__brand {
+  padding: 20px;
+  color: #ffffff;
+  font-size: 22px;
+  font-weight: 700;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.appSidebar__nav {
+margin-top: auto;
+padding: 16px;
+flex: 1; /* push footer to bottom */
+}
+
+.appSidebar__link {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  color: white;
+  text-decoration: none;
+  border-radius: 14px;
+  transition: all 0.2s ease;
+}
+
+.appSidebar__label {
+  flex: 1;
+}
+
+.appSidebar__badge {
+  margin-left: auto;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: #fef3c7;
+  color: #92400e;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.appSidebar__link:hover {
+  background: #1c89ff;
+  color: #ffffff;
+}
+
+.appSidebar__link--active {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: #ffffff;
+  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.4);
+}
+
+/* Sidebar Footer */
+.appSidebar__footer {
+  padding: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.appSidebar__user {
+color: #9ca3af;
+font-size: 14px;
+margin-bottom: 10px;
+}
+
+.appSidebar__logout {
+  width: 100%;
+  padding: 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+
+  display: flex;             
+  align-items: center;        
+  justify-content: center;    
+  gap: 8px;                   
+}
+
+.appSidebar__logout:hover {
+  background: #1c89ff;
+  color: #ffffff;
+}
+/* ============================= */
+/* TOPBAR */
+/* ============================= */
+
+.appTopbar {
+height: 72px;
+background: #fff;
+border-bottom: 1px solid #e5e7eb;
+display: flex ;
+justify-content: space-between;
+align-items: center;
+gap: 16px;
+padding: 0 20px;
+position: sticky;
+top: 0;
+z-index: 50;
+box-shadow: 0 2px 12px rgba(15, 23, 42, 0.08);
+flex-shrink: 0;
+}
+
+.appTopbar__left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.appTopbar__logo {
+  height: 70px;
+}
+.appTopbar__logo {
+  display: block;
+}
+
+@media (max-width: 768px) {
+.appTopbar__logo {
+    display: none;
+  }
+}
+
+/* CENTER (perfect center) */
+.appTopbar__center {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+.appTopbar__start {
+display: flex;
+align-items: center;
+gap: 12px;
+}
+
+.appTopbar__title {
+font-size: 18px;
+font-weight: 700;
+color: #111827;
+}
+
+.appTopbar__actions {
+display: flex;
+align-items: center;
+gap: 12px;
+}
+
+.appTopbar__actions--desktop {
+display: flex;
+}
+
+.appTopbar__welcome {
+color: #4b5563;
+}
+
+.appTopbar__menuButton,
+.appTopbar__logout {
+border: none;
+border-radius: 10px;
+padding: 8px 14px;
+cursor: pointer;
+}
+
+.appTopbar__menuButton {
+display: none;
+background: #e5e7eb;
+color: #111827;
+}
+
+.appTopbar__logout {
+background: linear-gradient(135deg, #7c3aed, #9333ea);
+color: #fff;
+}
+
+/* ============================= */
+/* TABLET & MOBILE */
+/* ============================= */
+
+@media (max-width: 900px) {
+
+.appLayout__body {
+display: block;
+overflow-y: visible;
+}
+
+.appLayout__content {
+padding: 20px 16px 24px;
+}
+
+/* Topbar */
+.appTopbar {
+padding: 0 16px;
+}
+
+.appTopbar__actions--desktop {
+display: none; /* hide welcome + logout */
+}
+
+.appTopbar__menuButton {
+display: inline-flex;
+align-items: center;
+justify-content: center;
+font-size: 18px;
+}
+
+.appTopbar__title {
+font-size: 16px;
+}
+
+/* Sidebar (mobile drawer) */
+.appSidebar {
+position: fixed;
+top: 60px;
+left: 0;
+bottom: 0;
+transform: translateX(-100%);
+transition: transform 0.25s ease;
+z-index: 40;
+box-shadow: 0 20px 40px rgba(15, 23, 42, 0.24);
+}
+
+.appSidebar__link {
+  display: flex;
+  align-items: center;
+  gap: 12px; /* spacing between icon + text */
+  padding: 12px 14px;
+  color: rgba(255, 255, 255, 0.85);
+  text-decoration: none;
+  border-radius: 12px;
+  transition: 0.2s;
+}
+
+.appSidebar__icon {
+  flex-shrink: 0;
+  opacity: 0.9;
+}
+.appSidebar--open {
+transform: translateX(0);
+}
+
+/* Backdrop */
+.appLayout__backdrop {
+display: block;
+position: fixed;
+inset: 0;
+border: none;
+background: rgba(15, 23, 42, 0.42);
+z-index: 30;
+}
+}
+
+/* ============================= */
+/* SMALL MOBILE */
+/* ============================= */
+
+@media (max-width: 540px) {
+
+.appTopbar__title {
+font-size: 15px;
+}
+
+.appSidebar__user {
+font-size: 13px;
+}
+
+.appSidebar__logout {
+padding: 9px;
+font-size: 14px;
+}
+}

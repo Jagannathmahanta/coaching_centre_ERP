@@ -12,7 +12,7 @@ const cardStyle = {
 };
 
 const primaryButton = {
-  background: "#2563eb",
+  background: "linear-gradient(135deg, #7c3aed, #9333ea)",
   color: "#fff",
   border: "none",
   borderRadius: 10,
@@ -23,6 +23,7 @@ const primaryButton = {
 
 export default function HostelPage() {
   const state = useHostelData();
+  const showFormOnly = Boolean(state.showHostelForm || state.editingHostelId || state.editingRoomId);
 
   return (
     <div style={{ display: "grid", gap: 20 }}>
@@ -31,32 +32,86 @@ export default function HostelPage() {
         <p style={{ color: "#6b7280", marginTop: 8 }}>
           Create boys and girls hostels, add rooms, and manage active hostel seat allocations.
         </p>
-      </div>
-
-      {state.message && <div style={{ ...cardStyle, color: "#166534", background: "#f0fdf4" }}>{state.message}</div>}
-      {state.error && <div style={{ ...cardStyle, color: "#b91c1c", background: "#fef2f2" }}>{state.error}</div>}
-
-      <div style={{ ...cardStyle, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-        <div>
-          <h2 style={{ margin: 0 }}>Hostel Listings</h2>
-          <p style={{ margin: "6px 0 0", color: "#6b7280" }}>
-            Keep the page focused on rooms and allocations. Open the form only when you need to add or edit.
-          </p>
-        </div>
         <button
-          type="button"
-          onClick={() => {
-            state.resetRoomForm();
-            state.setEditingHostelId(null);
-            state.setHostelForm({ hostel_name: "", gender_type: "boys", address: "", status: "active" });
-            state.setRoomDrafts([{ room_number: "", floor: "", type: "double", capacity: "2", monthly_fee: "", status: "active" }]);
-            state.setShowHostelForm(true);
-          }}
-          style={primaryButton}
-        >
-          Add Hostel
-        </button>
+            type="button"
+            onClick={() => {
+              state.resetRoomForm();
+              state.setEditingHostelId(null);
+              state.setHostelForm({
+                hostel_name: "",
+                gender_type: "boys",
+                address: "",
+                status: "active",
+              });
+              state.setRoomDrafts([{
+                room_number: "",
+                floor: "",
+                type: "double",
+                capacity: "2",
+                monthly_fee: "",
+                status: "active",
+              }]);
+              state.setShowHostelForm(true);
+            }}
+            style={primaryButton}
+          >
+            Add Hostel
+          </button>
       </div>
+
+      {state.message && (
+        <div style={{ ...cardStyle, color: "#166534", background: "#f0fdf4" }}>
+          {state.message}
+        </div>
+      )}
+      {state.error && (
+        <div style={{ ...cardStyle, color: "#b91c1c", background: "#fef2f2" }}>
+          {state.error}
+        </div>
+      )}
+
+      {/* {!showFormOnly ? (
+        <div style={{
+          ...cardStyle,
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "flex-start",
+          gap: 12,
+          flexWrap: "wrap",
+        }}>
+          <div>
+            <h2 style={{ margin: 0 }}>Hostel Listings</h2>
+            <p style={{ margin: "6px 0 0", color: "#6b7280" }}>
+              Keep the page focused on rooms and allocations. Open the form only when you need to add or edit.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              state.resetRoomForm();
+              state.setEditingHostelId(null);
+              state.setHostelForm({
+                hostel_name: "",
+                gender_type: "boys",
+                address: "",
+                status: "active",
+              });
+              state.setRoomDrafts([{
+                room_number: "",
+                floor: "",
+                type: "double",
+                capacity: "2",
+                monthly_fee: "",
+                status: "active",
+              }]);
+              state.setShowHostelForm(true);
+            }}
+            style={primaryButton}
+          >
+            Add Hostel
+          </button>
+        </div>
+      ) : null} */}
 
       <HostelFormsSection
         hostels={state.hostels}
@@ -75,11 +130,12 @@ export default function HostelPage() {
         onSaveRoom={state.handleSaveRoom}
       />
 
-      {state.loading ? (
+      {!showFormOnly && state.loading ? (
         <div style={cardStyle}>Loading hostel data...</div>
-      ) : (
+      ) : !showFormOnly ? (
         <>
-          <div style={cardStyle}>
+          {/* RoomAvailabilityTable card */}
+          <div style={{ ...cardStyle, minWidth: 0, overflow: "hidden" }}>
             <RoomAvailabilityTable
               hostels={state.hostels}
               rooms={state.filteredRooms}
@@ -116,11 +172,15 @@ export default function HostelPage() {
             />
           </div>
 
-          <div style={cardStyle}>
-            <AllocationTable allocations={state.allocations} onReleaseAllocation={state.handleReleaseAllocation} />
+          {/* AllocationTable card */}
+          <div style={{ ...cardStyle, minWidth: 0, overflow: "hidden" }}>
+            <AllocationTable
+              allocations={state.allocations}
+              onReleaseAllocation={state.handleReleaseAllocation}
+            />
           </div>
         </>
-      )}
+      ) : null}
     </div>
   );
 }

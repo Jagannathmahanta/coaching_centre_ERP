@@ -1,11 +1,22 @@
+import type { CatalogBatch, CatalogClass, CatalogCourse, CatalogProgramType } from "../../../shared/types/catalog";
+
 export type FeeDefinition = {
   id: number;
   name: string;
-  program_type: "academic" | "course";
+  program_type: CatalogProgramType | "course";
   description?: string | null;
   board?: string | null;
   class_name?: string | null;
   course_name?: string | null;
+  class_id?: number | null;
+  course_id?: number | null;
+  batch_id?: number | null;
+  class_label?: string | null;
+  course_label?: string | null;
+  batch_name?: string | null;
+  batch_shift?: string | null;
+  batch_start_time?: string | null;
+  batch_end_time?: string | null;
   academic_year?: string | null;
   duration_months: number;
   session_start_month?: number | null;
@@ -129,8 +140,11 @@ export type DefinitionFormState = {
   name: string;
   program_type: string;
   board: string;
-  class_name: string;
-  course_name: string;
+  class_name?: string;
+  course_name?: string;
+  class_id?: string;
+  course_id?: string;
+  batch_id?: string;
   academic_year: string;
   duration_months: string;
   session_start_month: string;
@@ -177,6 +191,9 @@ export const initialDefinitionForm: DefinitionFormState = {
   board: "CBSE",
   class_name: "Class X",
   course_name: "",
+  class_id: "",
+  course_id: "",
+  batch_id: "",
   academic_year: "2026-2027",
   duration_months: "12",
   session_start_month: "3",
@@ -185,4 +202,10 @@ export const initialDefinitionForm: DefinitionFormState = {
   hostel_total: "18000",
   transport_total: "18000",
   description: "Academic session fee definition",
+};
+
+export type FeeCatalogOptions = {
+  classes: CatalogClass[];
+  courses: CatalogCourse[];
+  batches: CatalogBatch[];
 };

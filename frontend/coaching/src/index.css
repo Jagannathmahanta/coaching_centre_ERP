@@ -34,23 +34,19 @@
   box-sizing: border-box;
 }
 
-html,
-body,
-#root {
+html, body, #root {
+  margin: 0;
+  padding: 0;
   width: 100%;
-  min-height: 100vh;
+  height: 100%;
 }
 
 body {
   margin: 0;
-  font-family: var(--sans);
-  background: #f4f7fb;
-  color: #111827;
+ background: red;
+  overflow-x: hidden;
 }
 
-#root {
-  display: block;
-}
 
 h1,
 h2 {

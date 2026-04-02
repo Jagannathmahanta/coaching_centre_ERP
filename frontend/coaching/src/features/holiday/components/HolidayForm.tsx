@@ -2,11 +2,12 @@ import type { ReactNode } from "react";
 import type { HolidayFormValues } from "../types/holiday.types";
 
 const inputStyle = {
-  width: "100%",
+  width: "100%",                // ← was 90%
   padding: "12px 14px",
   borderRadius: 12,
   border: "1px solid #d1d5db",
   marginTop: 6,
+  boxSizing: "border-box" as const,
 };
 
 const buttonStyle = {
@@ -23,45 +24,73 @@ export function HolidayForm({
   form,
   onChange,
   onSubmit,
+  onCancel,
   isPending,
 }: {
   form: HolidayFormValues;
   onChange: (key: keyof HolidayFormValues, value: string) => void;
   onSubmit: () => void;
+  onCancel: () => void;
   isPending: boolean;
 }) {
   return (
     <form
-      onSubmit={(event) => {
-        event.preventDefault();
+      onSubmit={(e) => {
+        e.preventDefault();
         onSubmit();
       }}
     >
       <div style={{ marginBottom: 18 }}>
-        <h2 style={{ margin: 0 }}>Create Holiday</h2>
+        <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+          <h2 style={{ margin: 0 }}>Create Holiday</h2>
+          <button type="button" onClick={onCancel} style={{ ...buttonStyle, background: "#fff", color: "#1d4ed8", border: "1px solid #bfdbfe" }}>
+            Close
+          </button>
+        </div>
         <p style={{ color: "#6b7280", marginTop: 8 }}>Add one-day or multi-day holidays here.</p>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr 1fr", gap: 14 }}>
+      {/* Responsive 3-col → stacks on mobile */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 14 }}>
         <Field label="Holiday Title">
-          <input value={form.title} onChange={(event) => onChange("title", event.target.value)} style={inputStyle} required />
+          <input
+            value={form.title}
+            onChange={(e) => onChange("title", e.target.value)}
+            style={inputStyle}
+            required
+          />
         </Field>
         <Field label="Start Date">
-          <input type="date" value={form.start_date} onChange={(event) => onChange("start_date", event.target.value)} style={inputStyle} required />
+          <input
+            type="date"
+            value={form.start_date}
+            onChange={(e) => onChange("start_date", e.target.value)}
+            style={inputStyle}
+            required
+          />
         </Field>
         <Field label="End Date">
-          <input type="date" value={form.end_date} onChange={(event) => onChange("end_date", event.target.value)} style={inputStyle} required />
+          <input
+            type="date"
+            value={form.end_date}
+            onChange={(e) => onChange("end_date", e.target.value)}
+            style={inputStyle}
+            required
+          />
         </Field>
       </div>
 
-      <Field label="Description">
-        <textarea
-          rows={3}
-          value={form.description}
-          onChange={(event) => onChange("description", event.target.value)}
-          style={{ ...inputStyle, resize: "vertical" as const }}
-        />
-      </Field>
+      {/* Description — full width, below grid */}
+      <div style={{ marginTop: 14 }}>
+        <Field label="Description">
+          <textarea
+            rows={3}
+            value={form.description}
+            onChange={(e) => onChange("description", e.target.value)}
+            style={{ ...inputStyle, resize: "vertical" as const }}
+          />
+        </Field>
+      </div>
 
       <div style={{ marginTop: 16 }}>
         <button type="submit" style={buttonStyle} disabled={isPending}>
@@ -74,7 +103,13 @@ export function HolidayForm({
 
 function Field({ children, label }: { children: ReactNode; label: string }) {
   return (
-    <label style={{ display: "block", color: "#374151", fontWeight: 700, fontSize: 14 }}>
+    <label style={{
+      display: "flex",           // ← was block
+      flexDirection: "column",   // ← label on top, input below
+      color: "#374151",
+      fontWeight: 700,
+      fontSize: 14,
+    }}>
       {label}
       {children}
     </label>

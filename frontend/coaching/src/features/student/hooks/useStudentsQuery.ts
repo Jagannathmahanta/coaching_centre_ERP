@@ -31,7 +31,7 @@ export function useStudentsQuery() {
 
   useEffect(() => {
     loadStudents();
-  }, [filters.className, filters.board, filters.academicYear]);
+  }, [filters.className, filters.board, filters.academicYear, filters.status]);
 
   const classOptions = useMemo(
     () => Array.from(new Set(students.map((student) => student.class).filter(Boolean))),

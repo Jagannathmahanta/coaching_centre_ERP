@@ -1,8 +1,14 @@
+import type { CatalogBatch, CatalogBootstrap, CatalogClass, CatalogCourse, CatalogProgramType } from "../../../shared/types/catalog";
+
 export type StudentRecord = {
   id: number;
   name: string;
   class: string;
+  status?: string;
+  left_date?: string | null;
+  left_reason?: string | null;
   phone?: string | null;
+  email?: string | null;
   roll_number?: string | null;
   join_date?: string | null;
   board?: string | null;
@@ -21,6 +27,7 @@ export type StudentFiltersState = {
   className: string;
   board: string;
   academicYear: string;
+  status: string;
 };
 
 export type StudentLoginDraft = {
@@ -35,10 +42,19 @@ export type StudentLoginDraft = {
 export type FeeDefinition = {
   id: number;
   name: string;
-  program_type: "academic" | "course";
+  program_type: CatalogProgramType;
   board?: string | null;
   class_name?: string | null;
   course_name?: string | null;
+  class_id?: number | null;
+  course_id?: number | null;
+  batch_id?: number | null;
+  class_label?: string | null;
+  course_label?: string | null;
+  batch_name?: string | null;
+  batch_shift?: string | null;
+  batch_start_time?: string | null;
+  batch_end_time?: string | null;
   academic_year?: string | null;
   duration_months: number;
   session_start_month?: number | null;
@@ -52,13 +68,29 @@ export type StudentDetail = {
   id: number;
   name: string;
   phone?: string | null;
+  email?: string | null;
+  parent_name?: string | null;
+  parent_phone?: string | null;
+  parent_email?: string | null;
   gender?: string | null;
   join_date?: string | null;
   class: string;
+  program_type?: CatalogProgramType | null;
+  board?: string | null;
+  class_id?: number | null;
+  course_id?: number | null;
+  batch_id?: number | null;
+  class_label?: string | null;
+  course_label?: string | null;
+  batch_name?: string | null;
+  batch_shift?: string | null;
+  batch_start_time?: string | null;
+  batch_end_time?: string | null;
   roll_number?: string | null;
   fee_structure_id?: number | null;
   billing_cycle?: string | null;
   academic_year?: string | null;
+  admission_year?: number | null;
   due_day?: number | null;
   include_hostel?: boolean;
   include_transport?: boolean;
@@ -67,6 +99,9 @@ export type StudentDetail = {
   hostel_name?: string | null;
   room_number?: string | null;
   notes?: string | null;
+  status?: string | null;
+  left_date?: string | null;
+  left_reason?: string | null;
 };
 
 export type HostelOption = {
@@ -90,17 +125,21 @@ export type HostelRoomOption = {
 export type StudentAdmissionForm = {
   name: string;
   phone: string;
+  email: string;
   gender: string;
+  status: string;
+  left_date: string;
+  left_reason: string;
   parent_name: string;
   parent_phone: string;
   parent_email: string;
-  create_parent_login: boolean;
-  parent_login_password: string;
-  create_student_login: boolean;
-  student_login_email: string;
-  student_login_phone: string;
-  student_login_password: string;
   join_date: string;
+  program_type: CatalogProgramType;
+  board: string;
+  class_id: string;
+  course_id: string;
+  batch_id: string;
+  admission_year: string;
   fee_structure_id: string;
   class: string;
   billing_cycle: string;
@@ -127,6 +166,9 @@ export type FeePreview = {
 export type AdmissionBootstrap = {
   definitions: FeeDefinition[];
   hostels: HostelOption[];
+  classes: CatalogClass[];
+  courses: CatalogCourse[];
+  batches: CatalogBatch[];
   student: StudentDetail | null;
 };
 
@@ -134,6 +176,7 @@ export const initialStudentFilters: StudentFiltersState = {
   className: "",
   board: "",
   academicYear: "",
+  status: "all",
 };
 
 export const initialStudentLoginDraft: StudentLoginDraft = {
@@ -148,16 +191,20 @@ export const initialStudentLoginDraft: StudentLoginDraft = {
 export const initialStudentAdmissionForm: StudentAdmissionForm = {
   name: "",
   phone: "",
+  email: "",
   gender: "male",
+  status: "active",
+  left_date: "",
+  left_reason: "",
   parent_name: "",
   parent_phone: "",
   parent_email: "",
-  create_parent_login: false,
-  parent_login_password: "",
-  create_student_login: false,
-  student_login_email: "",
-  student_login_phone: "",
-  student_login_password: "",
+  program_type: "academic",
+  board: "CBSE",
+  class_id: "",
+  course_id: "",
+  batch_id: "",
+  admission_year: String(new Date().getFullYear()),
   join_date: new Date().toISOString().slice(0, 10),
   fee_structure_id: "",
   class: "",
@@ -170,6 +217,8 @@ export const initialStudentAdmissionForm: StudentAdmissionForm = {
   include_transport: false,
   notes: "",
 };
+
+export type { CatalogBatch, CatalogBootstrap, CatalogClass, CatalogCourse, CatalogProgramType };
 
 export const cycleLabels: Record<string, string> = {
   monthly: "Monthly",

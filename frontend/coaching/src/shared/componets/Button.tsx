@@ -14,7 +14,7 @@ export default function Button({
     borderRadius: "6px",
     border: "none",
     cursor: "pointer",
-    background: variant === "primary" ? "#2563eb" : "#e5e7eb",
+    background: variant === "primary" ? "linear-gradient(135deg, #7c3aed, #9333ea)" : "#e5e7eb",
     color: variant === "primary" ? "#fff" : "#000",
   };
 

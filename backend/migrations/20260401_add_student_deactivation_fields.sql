@@ -1,0 +1,3 @@
+ALTER TABLE students
+  ADD COLUMN IF NOT EXISTS left_date DATE,
+  ADD COLUMN IF NOT EXISTS left_reason TEXT;

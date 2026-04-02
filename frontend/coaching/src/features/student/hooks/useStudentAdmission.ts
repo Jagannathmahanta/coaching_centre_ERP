@@ -8,6 +8,9 @@ import {
   updateStudentFeePlan,
 } from "../services/students.service";
 import type {
+  CatalogBatch,
+  CatalogClass,
+  CatalogCourse,
   FeeDefinition,
   FeePreview,
   HostelOption,
@@ -42,6 +45,9 @@ export function useStudentAdmission() {
   const [form, setForm] = useState<StudentAdmissionForm>(initialStudentAdmissionForm);
   const [definitions, setDefinitions] = useState<FeeDefinition[]>([]);
   const [hostels, setHostels] = useState<HostelOption[]>([]);
+  const [classes, setClasses] = useState<CatalogClass[]>([]);
+  const [courses, setCourses] = useState<CatalogCourse[]>([]);
+  const [batches, setBatches] = useState<CatalogBatch[]>([]);
   const [rooms, setRooms] = useState<HostelRoomOption[]>([]);
   const [initialStudent, setInitialStudent] = useState<StudentDetail | null>(null);
   const [loading, setLoading] = useState(false);
@@ -52,25 +58,32 @@ export function useStudentAdmission() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const { definitions, hostels, student } = await getAdmissionBootstrap(id);
+        const { definitions, hostels, classes, courses, batches, student } = await getAdmissionBootstrap(id);
         setDefinitions(definitions);
         setHostels(hostels);
+        setClasses(classes);
+        setCourses(courses);
+        setBatches(batches);
 
         if (student) {
           setInitialStudent(student);
           setForm({
             name: student.name || "",
             phone: student.phone || "",
+            email: student.email || "",
             gender: student.gender || "male",
-            parent_name: "",
-            parent_phone: "",
-            parent_email: "",
-            create_parent_login: false,
-            parent_login_password: "",
-            create_student_login: false,
-            student_login_email: "",
-            student_login_phone: "",
-            student_login_password: "",
+            status: student.status || "active",
+            left_date: student.left_date ? String(student.left_date).slice(0, 10) : "",
+            left_reason: student.left_reason || "",
+            parent_name: student.parent_name || "",
+            parent_phone: student.parent_phone || "",
+            parent_email: student.parent_email || "",
+            program_type: student.program_type || (student.course_id ? "non_academic" : "academic"),
+            board: student.board || "CBSE",
+            class_id: student.class_id ? String(student.class_id) : "",
+            course_id: student.course_id ? String(student.course_id) : "",
+            batch_id: student.batch_id ? String(student.batch_id) : "",
+            admission_year: String(student.admission_year || new Date(student.join_date || new Date()).getFullYear()),
             join_date: student.join_date ? String(student.join_date).slice(0, 10) : new Date().toISOString().slice(0, 10),
             fee_structure_id: student.fee_structure_id ? String(student.fee_structure_id) : "",
             class: student.class || "",
@@ -117,6 +130,42 @@ export function useStudentAdmission() {
     () => definitions.find((item) => String(item.id) === form.fee_structure_id),
     [definitions, form.fee_structure_id]
   );
+
+  const availableClasses = useMemo(
+    () => classes.filter((item) => item.status === "active" || String(item.id) === form.class_id),
+    [classes, form.class_id]
+  );
+
+  const availableCourses = useMemo(
+    () => courses.filter((item) => item.status === "active" || String(item.id) === form.course_id),
+    [courses, form.course_id]
+  );
+
+  const availableBatches = useMemo(() => {
+    return batches.filter((batch) => {
+      if (!(batch.status === "active" || String(batch.id) === form.batch_id)) return false;
+      if (batch.program_type !== form.program_type) return false;
+      if (form.program_type === "academic") {
+        return String(batch.class_id || "") === form.class_id && (!form.board || !batch.board || batch.board === form.board);
+      }
+      return String(batch.course_id || "") === form.course_id;
+    });
+  }, [batches, form.batch_id, form.class_id, form.course_id, form.program_type, form.board]);
+
+  const filteredDefinitions = useMemo(() => {
+    return definitions.filter((definition) => {
+      if (definition.program_type !== form.program_type) return false;
+      if (form.program_type === "academic") {
+        if (form.board && definition.board && definition.board !== form.board) return false;
+        if (form.class_id && String(definition.class_id || "") !== form.class_id) return false;
+      } else if (form.course_id && String(definition.course_id || "") !== form.course_id) {
+        return false;
+      }
+
+      if (form.batch_id && String(definition.batch_id || "") !== form.batch_id) return false;
+      return true;
+    });
+  }, [definitions, form.program_type, form.board, form.class_id, form.course_id, form.batch_id]);
 
   const filteredHostels = useMemo(() => {
     const targetGender = form.gender === "female" ? "girls" : "boys";
@@ -182,12 +231,53 @@ export function useStudentAdmission() {
     setForm((current) => {
       const next = { ...current, [key]: value };
 
+      if (key === "program_type") {
+        next.program_type = String(value) as StudentAdmissionForm["program_type"];
+        next.class_id = "";
+        next.course_id = "";
+        next.batch_id = "";
+        next.fee_structure_id = "";
+        next.class = "";
+        next.billing_cycle = "monthly";
+      }
+
+      if (key === "join_date" && typeof value === "string") {
+        next.admission_year = String(new Date(value || new Date().toISOString().slice(0, 10)).getFullYear());
+      }
+
+      if (key === "status" && value === "active") {
+        next.left_date = "";
+        next.left_reason = "";
+      }
+
+      if (key === "board") {
+        next.batch_id = "";
+        next.fee_structure_id = "";
+      }
+
+      if (key === "class_id") {
+        next.batch_id = "";
+        next.fee_structure_id = "";
+        const classRow = classes.find((item) => String(item.id) === String(value));
+        next.class = classRow?.class_name || "";
+      }
+
+      if (key === "course_id") {
+        next.batch_id = "";
+        next.fee_structure_id = "";
+        const courseRow = courses.find((item) => String(item.id) === String(value));
+        next.class = courseRow?.course_name || "";
+      }
+
+      if (key === "batch_id") {
+        next.fee_structure_id = "";
+      }
+
       if (key === "fee_structure_id") {
         const definition = definitions.find((item) => String(item.id) === String(value));
         if (definition) {
-          next.class = definition.class_name || definition.course_name || definition.name;
+          next.class = definition.class_label || definition.class_name || definition.course_label || definition.course_name || definition.name;
           next.academic_year = definition.academic_year || current.academic_year;
-          next.billing_cycle = definition.program_type === "course" ? "full_package" : current.billing_cycle;
         }
       }
 
@@ -208,6 +298,14 @@ export function useStudentAdmission() {
       return next;
     });
   };
+
+  useEffect(() => {
+    if (!form.fee_structure_id) return;
+    const stillValid = filteredDefinitions.some((item) => String(item.id) === form.fee_structure_id);
+    if (!stillValid) {
+      setForm((current) => ({ ...current, fee_structure_id: "" }));
+    }
+  }, [filteredDefinitions, form.fee_structure_id]);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -256,12 +354,19 @@ export function useStudentAdmission() {
     isEditMode,
     form,
     definitions,
+    classes,
+    courses,
+    batches,
     hostels,
     rooms,
     loading,
     bootLoading,
     error,
     success,
+    availableClasses,
+    availableCourses,
+    availableBatches,
+    filteredDefinitions,
     selectedDefinition,
     filteredHostels,
     availableRooms,

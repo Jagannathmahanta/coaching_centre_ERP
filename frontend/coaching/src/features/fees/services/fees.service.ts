@@ -1,4 +1,5 @@
 import api from "../../../shared/services/api";
+import type { CatalogBootstrap } from "../../../shared/types/catalog";
 import type {
   AdjustmentDraftState,
   DefinitionFormState,
@@ -11,6 +12,11 @@ import type {
 export async function getFeeStructures() {
   const response = await api.get("/fees/structures");
   return response.data || [];
+}
+
+export async function getFeeCatalogOptions(): Promise<CatalogBootstrap> {
+  const response = await api.get("/catalog/bootstrap");
+  return response.data || { classes: [], courses: [], batches: [] };
 }
 
 export async function getStudents() {
@@ -43,8 +49,9 @@ export async function saveFeeDefinition(editingStructureId: number | null, form:
     name: form.name,
     program_type: form.program_type,
     board: form.program_type === "academic" ? form.board : undefined,
-    class_name: form.program_type === "academic" ? form.class_name : undefined,
-    course_name: form.program_type === "course" ? form.course_name : undefined,
+    class_id: form.program_type === "academic" && form.class_id ? Number(form.class_id) : undefined,
+    course_id: form.program_type === "non_academic" && form.course_id ? Number(form.course_id) : undefined,
+    batch_id: form.batch_id ? Number(form.batch_id) : undefined,
     academic_year: form.program_type === "academic" ? form.academic_year : undefined,
     duration_months: Number(form.duration_months),
     session_start_month: form.program_type === "academic" ? Number(form.session_start_month) : undefined,

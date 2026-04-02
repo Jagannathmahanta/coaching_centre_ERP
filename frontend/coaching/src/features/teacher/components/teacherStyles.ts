@@ -7,7 +7,7 @@ export const cardStyle = {
 };
 
 export const inputStyle = {
-  width: "100%",
+  width: "90%",
   padding: "12px 14px",
   borderRadius: 12,
   border: "1px solid #d1d5db",
@@ -15,7 +15,7 @@ export const inputStyle = {
 };
 
 export const buttonStyle = {
-  background: "#1d4ed8",
+  background: "linear-gradient(135deg, #7c3aed, #9333ea)",
   color: "#fff",
   border: "none",
   borderRadius: 12,
@@ -26,8 +26,8 @@ export const buttonStyle = {
 
 export const secondaryButton = {
   ...buttonStyle,
-  background: "#eff6ff",
-  color: "#1d4ed8",
+  background: "linear-gradient(135deg, #7c3aed, #9333ea)",
+  color: "#fff",
 };
 
 export const dangerButton = {

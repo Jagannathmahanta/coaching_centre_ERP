@@ -1,4 +1,5 @@
 import api from "../../../shared/services/api";
+import type { CatalogBootstrap } from "../../../shared/types/catalog";
 import type {
   AdmissionBootstrap,
   HostelRoomOption,
@@ -12,6 +13,7 @@ export async function getStudents(filters: StudentFiltersState) {
       class: filters.className || undefined,
       board: filters.board || undefined,
       academic_year: filters.academicYear || undefined,
+      status: filters.status || undefined,
     },
   });
 
@@ -20,6 +22,11 @@ export async function getStudents(filters: StudentFiltersState) {
 
 export async function deleteStudent(studentId: number) {
   const response = await api.delete(`/students/${studentId}`);
+  return response.data;
+}
+
+export async function deactivateStudent(studentId: number, payload: { left_date: string; left_reason: string }) {
+  const response = await api.patch(`/students/${studentId}/deactivate`, payload);
   return response.data;
 }
 
@@ -35,15 +42,21 @@ export async function createStudentLogin(payload: {
 }
 
 export async function getAdmissionBootstrap(studentId?: string): Promise<AdmissionBootstrap> {
-  const [definitionsRes, hostelsRes, studentRes] = await Promise.all([
+  const [definitionsRes, hostelsRes, catalogRes, studentRes] = await Promise.all([
     api.get("/fees/structures"),
     api.get("/hostel"),
+    api.get("/catalog/bootstrap"),
     studentId ? api.get(`/students/${studentId}`) : Promise.resolve({ data: null }),
   ]);
+
+  const catalog = (catalogRes.data || {}) as CatalogBootstrap;
 
   return {
     definitions: definitionsRes.data || [],
     hostels: hostelsRes.data || [],
+    classes: catalog.classes || [],
+    courses: catalog.courses || [],
+    batches: catalog.batches || [],
     student: studentRes.data || null,
   };
 }
@@ -58,17 +71,18 @@ function toStudentPayload(form: StudentAdmissionForm) {
   return {
     name: form.name,
     class: form.class,
+    email: form.email || undefined,
+    program_type: form.program_type,
+    board: form.program_type === "academic" ? form.board || undefined : undefined,
+    class_id: form.program_type === "academic" && form.class_id ? Number(form.class_id) : undefined,
+    course_id: form.program_type === "non_academic" && form.course_id ? Number(form.course_id) : undefined,
+    batch_id: form.batch_id ? Number(form.batch_id) : undefined,
+    admission_year: Number(form.admission_year),
     phone: form.phone || undefined,
     gender: form.gender,
     parent_name: form.parent_name || undefined,
     parent_phone: form.parent_phone || undefined,
     parent_email: form.parent_email || undefined,
-    create_parent_login: form.create_parent_login,
-    parent_login_password: form.parent_login_password || undefined,
-    create_student_login: form.create_student_login,
-    student_login_email: form.student_login_email || undefined,
-    student_login_phone: form.student_login_phone || undefined,
-    student_login_password: form.student_login_password || undefined,
     join_date: form.join_date,
     fee_structure_id: form.fee_structure_id ? Number(form.fee_structure_id) : undefined,
     billing_cycle: form.billing_cycle,
@@ -93,6 +107,19 @@ export async function updateStudentAdmission(studentId: string, form: StudentAdm
   await api.patch(`/students/${studentId}`, {
     name: payload.name,
     class: payload.class,
+    email: payload.email,
+    status: form.status,
+    left_date: form.status === "active" ? undefined : form.left_date || undefined,
+    left_reason: form.status === "active" ? undefined : form.left_reason || undefined,
+    parent_name: form.parent_name || undefined,
+    parent_phone: form.parent_phone || undefined,
+    parent_email: form.parent_email || undefined,
+    program_type: payload.program_type,
+    board: payload.board,
+    class_id: payload.class_id,
+    course_id: payload.course_id,
+    batch_id: payload.batch_id,
+    admission_year: payload.admission_year,
     phone: payload.phone,
     gender: payload.gender,
     join_date: payload.join_date,

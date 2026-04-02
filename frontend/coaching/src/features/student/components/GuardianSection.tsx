@@ -1,17 +1,13 @@
-import { CheckboxCard, Field, FormSection, inputStyle } from "./StudentForm";
+import { Field, FormSection, inputStyle } from "./StudentForm";
 import type { StudentAdmissionForm } from "../types/students.types";
 
 export function GuardianSection({
   form,
-  isEditMode,
   onChange,
 }: {
   form: StudentAdmissionForm;
-  isEditMode: boolean;
   onChange: (key: keyof StudentAdmissionForm, value: string | boolean) => void;
 }) {
-  if (isEditMode) return null;
-
   return (
     <FormSection title="Guardian Details">
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 16 }}>
@@ -26,27 +22,10 @@ export function GuardianSection({
         </Field>
       </div>
 
-      <div style={{ marginTop: 18 }}>
-        <CheckboxCard
-          label="Create Parent Login Now"
-          checked={form.create_parent_login}
-          onChange={(checked) => onChange("create_parent_login", checked)}
-          helper="Guardian can log in with email or mobile and see student-related modules."
-        />
+      <div style={{ marginTop: 18, background: "#eff6ff", borderRadius: 12, padding: 16, color: "#1e3a8a" }}>
+        Parent login is created automatically only when guardian mobile or email is different from the student's contact.
+        Default password pattern: first four letters of student name in capital + admission year.
       </div>
-
-      {form.create_parent_login && (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 16, marginTop: 16 }}>
-          <Field label="Parent Login Password">
-            <input
-              type="password"
-              value={form.parent_login_password}
-              onChange={(e) => onChange("parent_login_password", e.target.value)}
-              style={inputStyle}
-            />
-          </Field>
-        </div>
-      )}
     </FormSection>
   );
 }

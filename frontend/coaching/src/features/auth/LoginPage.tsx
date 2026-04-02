@@ -1,11 +1,15 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type FormEvent } from "react";
+import { AxiosError } from "axios";
 import { useNavigate } from "react-router-dom";
 import { isAuthenticated, saveAuth } from "../../shared/services/auth";
 import api from "../../shared/services/api";
+import "./styles/LoginPage.css"
+import { useAuth } from "../../shared/hooks/AuthContext";
 
 
 export default function LoginPage() {
     const navigate = useNavigate();
+    const { setProfile } = useAuth();
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
@@ -17,7 +21,7 @@ export default function LoginPage() {
         }
     }, [navigate]);
 
-    const handleSubmit = async (event: any) => {
+    const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
         setError("");
         setLoading(true);
@@ -25,97 +29,69 @@ export default function LoginPage() {
         try {
             const response = await api.post("/auth/login", { email, password });
             saveAuth(response.data);
+            setProfile(response.data.user);
             navigate("/", { replace: true });
-        } catch (err: any) {
-            setError(err?.response?.data?.error || "Login failed. Check your credentials.");
+        } catch (err) {
+            const error = err as AxiosError<{ error?: string }>;
+            setError(error.response?.data?.error || "Login failed. Check your credentials.");
         } finally {
             setLoading(false);
         }
     };
 
-    return (
-        <div
-            style={{
-                minHeight: "100vh",
-                display: "grid",
-                placeItems: "center",
-                background: "#eef2ff",
-                padding: 24,
-            }}
-        >
-            <div
-                style={{
-                    width: 360,
-                    background: "#fff",
-                    borderRadius: 24,
-                    padding: 32,
-                    boxShadow: "0 24px 60px rgba(15, 23, 42, 0.12)",
-                }}
-            >
-                <h1 style={{ margin: 0, marginBottom: 16 }}>Coach Login</h1>
-                <p style={{ color: "#555", marginBottom: 24 }}>
-                    Sign in with your coaching account to continue.
-                </p>
+   return (
+  <div className="login-container">
+    <div className="login-card">
+      <h1 className="login-title">CoachingERP</h1>
+      <p className="login-subtitle">Coaching Management System</p>
 
-                <form onSubmit={handleSubmit}>
-                    <label style={{ display: "block", marginBottom: 12, color: "#333" }}>
-                        Email or Mobile
-                        <input
-                            type="text"
-                            value={email}
-                            onChange={(event) => setEmail(event.target.value)}
-                            required
-                            style={{
-                                width: "100%",
-                                padding: "12px 14px",
-                                marginTop: 8,
-                                borderRadius: 12,
-                                border: "1px solid #d1d5db",
-                                outline: "none",
-                            }}
-                        />
-                    </label>
-
-                    <label style={{ display: "block", marginBottom: 12, color: "#333" }}>
-                        Password
-                        <input
-                            type="password"
-                            value={password}
-                            onChange={(event) => setPassword(event.target.value)}
-                            required
-                            style={{
-                                width: "100%",
-                                padding: "12px 14px",
-                                marginTop: 8,
-                                borderRadius: 12,
-                                border: "1px solid #d1d5db",
-                                outline: "none",
-                            }}
-                        />
-                    </label>
-
-                    {error && (
-                        <div style={{ color: "#b91c1c", marginBottom: 16 }}>{error}</div>
-                    )}
-
-                    <button
-                        type="submit"
-                        disabled={loading}
-                        style={{
-                            width: "100%",
-                            padding: "14px 16px",
-                            border: "none",
-                            borderRadius: 12,
-                            background: "#4f46e5",
-                            color: "#fff",
-                            fontSize: 16,
-                            cursor: "pointer",
-                        }}
-                    >
-                        {loading ? "Signing in..." : "Sign In"}
-                    </button>
-                </form>
-            </div>
+      <form onSubmit={handleSubmit}>
+        <div className="input-group">
+          <label className="input-label">Email Address</label>
+          <input
+            type="text"
+            placeholder="you@example.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            className="input-field"
+          />
         </div>
-    );
+
+        <div className="input-group">
+          <label className="input-label">Password</label>
+          <input
+            type="password"
+            placeholder="Enter your password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            className="input-field"
+          />
+        </div>
+
+        {error && <div className="error-text">{error}</div>}
+
+        <div className="options-row">
+          <label className="remember">
+            <input type="checkbox" /> Remember me
+          </label>
+          <span className="forgot">Forgot password?</span>
+        </div>
+
+        <button type="submit" disabled={loading} className="login-button">
+          {loading ? "Signing in..." : "Sign in →"}
+        </button>
+      </form>
+
+      <div className="divider">NEW USER?</div>
+
+      <p className="signup">
+        Don't have an account? <span className="create">Create one</span>
+      </p>
+    </div>
+
+
+  </div>
+);
 }

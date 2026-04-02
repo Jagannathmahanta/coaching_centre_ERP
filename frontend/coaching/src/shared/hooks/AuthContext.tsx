@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useState } from 'react';
 import type { ReactNode } from 'react';
 import { clearAuth, getUser, type AuthUser } from '../services/auth';
 
@@ -13,14 +13,8 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [profile, setProfile] = useState<AuthUser | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const stored = getUser();
-    setProfile(stored);
-    setLoading(false);
-  }, []);
+  const [profile, setProfile] = useState<AuthUser | null>(() => getUser());
+  const [loading] = useState(false);
 
   const signOut = () => {
     clearAuth();
@@ -28,7 +22,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ profile, loading, signOut,setProfile }}>
+    <AuthContext.Provider value={{ profile, loading, signOut, setProfile }}>
       {children}
     </AuthContext.Provider>
   );

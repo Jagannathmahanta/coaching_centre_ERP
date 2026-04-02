@@ -1,6 +1,7 @@
 // routes/DashboardRoute.tsx
 
 import { useAuth } from "../../../shared/hooks/AuthContext";
+import { getUser } from "../../../shared/services/auth";
 import AdminDashboardPage from "../pages/AdminDashboardPage";
 import ParentDashboardPage from "../pages/ParentDashboardPage";
 import StudentDashboardPage from "../pages/StudentDashboardPage";
@@ -13,7 +14,7 @@ export default function DashboardRoute() {
 
   if (loading) return <div>Loading...</div>;
 
-  const role = profile?.role; 
+  const role = profile?.role ?? getUser()?.role;
 
   switch (role) {
     case "admin":

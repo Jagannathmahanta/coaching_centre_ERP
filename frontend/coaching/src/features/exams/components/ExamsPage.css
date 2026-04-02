@@ -30,6 +30,8 @@
   border-radius: 20px;
   padding: 22px;
   box-shadow: 0 12px 32px rgba(15, 23, 42, 0.06);
+  min-width: 0;        /* ← add this */
+  overflow: hidden;    /* ← add this */
 }
 
 .exams-cardHeader {
@@ -84,7 +86,7 @@
 }
 
 .exams-field {
-  display: block;
+  display: grid;
   font-size: 14px;
   font-weight: 600;
   color: #374151;
@@ -100,7 +102,7 @@
 .exams-field textarea,
 .exams-table input,
 .exams-table select {
-  width: 100%;
+  width: 90%;
   padding: 12px 14px;
   border-radius: 12px;
   border: 1px solid #d1d5db;
@@ -153,7 +155,7 @@
 }
 
 .exams-buttonPrimary {
-  background: #1d4ed8;
+  background: linear-gradient(135deg, #7c3aed, #9333ea);
   color: #fff;
 }
 

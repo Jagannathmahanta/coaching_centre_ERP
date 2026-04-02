@@ -1,6 +1,5 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Layout from "./layout/Layout";
-import LoginPage from "./modules/auth/LoginPage.tsx";
 import ProtectedRoute from "./modules/auth/ProtectedRoute.tsx";
 import NotFoundPage from "./modules/NotFoundPage";
 import SignupPage from "./modules/auth/SignupPage.tsx";
@@ -18,6 +17,8 @@ import HolidayRoute from "./features/holiday/routes/HolidayRoute.tsx";
 import LeaveRoute from "./features/leave/routes/LeaveRoute.tsx";
 import NoticesRoute from "./features/notice/routes/NoticesRoute.tsx";
 import ParentsRoute from "./features/parent/routes/ParentsRoute.tsx";
+import LoginPage from "./features/auth/LoginPage.tsx";
+import CatalogRoute from "./features/catalog/routes/CatalogRoute.tsx";
 export default function App() {
   return (
     <BrowserRouter>
@@ -27,6 +28,7 @@ export default function App() {
         <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
           <Route path="/" element={<DashboardRoute />} />
           <Route path="/students" element={<StudentsRoute />} />
+          <Route path="/catalog" element={<CatalogRoute />} />
           <Route path="/students/new" element={<NewStudentRoute />} />
           <Route path="/students/:id/edit" element={<NewStudentRoute />} />
           <Route path="/fees" element={<FeesRoute />} />

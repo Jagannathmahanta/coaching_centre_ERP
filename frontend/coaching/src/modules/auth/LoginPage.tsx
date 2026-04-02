@@ -2,10 +2,12 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { isAuthenticated, saveAuth } from "../../shared/services/auth";
 import api from "../../shared/services/api";
+import { useAuth } from "../../shared/hooks/AuthContext";
 
 
 export default function LoginPage() {
     const navigate = useNavigate();
+    const { setProfile } = useAuth();
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
@@ -25,6 +27,7 @@ export default function LoginPage() {
         try {
             const response = await api.post("/auth/login", { email, password });
             saveAuth(response.data);
+            setProfile(response.data.user);
             navigate("/", { replace: true });
         } catch (err: any) {
             setError(err?.response?.data?.error || "Login failed. Check your credentials.");

@@ -4,12 +4,28 @@ import type {
   FeeStructureOption,
   Teacher,
   TeacherFormState,
-  TeacherLoginDraft,
 } from "../types/teacher.types";
 
 export async function getTeachers(): Promise<Teacher[]> {
   const response = await api.get("/teachers");
   return response.data || [];
+}
+
+export async function getTeacherAbsencesToday(): Promise<number> {
+  const response = await api.get("/leaves", {
+    params: {
+      applicant_type: "teacher",
+      status: "approved",
+    },
+  });
+  const today = new Date().toISOString().slice(0, 10);
+  const leaves = response.data || [];
+
+  return leaves.filter((item: any) => {
+    const fromDate = String(item.from_date || "").slice(0, 10);
+    const toDate = String(item.to_date || "").slice(0, 10);
+    return fromDate && toDate && fromDate <= today && toDate >= today;
+  }).length;
 }
 
 export async function getTeacherClassStructures(): Promise<FeeStructureOption[]> {
@@ -24,9 +40,16 @@ export async function getTeacherClassExams(): Promise<ExamOption[]> {
 
 export async function saveTeacher(editingTeacherId: number | null, form: TeacherFormState) {
   const payload = {
-    ...form,
+    name: form.name,
+    phone: form.phone,
+    email: form.email,
+    gender: form.gender,
+    qualification: form.qualification,
     assigned_subjects: form.assigned_subjects,
     assigned_classes: form.assigned_classes,
+    join_date: form.join_date,
+    status: form.status,
+    notes: form.notes,
   };
 
   if (editingTeacherId) {
@@ -40,16 +63,5 @@ export async function saveTeacher(editingTeacherId: number | null, form: Teacher
 
 export async function removeTeacher(teacherId: number) {
   const response = await api.delete(`/teachers/${teacherId}`);
-  return response.data;
-}
-
-export async function createTeacherLogin(draft: TeacherLoginDraft) {
-  const response = await api.post("/auth/accounts", {
-    role: "teacher",
-    teacher_id: draft.teacherId,
-    email: draft.email || undefined,
-    phone: draft.phone || undefined,
-    password: draft.password,
-  });
   return response.data;
 }

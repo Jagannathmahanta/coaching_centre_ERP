@@ -1,5 +1,8 @@
-import { FeeStatusPill } from "./FeeStatusPill";
+import { useEffect, useState } from "react";
 import type { StudentRecord } from "../types/students.types";
+import Content from "../../../assets/Content.png";
+import "../../../shared/styles/dataTable.css";
+import "./StudentTable.css";
 
 const cardStyle = {
   background: "#fff",
@@ -16,138 +19,87 @@ const tableCellStyle = {
   verticalAlign: "top" as const,
 };
 
-function renderFeeStatus(student: StudentRecord) {
-  const overdue = Number(student.overdue_count || 0);
-  const current = Number(student.current_due_count || 0);
-
-  if (overdue > 0) {
-    return <FeeStatusPill label={`Overdue (${overdue})`} background="#fee2e2" color="#b91c1c" />;
-  }
-
-  if (current > 0) {
-    return <FeeStatusPill label={`Due This Month (${current})`} background="#fef3c7" color="#b45309" />;
-  }
-
-  return <FeeStatusPill label="Fees Clear" background="#dcfce7" color="#15803d" />;
-}
-
 export function StudentTable({
   students,
+  onView,
   onEdit,
   onDelete,
   onCreateLogin,
 }: {
   students: StudentRecord[];
+  onView: (student: StudentRecord) => void;
   onEdit: (studentId: number) => void;
   onDelete: (studentId: number) => void;
   onCreateLogin: (student: StudentRecord) => void;
 }) {
+  const [openMenuId, setOpenMenuId] = useState<number | null>(null);
+
+  useEffect(() => {
+    const handleClick = () => setOpenMenuId(null);
+    window.addEventListener("click", handleClick);
+    return () => window.removeEventListener("click", handleClick);
+  }, []);
+
   if (students.length === 0) {
     return <div style={cardStyle}>No students found yet.</div>;
   }
 
   return (
-    <div style={{ ...cardStyle, padding: 0, overflowX: "auto" }}>
-      <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 1320 }}>
+    <div className="dataTableWrap studentTableWrap" style={{ ...cardStyle, padding: 0, overflowX: "auto" }}>
+      <table className="dataTable studentTable">
         <thead>
           <tr style={{ background: "#f8fafc" }}>
             <th style={tableCellStyle}>Sl No</th>
-            <th style={tableCellStyle}>Name</th>
-            <th style={tableCellStyle}>Class</th>
-            <th style={tableCellStyle}>Board</th>
+            <th style={tableCellStyle}>Name / Admission No</th>
+            <th style={tableCellStyle}>Class / Course</th>
             <th style={tableCellStyle}>Admission Date</th>
-            <th style={tableCellStyle}>Plan</th>
-            <th style={tableCellStyle}>Session</th>
-            <th style={tableCellStyle}>Hostel</th>
-            <th style={tableCellStyle}>Transport</th>
-            <th style={tableCellStyle}>Fee Status</th>
-            <th style={tableCellStyle}>Login</th>
+            <th style={tableCellStyle}>Contact</th>
+            <th style={tableCellStyle}>Status</th>
             <th style={tableCellStyle}>Actions</th>
           </tr>
         </thead>
         <tbody>
           {students.map((student, index) => (
-            <tr
-              key={student.id}
-              style={{
-                background:
-                  Number(student.overdue_count || 0) > 0
-                    ? "#fff7f7"
-                    : Number(student.current_due_count || 0) > 0
-                      ? "#fffdf5"
-                      : "#fff",
-              }}
-            >
+            <tr key={student.id} className="dataTable__row studentTable__row" onClick={() => onView(student)}>
               <td style={tableCellStyle}>{index + 1}</td>
               <td style={tableCellStyle}>
-                <div style={{ fontWeight: 700 }}>{student.name}</div>
-                <div style={{ color: "#64748b", marginTop: 4, fontSize: 14 }}>Admission No: {student.roll_number || "-"}</div>
-                <div style={{ color: "#64748b", marginTop: 4, fontSize: 14 }}>{student.phone || "-"}</div>
+                <div className="dataTable__strong">{student.name}</div>
+                <div className="dataTable__subtle">Admission No: {student.roll_number || "-"}</div>
               </td>
-              <td style={tableCellStyle}>{student.class}</td>
-              <td style={tableCellStyle}>{student.board || "-"}</td>
+              <td style={tableCellStyle}>
+                <div className="dataTable__strong">{student.class || "-"}</div>
+                <div className="dataTable__subtle">{student.board || ""}</div>
+              </td>
               <td style={tableCellStyle}>{student.join_date ? new Date(student.join_date).toLocaleDateString() : "-"}</td>
-              <td style={tableCellStyle}>{student.billing_cycle ? student.billing_cycle.replace("_", " ") : "-"}</td>
-              <td style={tableCellStyle}>{student.academic_year || "-"}</td>
-              <td style={tableCellStyle}>{student.include_hostel ? "Yes" : "No"}</td>
-              <td style={tableCellStyle}>{student.include_transport ? "Yes" : "No"}</td>
-              <td style={tableCellStyle}>{renderFeeStatus(student)}</td>
               <td style={tableCellStyle}>
-                {student.has_login_account ? (
-                  <div>
-                    <div style={{ fontWeight: 700, color: "#166534" }}>Ready</div>
-                    <div style={{ color: "#64748b", fontSize: 13 }}>{student.login_email || student.login_phone || "-"}</div>
-                  </div>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => onCreateLogin(student)}
-                    style={{
-                      background: "#eff6ff",
-                      color: "#1d4ed8",
-                      border: "none",
-                      borderRadius: 8,
-                      padding: "8px 12px",
-                      fontWeight: 700,
-                      cursor: "pointer",
-                    }}
-                  >
-                    Create Login
-                  </button>
-                )}
+                <div className="dataTable__strong">{student.phone || "-"}</div>
+                <div className="dataTable__subtle">{student.email || "-"}</div>
               </td>
               <td style={tableCellStyle}>
-                <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                <span className={`dataTableStatusPill studentStatusPill studentStatusPill--${(student.status || "active").toLowerCase()}`}>
+                  {student.status || "active"}
+                </span>
+              </td>
+              <td style={{ ...tableCellStyle, position: "relative" }}>
+                <div className="dataTableActionMenu" onClick={(event) => event.stopPropagation()}>
                   <button
-                    type="button"
-                    onClick={() => onEdit(student.id)}
-                    style={{
-                      background: "#fff",
-                      color: "#1f2937",
-                      border: "1px solid #cbd5e1",
-                      borderRadius: 8,
-                      padding: "8px 12px",
-                      fontWeight: 700,
-                      cursor: "pointer",
+                    className="dataTableActionTrigger"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      setOpenMenuId(openMenuId === student.id ? null : student.id);
                     }}
                   >
-                    Edit
+                    <img src={Content} alt="menu" style={{ width: 18, height: 18 }} />
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => onDelete(student.id)}
-                    style={{
-                      background: "#fff",
-                      color: "#b91c1c",
-                      border: "1px solid #fecaca",
-                      borderRadius: 8,
-                      padding: "8px 12px",
-                      fontWeight: 700,
-                      cursor: "pointer",
-                    }}
-                  >
-                    Delete
-                  </button>
+
+                  {openMenuId === student.id ? (
+                    <div className="dataTableActionDropdown">
+                      <button onClick={() => onView(student)}>View</button>
+                      <button onClick={() => onEdit(student.id)}>Edit</button>
+                      {!student.has_login_account ? <button onClick={() => onCreateLogin(student)}>Create Login</button> : null}
+                      <button onClick={() => onDelete(student.id)} data-danger="true">Permanent Delete</button>
+                    </div>
+                  ) : null}
                 </div>
               </td>
             </tr>

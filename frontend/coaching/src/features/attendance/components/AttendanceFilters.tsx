@@ -6,6 +6,7 @@ const inputStyle = {
   borderRadius: 12,
   border: "1px solid #d1d5db",
   marginTop: 6,
+  boxSizing: "border-box" as const,
 };
 
 export function AttendanceFilters({
@@ -26,10 +27,22 @@ export function AttendanceFilters({
   students: StudentOption[];
 }) {
   return (
-    <div style={{ display: "grid", gridTemplateColumns: canEdit ? "1fr 1fr 1fr" : "1fr 1fr 1fr 1.4fr", gap: 14 }}>
+    <div style={{
+      display: "grid",
+      gridTemplateColumns: canEdit
+        ? "repeat(auto-fit, minmax(160px, 1fr))"
+        : "repeat(auto-fit, minmax(180px, 1fr))",
+      gap: 14,
+    }}>
+
+      {/* Student selector — non-edit mode only */}
       {!canEdit && (
         <Field label="Student">
-          <select value={filters.studentId} onChange={(event) => setFilters((current) => ({ ...current, studentId: event.target.value, className: "" }))} style={inputStyle}>
+          <select
+            value={filters.studentId}
+            onChange={(e) => setFilters((c) => ({ ...c, studentId: e.target.value, className: "" }))}
+            style={inputStyle}
+          >
             {!linkedStudentId && <option value="">Select your name</option>}
             {students.map((student) => (
               <option key={student.id} value={student.id}>
@@ -39,47 +52,75 @@ export function AttendanceFilters({
           </select>
         </Field>
       )}
+
+      {/* Class selector — edit mode only */}
       {canEdit && (
         <Field label="Class">
-          <select value={filters.className} onChange={(event) => setFilters((current) => ({ ...current, className: event.target.value }))} style={inputStyle}>
+          <select
+            value={filters.className}
+            onChange={(e) => setFilters((c) => ({ ...c, className: e.target.value }))}
+            style={inputStyle}
+          >
             <option value="">Select class</option>
             {classOptions.map((item) => (
-              <option key={item} value={item}>
-                {item}
-              </option>
+              <option key={item} value={item}>{item}</option>
             ))}
           </select>
         </Field>
       )}
+
+      {/* Date */}
       <Field label="Date">
-        <input type="date" value={filters.date} onChange={(event) => setFilters((current) => ({ ...current, date: event.target.value }))} style={inputStyle} />
+        <input
+          type="date"
+          value={filters.date}
+          onChange={(e) => setFilters((c) => ({ ...c, date: e.target.value }))}
+          style={inputStyle}
+        />
       </Field>
+
+      {/* Session */}
       <Field label="Session">
-        <select value={filters.session} onChange={(event) => setFilters((current) => ({ ...current, session: event.target.value }))} style={inputStyle}>
+        <select
+          value={filters.session}
+          onChange={(e) => setFilters((c) => ({ ...c, session: e.target.value }))}
+          style={inputStyle}
+        >
           <option value="">All sessions</option>
           {sessionOptions.map((item) => (
-            <option key={item} value={item}>
-              {item}
-            </option>
+            <option key={item} value={item}>{item}</option>
           ))}
         </select>
       </Field>
+
+      {/* Class display — non-edit mode only */}
       {!canEdit && (
         <Field label="Class">
           <input
-            value={filters.studentId ? (students.find((student) => String(student.id) === filters.studentId)?.class || "-") : "Select your profile first"}
+            value={
+              filters.studentId
+                ? (students.find((s) => String(s.id) === filters.studentId)?.class || "-")
+                : "Select your profile first"
+            }
             style={{ ...inputStyle, background: "#f8fafc" }}
             readOnly
           />
         </Field>
       )}
+
     </div>
   );
 }
 
 function Field({ children, label }: { children: React.ReactNode; label: string }) {
   return (
-    <label style={{ display: "block", color: "#374151", fontWeight: 700, fontSize: 14 }}>
+    <label style={{
+      display: "flex",
+      flexDirection: "column",
+      color: "#374151",
+      fontWeight: 700,
+      fontSize: 14,
+    }}>
       {label}
       {children}
     </label>

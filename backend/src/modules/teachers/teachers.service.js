@@ -31,6 +31,16 @@ function normalizeTextArray(value) {
   return value.map((item) => String(item).trim()).filter(Boolean);
 }
 
+function buildTeacherPassword(name, joinDate) {
+  const letters = String(name || "")
+    .replace(/[^a-zA-Z]/g, "")
+    .slice(0, 4)
+    .toUpperCase()
+    .padEnd(4, "X");
+  const year = new Date(joinDate || new Date()).getFullYear();
+  return `${letters}${year}`;
+}
+
 exports.getTeachers = async (req) => {
   const { rows } = await pool.query(
     `
@@ -65,10 +75,6 @@ exports.createTeacher = async (req) => {
     join_date,
     status,
     notes,
-    create_login,
-    login_email,
-    login_phone,
-    login_password,
   } = req.body;
 
   if (!name) {
@@ -104,18 +110,9 @@ exports.createTeacher = async (req) => {
 
     const teacher = rows[0];
 
-    if (create_login) {
-      const normalizedEmail = String(login_email || email || "").trim().toLowerCase() || null;
-      const normalizedPhone = String(login_phone || phone || "").trim() || null;
-
-      if (!normalizedEmail && !normalizedPhone) {
-        throw badRequest("Teacher login needs an email or mobile.");
-      }
-
-      if (!login_password || String(login_password).length < 6) {
-        throw badRequest("Teacher login password must be at least 6 characters.");
-      }
-
+    const normalizedEmail = String(email || "").trim().toLowerCase() || null;
+    const normalizedPhone = String(phone || "").trim() || null;
+    if (normalizedEmail || normalizedPhone) {
       const existingUser = await client.query(
         `
         SELECT id
@@ -132,15 +129,15 @@ exports.createTeacher = async (req) => {
         throw badRequest("A login account already exists for this teacher, email, or mobile.");
       }
 
-      const passwordHash = await bcrypt.hash(String(login_password), 10);
+      const passwordHash = await bcrypt.hash(buildTeacherPassword(teacher.name, teacher.join_date), 10);
       await client.query(
         `
         INSERT INTO users
-          (name, email, phone, password_hash, role, center_id, teacher_id)
+          (name, email, phone, password_hash, role, center_id, teacher_id, must_change_password)
         VALUES
-          ($1,$2,$3,$4,'teacher',$5,$6)
+          ($1,$2,$3,$4,'teacher',$5,$6,$7)
         `,
-        [teacher.name, normalizedEmail, normalizedPhone, passwordHash, req.user.center_id, teacher.id]
+        [teacher.name, normalizedEmail, normalizedPhone, passwordHash, req.user.center_id, teacher.id, true]
       );
     }
 

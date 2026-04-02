@@ -13,9 +13,10 @@ type Props = {
   fees?: PendingFeeItem[];
   shortDate: (date: string) => string;
   currency: (value: number | string) => string;
+  showAction?: boolean;
 };
 
-export const PendingFeeTable = ({ fees, shortDate, currency }: Props) => {
+export const PendingFeeTable = ({ fees, shortDate, currency, showAction = true }: Props) => {
   return (
     <div className="dashboard-tableWrap">
       <table className="dashboard-table">
@@ -25,7 +26,7 @@ export const PendingFeeTable = ({ fees, shortDate, currency }: Props) => {
             <th>Installment</th>
             <th>Due</th>
             <th>Balance</th>
-            <th>Status</th>
+            {showAction ? <th>Action</th> : null}
           </tr>
         </thead>
 
@@ -33,7 +34,7 @@ export const PendingFeeTable = ({ fees, shortDate, currency }: Props) => {
           {fees?.length ? (
             fees.map((item) => (
               <tr key={item.fee_id}>
-                <td>
+                <td data-label="Student">
                   <strong>{item.student_name}</strong>
                   <div className="dashboard-listMeta">
                     {item.class}
@@ -41,20 +42,26 @@ export const PendingFeeTable = ({ fees, shortDate, currency }: Props) => {
                   </div>
                 </td>
 
-                <td>{item.installment_label}</td>
-                <td>{shortDate(item.due_date)}</td>
-                <td>{currency(item.balance)}</td>
+                <td data-label="Installment">{item.installment_label}</td>
+                <td data-label="Due">{shortDate(item.due_date)}</td>
+                <td data-label="Balance">{currency(item.balance)}</td>
 
-                <td>
-                  <span className={`dashboard-badge ${item.status}`}>
-                    {item.status}
-                  </span>
-                </td>
+                {showAction ? (
+                  <td data-label="Action">
+                    <button
+                      type="button"
+                      className="dashboard-actionLink dashboard-actionLink--text dashboard-actionLink--reminder"
+                      onClick={() => window.alert(`Reminder queued for ${item.student_name}.`)}
+                    >
+                      Send Reminder
+                    </button>
+                  </td>
+                ) : null}
               </tr>
             ))
           ) : (
             <tr>
-              <td colSpan={5} className="dashboard-empty">
+              <td colSpan={showAction ? 5 : 4} className="dashboard-empty">
                 No pending fees right now.
               </td>
             </tr>

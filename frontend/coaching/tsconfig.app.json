@@ -25,5 +25,16 @@
     "noUncheckedSideEffectImports": true
   },
   "include": ["src"],
-  "exclude": ["src/pages"]
+  "exclude": [
+    "src/pages",
+    "src/modules/attendance/**/*",
+    "src/modules/dashboard/**/*",
+    "src/modules/exams/**/*",
+    "src/modules/fees/**/*",
+    "src/modules/holiday/**/*",
+    "src/modules/hostel/**/*",
+    "src/modules/leave/**/*",
+    "src/modules/students/**/*",
+    "src/modules/teacher/**/*"
+  ]
 }

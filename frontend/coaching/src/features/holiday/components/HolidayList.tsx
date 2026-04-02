@@ -14,10 +14,12 @@ export function HolidayList({
   holidays,
   isLoading,
   onDelete,
+  isDisabled,
 }: {
   holidays: Holiday[];
   isLoading: boolean;
   onDelete: (holidayId: number) => void;
+  isDisabled: boolean;
 }) {
   if (isLoading) return <div>Loading holidays...</div>;
 
@@ -32,9 +34,11 @@ export function HolidayList({
             </div>
             {holiday.description && <div style={{ color: "#475569", marginTop: 8 }}>{holiday.description}</div>}
           </div>
-          <button type="button" style={dangerButton} onClick={() => onDelete(holiday.id)}>
-            Delete
-          </button>
+          {!isDisabled && (
+            <button type="button" style={dangerButton} onClick={() => onDelete(holiday.id)}>
+              Delete
+            </button>
+          )}
         </div>
       ))}
       {holidays.length === 0 && <div style={{ color: "#6b7280" }}>No holidays added yet.</div>}

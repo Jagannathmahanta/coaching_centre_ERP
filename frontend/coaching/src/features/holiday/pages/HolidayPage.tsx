@@ -5,6 +5,8 @@ import { useCreateHoliday } from "../hooks/useCreateHoliday";
 import { useDeleteHoliday } from "../hooks/useDeleteHoliday";
 import { useHolidaysQuery } from "../hooks/useHolidaysQuery";
 import type { HolidayFormValues } from "../types/holiday.types";
+import { useAuth } from "../../../shared/hooks/AuthContext";
+import { getUser } from "../../../shared/services/auth";
 
 const cardStyle = {
   background: "#fff",
@@ -24,15 +26,21 @@ const initialForm: HolidayFormValues = {
 
 export default function HolidayPage() {
   const [form, setForm] = useState(initialForm);
+  const [showForm, setShowForm] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const holidaysQuery = useHolidaysQuery();
+    const { profile } = useAuth();
+
+     const role = profile?.role ?? getUser()?.role ?? "";
+       const isDisabled = ["teacher", "student", "parent"].includes(role);
 
   const createHolidayMutation = useCreateHoliday(
     () => {
       setMessage("Holiday created.");
       setError("");
       setForm(initialForm);
+      setShowForm(false);
     },
     (mutationError) => {
       setError(mutationError);
@@ -53,35 +61,63 @@ export default function HolidayPage() {
 
   return (
     <div style={{ display: "grid", gap: 20 }}>
-      <div>
-        <h1 style={{ margin: 0, fontSize: 28 }}>Holiday Module</h1>
-        <p style={{ color: "#6b7280", marginTop: 8 }}>
-          Create upcoming holidays and keep the holiday list visible for admin planning and dashboard updates.
-        </p>
+      <div style={{ display: "flex", justifyContent: "space-between", gap: 16, alignItems: "center", flexWrap: "wrap" }}>
+        <div>
+          <h1 style={{ margin: 0, fontSize: 28 }}>Holiday Module</h1>
+          {
+            !isDisabled&&
+            <p style={{ color: "#6b7280", marginTop: 8 }}>
+            Create upcoming holidays and keep the holiday list visible for admin planning and dashboard updates.
+          </p>
+          }
+          
+        </div>
+      
+
+{!isDisabled ? (
+  <button
+    type="button"
+    disabled={isDisabled}
+    style={{
+      background: "linear-gradient(135deg, #7c3aed, #9333ea)",
+      color: "#fff",
+      border: "none",
+      borderRadius: 12,
+      padding: "12px 16px",
+      fontWeight: 700,
+      cursor: isDisabled ? "not-allowed" : "pointer",
+      opacity: isDisabled ? 0.5 : 1,
+    }}
+    onClick={() => setShowForm(true)}
+  >
+    Add Holiday
+  </button>
+) : null}
       </div>
 
       {message && <div style={{ ...cardStyle, background: "#f0fdf4", color: "#166534" }}>{message}</div>}
       {error && <div style={{ ...cardStyle, background: "#fef2f2", color: "#b91c1c" }}>{error}</div>}
 
-      <section style={cardStyle}>
-        <HolidayForm
-          form={form}
-          onChange={(key, value) => setForm((current) => ({ ...current, [key]: value }))}
-          onSubmit={() => {
-            setMessage("");
-            setError("");
-            createHolidayMutation.mutate(form);
-          }}
-          isPending={createHolidayMutation.isPending}
-        />
-      </section>
-
+      {showForm ? (
+        <section style={cardStyle}>
+          <HolidayForm
+            form={form}
+            onChange={(key, value) => setForm((current) => ({ ...current, [key]: value }))}
+            onSubmit={() => {
+              setMessage("");
+              setError("");
+              createHolidayMutation.mutate(form);
+            }}
+            onCancel={() => setShowForm(false)}
+            isPending={createHolidayMutation.isPending}
+          />
+        </section>
+      ) : (
       <section style={cardStyle}>
         <div style={{ marginBottom: 18 }}>
           <h2 style={{ margin: 0 }}>Holiday List</h2>
           <p style={{ color: "#6b7280", marginTop: 8 }}>All upcoming and past holidays for this center.</p>
         </div>
-
         <HolidayList
           holidays={holidaysQuery.data || []}
           isLoading={holidaysQuery.isLoading}
@@ -89,8 +125,10 @@ export default function HolidayPage() {
             if (!window.confirm("Delete this holiday?")) return;
             deleteHolidayMutation.mutate(holidayId);
           }}
+          isDisabled={isDisabled}
         />
       </section>
+      )}
     </div>
   );
 }

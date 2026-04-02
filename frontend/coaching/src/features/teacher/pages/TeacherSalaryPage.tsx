@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { SalaryPaymentModal } from "../components/SalaryPaymentModal";
 import { SalarySlipList } from "../components/SalarySlipList";
 import { SalaryStructureForm } from "../components/SalaryStructureForm";
@@ -67,22 +68,38 @@ function printSalarySlip(slip: SalarySlip, currency: (value: number | string | n
 
 export default function TeacherSalaryPage() {
   const state = useTeacherSalaryData();
+  const [showStructureForm, setShowStructureForm] = useState(false);
+
+  useEffect(() => {
+    if (state.message === "Salary structure saved.") {
+      setShowStructureForm(false);
+    }
+  }, [state.message]);
 
   return (
     <div style={{ display: "grid", gap: 20 }}>
-      <div>
-        <h1 style={{ margin: 0, fontSize: 28 }}>Teacher Salary Module</h1>
-        <p style={{ color: "#6b7280", marginTop: 8 }}>
-          Phase 1 includes salary structures, one paid leave allowed per month, monthly slip generation, and paid or pending tracking.
-        </p>
+      <div style={{ display: "flex", justifyContent: "space-between", gap: 16, alignItems: "center", flexWrap: "wrap" }}>
+        <div>
+          <h1 style={{ margin: 0, fontSize: 28 }}>Teacher Salary Module</h1>
+          <p style={{ color: "#6b7280", marginTop: 8 }}>
+            Phase 1 includes salary structures, one paid leave allowed per month, monthly slip generation, and paid or pending tracking.
+          </p>
+        </div>
+        {!showStructureForm ? (
+          <button type="button" style={secondaryButton} onClick={() => setShowStructureForm(true)}>
+            Add Salary
+          </button>
+        ) : null}
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 16 }}>
-        <StatCard label="Salary Structures" value={state.structureStats.total} accent="#2563eb" />
-        <StatCard label="Monthly Pay" value={state.structureStats.monthly} accent="#059669" />
-        <StatCard label="Per Day" value={state.structureStats.perDay} accent="#d97706" />
-        <StatCard label="Per Period" value={state.structureStats.perPeriod} accent="#7c3aed" />
-      </div>
+      {!showStructureForm ? (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 16 }}>
+          <StatCard label="Salary Structures" value={state.structureStats.total} accent="#2563eb" />
+          <StatCard label="Monthly Pay" value={state.structureStats.monthly} accent="#059669" />
+          <StatCard label="Per Day" value={state.structureStats.perDay} accent="#d97706" />
+          <StatCard label="Per Period" value={state.structureStats.perPeriod} accent="#7c3aed" />
+        </div>
+      ) : null}
 
       {state.message && <div style={{ ...cardStyle, background: "#f0fdf4", color: "#166534" }}>{state.message}</div>}
       {state.error && <div style={{ ...cardStyle, background: "#fef2f2", color: "#b91c1c" }}>{state.error}</div>}
@@ -99,18 +116,20 @@ export default function TeacherSalaryPage() {
         isPending={state.paySlipMutation.isPending}
       />
 
-      <SalaryStructureForm
-        form={state.structureForm}
-        setForm={state.setStructureForm}
-        teachers={state.teachersQuery.data || []}
-        onSubmit={() => {
-          state.setMessage("");
-          state.setError("");
-          state.saveStructureMutation.mutate();
-        }}
-        isPending={state.saveStructureMutation.isPending}
-      />
-
+      {showStructureForm ? (
+        <SalaryStructureForm
+          form={state.structureForm}
+          setForm={state.setStructureForm}
+          teachers={state.teachersQuery.data || []}
+          onSubmit={() => {
+            state.setMessage("");
+            state.setError("");
+            state.saveStructureMutation.mutate();
+          }}
+          onCancel={() => setShowStructureForm(false)}
+          isPending={state.saveStructureMutation.isPending}
+        />
+      ) : (
       <section style={cardStyle}>
         <div style={{ display: "flex", justifyContent: "space-between", gap: 16, alignItems: "center", flexWrap: "wrap", marginBottom: 18 }}>
           <div>
@@ -138,6 +157,7 @@ export default function TeacherSalaryPage() {
           onPrint={(slip) => printSalarySlip(slip, state.currency, state.setError)}
         />
       </section>
+      )}
     </div>
   );
 }

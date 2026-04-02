@@ -182,13 +182,13 @@ exports.updateLeaveStatus = async (req) => {
       status = $1,
       review_note = $2,
       reviewed_by = $3,
-      reviewed_at = CASE WHEN $1 = 'pending' THEN NULL ELSE NOW() END,
+      reviewed_at = CASE WHEN $6 THEN NULL ELSE NOW() END,
       updated_at = NOW()
     WHERE id = $4
       AND center_id = $5
     RETURNING *
     `,
-    [status, review_note || null, req.user.id, leaveId, req.user.center_id]
+    [status, review_note || null, req.user.id, leaveId, req.user.center_id, status === "pending"]
   );
 
   return rows[0];

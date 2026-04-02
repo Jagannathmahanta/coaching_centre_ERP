@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { FeeDefinitionsSection } from "../components/FeeDefinitionsSection";
 import { FeeSummarySection } from "../components/FeeSummarySection";
 import { StudentFeeReview } from "../components/StudentFeeReview";
@@ -32,6 +33,7 @@ function openPrintWindow(title: string, body: string) {
 
 export default function FeesPage() {
   const state = useFeesData();
+  const [showDefinitionForm, setShowDefinitionForm] = useState(false);
 
   const handleGenerateBill = async (installment: Installment) => {
     if (!state.selectedStudent) return;
@@ -182,63 +184,79 @@ export default function FeesPage() {
         </p>
       </div>
 
-      <FeeSummarySection
-        summary={state.summary}
-        summaryScope={state.summaryScope}
-        setSummaryScope={state.setSummaryScope}
-        summaryMonth={state.summaryMonth}
-        setSummaryMonth={state.setSummaryMonth}
-        board={state.board}
-      />
+     
 
+      {!showDefinitionForm && state.editingStructureId === null ? (
+        <>
+          <FeeSummarySection
+            summary={state.summary}
+            summaryScope={state.summaryScope}
+            setSummaryScope={state.setSummaryScope}
+            summaryMonth={state.summaryMonth}
+            setSummaryMonth={state.setSummaryMonth}
+            board={state.board}
+          />
       <FeeDefinitionsSection
+        showForm={showDefinitionForm}
         editingStructureId={state.editingStructureId}
         definitionForm={state.definitionForm}
         setDefinitionForm={state.setDefinitionForm}
         definitions={state.definitions}
-        onSubmit={state.handleCreateDefinition}
-        onEdit={state.handleEditDefinition}
+        catalog={state.catalog}
+        onSubmit={async (event) => {
+          const saved = await state.handleCreateDefinition(event);
+          if (saved) setShowDefinitionForm(false);
+        }}
+        onStartCreate={() => setShowDefinitionForm(true)}
+        onEdit={(definition) => {
+          state.handleEditDefinition(definition);
+          setShowDefinitionForm(true);
+        }}
         onDelete={state.handleDeleteDefinition}
-        onCancelEdit={() => state.setEditingStructureId(null)}
+        onCancel={() => {
+          state.setEditingStructureId(null);
+          setShowDefinitionForm(false);
+        }}
       />
-
-      <StudentFeeReview
-        students={state.students}
-        selectedStudentId={state.selectedStudentId}
-        onStudentChange={state.handleStudentChange}
-        message={state.message}
-        error={state.error}
-        loading={state.loading}
-        selectedStudent={state.selectedStudent}
-        studentFees={state.studentFees}
-        definitions={state.definitions}
-        planForm={state.planForm}
-        setPlanForm={state.setPlanForm}
-        onUpdatePlan={state.handleUpdateStudentPlan}
-        studentPaymentMode={state.studentPaymentMode}
-        setStudentPaymentMode={state.setStudentPaymentMode}
-        studentPaymentAmount={state.studentPaymentAmount}
-        setStudentPaymentAmount={state.setStudentPaymentAmount}
-        onApplyStudentPayment={state.handleApplyStudentPayment}
-        selectedStudentSummary={state.selectedStudentSummary}
-        studentInstallmentView={state.studentInstallmentView}
-        setStudentInstallmentView={state.setStudentInstallmentView}
-        filteredInstallments={state.filteredInstallments}
-        paymentHistory={state.paymentHistory}
-        getRemainingByHead={state.getRemainingByHead}
-        getAdjustmentPreview={state.getAdjustmentPreview}
-        getAdjustmentDraft={state.getAdjustmentDraft}
-        updateAdjustmentDraft={state.updateAdjustmentDraft}
-        getPaymentDraft={state.getPaymentDraft}
-        updatePaymentDraft={state.updatePaymentDraft}
-        resetPaymentDraftToDue={state.resetPaymentDraftToDue}
-        getDraftTotal={state.getDraftTotal}
-        onPayInstallment={state.handlePayInstallment}
-        onUseAdvance={state.handleUseAdvance}
-        onGenerateBill={handleGenerateBill}
-        onGenerateReceipt={handleGenerateReceipt}
-        onGenerateHistoryReceipt={handleGenerateHistoryReceipt}
-      />
+          <StudentFeeReview
+            students={state.students}
+            selectedStudentId={state.selectedStudentId}
+            onStudentChange={state.handleStudentChange}
+            message={state.message}
+            error={state.error}
+            loading={state.loading}
+            selectedStudent={state.selectedStudent}
+            studentFees={state.studentFees}
+            definitions={state.definitions}
+            planForm={state.planForm}
+            setPlanForm={state.setPlanForm}
+            onUpdatePlan={state.handleUpdateStudentPlan}
+            studentPaymentMode={state.studentPaymentMode}
+            setStudentPaymentMode={state.setStudentPaymentMode}
+            studentPaymentAmount={state.studentPaymentAmount}
+            setStudentPaymentAmount={state.setStudentPaymentAmount}
+            onApplyStudentPayment={state.handleApplyStudentPayment}
+            selectedStudentSummary={state.selectedStudentSummary}
+            studentInstallmentView={state.studentInstallmentView}
+            setStudentInstallmentView={state.setStudentInstallmentView}
+            filteredInstallments={state.filteredInstallments}
+            paymentHistory={state.paymentHistory}
+            getRemainingByHead={state.getRemainingByHead}
+            getAdjustmentPreview={state.getAdjustmentPreview}
+            getAdjustmentDraft={state.getAdjustmentDraft}
+            updateAdjustmentDraft={state.updateAdjustmentDraft}
+            getPaymentDraft={state.getPaymentDraft}
+            updatePaymentDraft={state.updatePaymentDraft}
+            resetPaymentDraftToDue={state.resetPaymentDraftToDue}
+            getDraftTotal={state.getDraftTotal}
+            onPayInstallment={state.handlePayInstallment}
+            onUseAdvance={state.handleUseAdvance}
+            onGenerateBill={handleGenerateBill}
+            onGenerateReceipt={handleGenerateReceipt}
+            onGenerateHistoryReceipt={handleGenerateHistoryReceipt}
+          />
+        </>
+      ) : null}
     </div>
   );
 }

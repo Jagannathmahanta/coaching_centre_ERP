@@ -21,6 +21,9 @@ export function FeeDefinitionSection({
             {definitions.map((definition) => (
               <option key={definition.id} value={definition.id}>
                 {definition.name} {definition.board ? `• ${definition.board}` : ""}{" "}
+                {definition.class_label || definition.course_label ? `• ${definition.class_label || definition.course_label}` : ""}
+                {" "}
+                {definition.batch_name ? `• ${definition.batch_name}` : ""}{" "}
                 {definition.academic_year ? `• ${definition.academic_year}` : ""}
               </option>
             ))}
@@ -31,7 +34,6 @@ export function FeeDefinitionSection({
             value={form.billing_cycle}
             onChange={(e) => onChange("billing_cycle", e.target.value)}
             style={inputStyle}
-            disabled={selectedDefinition?.program_type === "course"}
           >
             <option value="monthly">Monthly</option>
             <option value="quarterly">Quarterly</option>
@@ -51,6 +53,10 @@ export function FeeDefinitionSection({
           <div style={{ marginTop: 6 }}>
             Type: {selectedDefinition.program_type} • Duration: {selectedDefinition.duration_months} months
             {selectedDefinition.board ? ` • Board: ${selectedDefinition.board}` : ""}
+            {selectedDefinition.class_label || selectedDefinition.course_label
+              ? ` • ${selectedDefinition.class_label || selectedDefinition.course_label}`
+              : ""}
+            {selectedDefinition.batch_name ? ` • ${selectedDefinition.batch_name}` : ""}
           </div>
         </div>
       )}

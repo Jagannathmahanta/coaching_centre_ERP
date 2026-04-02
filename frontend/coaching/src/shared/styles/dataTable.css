@@ -1,0 +1,137 @@
+.dataTableWrap {
+  min-width: 0;
+  -webkit-overflow-scrolling: touch;
+}
+
+.dataTable {
+  width: 100%;
+  min-width: 0;
+  border-collapse: collapse;
+}
+
+@media (max-width: 1100px) {
+  .dataTable {
+    min-width: 760px;
+  }
+}
+
+.dataTable__row {
+  cursor: pointer;
+}
+
+.dataTable__row:hover {
+  background: #f8fafc !important;
+}
+
+.dataTable__subtle {
+  color: #64748b;
+  margin-top: 4px;
+  font-size: 13px;
+}
+
+.dataTable__strong {
+  font-weight: 700;
+}
+
+.dataTableStatusPill {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+.dataTableStatusPill--active,
+.dataTableStatusPill--ready {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.dataTableStatusPill--inactive,
+.dataTableStatusPill--pending {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.dataTableStatusPill--left,
+.dataTableStatusPill--error {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.dataTableActionMenu {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dataTableViewButton {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 10px;
+  cursor: pointer;
+}
+
+.dataTableActionTrigger {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 6px;
+}
+
+.dataTableActionTrigger:hover {
+  background: #f3f4f6;
+}
+
+.dataTableActionDropdown {
+  position: absolute;
+  right: 0;
+  top: 34px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+  min-width: 150px;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.dataTableActionDropdown button {
+  padding: 10px 14px;
+  border: none;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.dataTableActionDropdown button:hover {
+  background: #f9fafb;
+}
+
+.dataTableActionDropdown button:last-child[data-danger="true"] {
+  color: #b91c1c;
+}
+
+.dataTableSelectButton {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.dataTableSelectButton--selected {
+  background: #1d4ed8;
+  color: #fff;
+}

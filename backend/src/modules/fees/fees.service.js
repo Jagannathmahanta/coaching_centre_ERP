@@ -11,6 +11,7 @@ const {
   getProfileByStudentId,
   createStudentFeePlan,
 } = require("./fees.shared");
+const { getBatchById, getClassById, getCourseById, normalizeProgramType } = require("../catalog/catalog.shared");
 
 const buildComponentSummarySelect = (totalPaidAlias, statusExpr) => `
   COALESCE(SUM(total_amount), 0) AS total_billed,
@@ -138,25 +139,51 @@ const resolveAdjustedStatus = (totalAmount, paidAmount, waivedAmount) => {
 };
 
 exports.getFeeStructures = async (req) => {
-  const { program_type, academic_year } = req.query;
+  const { program_type, academic_year, class_id, course_id, batch_id } = req.query;
   let query = `
-    SELECT *
+    SELECT
+      fs.*,
+      cd.class_name AS class_label,
+      cr.course_name AS course_label,
+      bd.batch_name,
+      bd.shift AS batch_shift,
+      bd.start_time AS batch_start_time,
+      bd.end_time AS batch_end_time
     FROM fee_structures
-    WHERE center_id = $1
+    fs
+    LEFT JOIN class_definitions cd ON cd.id = fs.class_id
+    LEFT JOIN course_definitions cr ON cr.id = fs.course_id
+    LEFT JOIN batch_definitions bd ON bd.id = fs.batch_id
+    WHERE fs.center_id = $1
   `;
   const params = [req.user.center_id];
 
   if (program_type) {
     params.push(program_type);
-    query += ` AND program_type = $${params.length}`;
+    query += ` AND fs.program_type = $${params.length}`;
   }
 
   if (academic_year) {
     params.push(academic_year);
-    query += ` AND (academic_year = $${params.length} OR academic_year IS NULL)`;
+    query += ` AND (fs.academic_year = $${params.length} OR fs.academic_year IS NULL)`;
   }
 
-  query += " ORDER BY program_type, class_name NULLS LAST, course_name NULLS LAST, name";
+  if (class_id) {
+    params.push(Number(class_id));
+    query += ` AND fs.class_id = $${params.length}`;
+  }
+
+  if (course_id) {
+    params.push(Number(course_id));
+    query += ` AND fs.course_id = $${params.length}`;
+  }
+
+  if (batch_id) {
+    params.push(Number(batch_id));
+    query += ` AND fs.batch_id = $${params.length}`;
+  }
+
+  query += " ORDER BY fs.program_type, fs.class_name NULLS LAST, fs.course_name NULLS LAST, fs.name";
 
   const { rows } = await pool.query(query, params);
   return rows;
@@ -164,19 +191,26 @@ exports.getFeeStructures = async (req) => {
 
 exports.createFeeStructure = async (req) => {
   const body = req.body;
-  const programType = body.program_type || "academic";
-  const name = body.name || body.class_name || body.course_name;
+  const programType = normalizeProgramType(body.program_type || "academic");
+  const classRow = body.class_id ? await getClassById(pool, req.user.center_id, body.class_id) : null;
+  const courseRow = body.course_id ? await getCourseById(pool, req.user.center_id, body.course_id) : null;
+  const batchRow = body.batch_id ? await getBatchById(pool, req.user.center_id, body.batch_id) : null;
+  const name = body.name || (classRow && classRow.class_name) || body.class_name || (courseRow && courseRow.course_name) || body.course_name;
 
   if (!name) {
     throw createAppError("name is required.");
   }
 
-  if (programType === "academic" && !body.class_name) {
-    throw createAppError("class_name is required for academic fee definitions.");
+  if (programType === "academic" && !body.class_name && !classRow) {
+    throw createAppError("class_id or class_name is required for academic fee definitions.");
   }
 
-  if (programType === "course" && !body.course_name) {
-    throw createAppError("course_name is required for course fee definitions.");
+  if (programType === "non_academic" && !body.course_name && !courseRow) {
+    throw createAppError("course_id or course_name is required for course fee definitions.");
+  }
+
+  if (batchRow && batchRow.program_type !== programType) {
+    throw createAppError("Selected batch does not match the program type.");
   }
 
   const durationMonths = Number(body.duration_months || (programType === "academic" ? 12 : 6));
@@ -193,6 +227,9 @@ exports.createFeeStructure = async (req) => {
       board,
       class_name,
       course_name,
+      class_id,
+      course_id,
+      batch_id,
       academic_year,
       duration_months,
       session_start_month,
@@ -202,16 +239,19 @@ exports.createFeeStructure = async (req) => {
       transport_total,
       description
     )
-    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
+    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
     RETURNING *
     `,
     [
       req.user.center_id,
       name,
       programType,
-      body.board || null,
-      body.class_name || null,
-      body.course_name || null,
+      body.board || (batchRow ? batchRow.board : null),
+      (classRow && classRow.class_name) || body.class_name || null,
+      (courseRow && courseRow.course_name) || body.course_name || null,
+      classRow ? classRow.id : null,
+      courseRow ? courseRow.id : null,
+      batchRow ? batchRow.id : null,
       body.academic_year || null,
       durationMonths,
       body.session_start_month ? Number(body.session_start_month) : null,
@@ -229,8 +269,16 @@ exports.createFeeStructure = async (req) => {
 exports.updateFeeStructure = async (req) => {
   const structureId = Number(req.params.id);
   const body = req.body;
-  const programType = body.program_type || "academic";
-  const name = body.name || body.class_name || body.course_name;
+  const existing = await pool.query(`SELECT * FROM fee_structures WHERE id = $1 AND center_id = $2`, [structureId, req.user.center_id]);
+  if (!existing.rows[0]) {
+    throw createAppError("Fee definition not found.", 404);
+  }
+  const current = existing.rows[0];
+  const programType = normalizeProgramType(body.program_type || current.program_type || "academic");
+  const classRow = body.class_id ? await getClassById(pool, req.user.center_id, body.class_id) : null;
+  const courseRow = body.course_id ? await getCourseById(pool, req.user.center_id, body.course_id) : null;
+  const batchRow = body.batch_id ? await getBatchById(pool, req.user.center_id, body.batch_id) : null;
+  const name = body.name || (classRow && classRow.class_name) || body.class_name || (courseRow && courseRow.course_name) || body.course_name || current.name;
 
   if (!structureId) {
     throw createAppError("Fee definition id is required.");
@@ -240,12 +288,16 @@ exports.updateFeeStructure = async (req) => {
     throw createAppError("name is required.");
   }
 
-  if (programType === "academic" && !body.class_name) {
-    throw createAppError("class_name is required for academic fee definitions.");
+  if (programType === "academic" && !body.class_name && !classRow && !current.class_id) {
+    throw createAppError("class_id or class_name is required for academic fee definitions.");
   }
 
-  if (programType === "course" && !body.course_name) {
-    throw createAppError("course_name is required for course fee definitions.");
+  if (programType === "non_academic" && !body.course_name && !courseRow && !current.course_id) {
+    throw createAppError("course_id or course_name is required for course fee definitions.");
+  }
+
+  if (batchRow && batchRow.program_type !== programType) {
+    throw createAppError("Selected batch does not match the program type.");
   }
 
   const durationMonths = Number(body.duration_months || (programType === "academic" ? 12 : 6));
@@ -262,33 +314,39 @@ exports.updateFeeStructure = async (req) => {
       board = $3,
       class_name = $4,
       course_name = $5,
-      academic_year = $6,
-      duration_months = $7,
-      session_start_month = $8,
-      session_end_month = $9,
-      tuition_total = $10,
-      hostel_total = $11,
-      transport_total = $12,
-      description = $13,
+      class_id = $6,
+      course_id = $7,
+      batch_id = $8,
+      academic_year = $9,
+      duration_months = $10,
+      session_start_month = $11,
+      session_end_month = $12,
+      tuition_total = $13,
+      hostel_total = $14,
+      transport_total = $15,
+      description = $16,
       updated_at = NOW()
-    WHERE id = $14
-      AND center_id = $15
+    WHERE id = $17
+      AND center_id = $18
     RETURNING *
     `,
     [
       name,
       programType,
-      body.board || null,
-      body.class_name || null,
-      body.course_name || null,
-      body.academic_year || null,
+      body.board !== undefined ? body.board : current.board,
+      (classRow && classRow.class_name) || body.class_name || current.class_name || null,
+      (courseRow && courseRow.course_name) || body.course_name || current.course_name || null,
+      classRow ? classRow.id : (current.class_id || null),
+      courseRow ? courseRow.id : (current.course_id || null),
+      batchRow ? batchRow.id : (current.batch_id || null),
+      body.academic_year !== undefined ? body.academic_year : current.academic_year,
       durationMonths,
-      body.session_start_month ? Number(body.session_start_month) : null,
-      body.session_end_month ? Number(body.session_end_month) : null,
-      validatePositiveAmount(body.tuition_total, "tuition_total"),
-      roundMoney(body.hostel_total || 0),
-      roundMoney(body.transport_total || 0),
-      body.description || null,
+      body.session_start_month !== undefined ? Number(body.session_start_month || 0) || null : current.session_start_month,
+      body.session_end_month !== undefined ? Number(body.session_end_month || 0) || null : current.session_end_month,
+      validatePositiveAmount(body.tuition_total !== undefined ? body.tuition_total : current.tuition_total, "tuition_total"),
+      roundMoney(body.hostel_total !== undefined ? body.hostel_total : current.hostel_total || 0),
+      roundMoney(body.transport_total !== undefined ? body.transport_total : current.transport_total || 0),
+      body.description !== undefined ? body.description : current.description,
       structureId,
       req.user.center_id,
     ]

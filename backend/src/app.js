@@ -15,6 +15,7 @@ const holidayRoutes = require("./modules/holidays/holidays.routes");
 const leaveRoutes = require("./modules/leaves/leaves.routes");
 const attendanceRoutes = require("./modules/attendance/attendance.routes");
 const parentRoutes = require("./modules/parents/parents.routes");
+const catalogRoutes = require("./modules/catalog/catalog.routes");
 const app = express();
 
 app.use(cors());
@@ -31,6 +32,7 @@ app.use("/api/teacher-salary", teacherSalaryRoutes);
 app.use("/api/hostel", hostelRoutes);
 app.use("/api/transport", transportRoutes);
 app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/catalog", catalogRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/students", studentRoutes);
 

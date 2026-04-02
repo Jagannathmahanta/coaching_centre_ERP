@@ -38,24 +38,12 @@ export type TeacherFormState = {
   join_date: string;
   status: string;
   notes: string;
-  create_login: boolean;
-  login_email: string;
-  login_phone: string;
-  login_password: string;
-};
-
-export type TeacherLoginDraft = {
-  open: boolean;
-  teacherId: number;
-  teacherName: string;
-  email: string;
-  phone: string;
-  password: string;
 };
 
 export type TeacherStat = {
   total: number;
   active: number;
+  absentToday: number;
   classes: number;
   subjects: number;
 };
@@ -87,17 +75,4 @@ export const initialTeacherForm: TeacherFormState = {
   join_date: new Date().toISOString().slice(0, 10),
   status: "active",
   notes: "",
-  create_login: false,
-  login_email: "",
-  login_phone: "",
-  login_password: "",
-};
-
-export const initialTeacherLoginDraft: TeacherLoginDraft = {
-  open: false,
-  teacherId: 0,
-  teacherName: "",
-  email: "",
-  phone: "",
-  password: "",
 };

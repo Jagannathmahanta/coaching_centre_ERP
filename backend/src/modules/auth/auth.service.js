@@ -1,6 +1,7 @@
 const pool = require("../../config/db");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const { buildStudentPassword } = require("../catalog/catalog.shared");
 
 function createError(message, statusCode = 400) {
   const error = new Error(message);
@@ -76,7 +77,7 @@ exports.register = async (data) => {
 };
 
 exports.createLinkedAccount = async (req) => {
-  const actorRole = String(req.user?.role || "").toLowerCase();
+  const actorRole = String((req.user && req.user.role) || "").toLowerCase();
   if (!["admin", "staff"].includes(actorRole)) {
     throw createError("Only admin or staff can create linked login accounts.", 403);
   }
@@ -95,10 +96,6 @@ exports.createLinkedAccount = async (req) => {
     throw createError("Role must be student, teacher, or parent.");
   }
 
-  if (!password || String(password).length < 6) {
-    throw createError("Password must be at least 6 characters.");
-  }
-
   const normalizedEmail = String(email || "").trim().toLowerCase() || null;
   const normalizedPhone = String(phone || "").trim() || null;
 
@@ -113,7 +110,7 @@ exports.createLinkedAccount = async (req) => {
     profileId = Number(student_id);
     if (!profileId) throw createError("Student is required.");
     profileQuery = await pool.query(
-      "SELECT id, name, phone FROM students WHERE id = $1 AND center_id = $2",
+      "SELECT id, name, phone, admission_year FROM students WHERE id = $1 AND center_id = $2",
       [profileId, req.user.center_id]
     );
   }
@@ -136,7 +133,7 @@ exports.createLinkedAccount = async (req) => {
     );
   }
 
-  const profile = profileQuery?.rows?.[0];
+  const profile = profileQuery && profileQuery.rows ? profileQuery.rows[0] : null;
   if (!profile) {
     throw createError("Linked profile was not found in this center.");
   }
@@ -165,14 +162,22 @@ exports.createLinkedAccount = async (req) => {
     throw createError("A login account already exists for this email, mobile, or linked profile.");
   }
 
-  const passwordHash = await bcrypt.hash(password, 10);
+  const resolvedPassword =
+    password ||
+    (role === "student" ? buildStudentPassword(profile.name, profile.admission_year) : null);
+
+  if (!resolvedPassword || String(resolvedPassword).length < 6) {
+    throw createError("Password must be at least 6 characters.");
+  }
+
+  const passwordHash = await bcrypt.hash(resolvedPassword, 10);
   const { rows } = await pool.query(
     `
     INSERT INTO users
-      (name, email, phone, password_hash, role, center_id, student_id, teacher_id, parent_id)
+      (name, email, phone, password_hash, role, center_id, student_id, teacher_id, parent_id, must_change_password)
     VALUES
-      ($1,$2,$3,$4,$5,$6,$7,$8,$9)
-    RETURNING id, name, email, phone, role, center_id, student_id, teacher_id, parent_id, created_at
+      ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+    RETURNING id, name, email, phone, role, center_id, student_id, teacher_id, parent_id, must_change_password, created_at
     `,
     [
       profile.name,
@@ -184,6 +189,7 @@ exports.createLinkedAccount = async (req) => {
       role === "student" ? profileId : null,
       role === "teacher" ? profileId : null,
       role === "parent" ? profileId : null,
+      !password,
     ]
   );
 

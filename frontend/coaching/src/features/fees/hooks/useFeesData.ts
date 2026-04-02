@@ -3,6 +3,7 @@ import {
   applyStudentPayment,
   currency,
   deleteFeeDefinition,
+  getFeeCatalogOptions,
   getCollectionBoard,
   getFeeStructures,
   getFeeSummary,
@@ -19,6 +20,7 @@ import {
 import type {
   AdjustmentDraftState,
   DefinitionFormState,
+  FeeCatalogOptions,
   Installment,
   PaymentDraftState,
 } from "../types/fees.types";
@@ -33,6 +35,7 @@ import {
 export function useFeesData() {
   const [definitions, setDefinitions] = useState<any[]>([]);
   const [students, setStudents] = useState<any[]>([]);
+  const [catalog, setCatalog] = useState<FeeCatalogOptions>({ classes: [], courses: [], batches: [] });
   const [selectedStudentId, setSelectedStudentId] = useState("");
   const [studentFees, setStudentFees] = useState<any | null>(null);
   const [summary, setSummary] = useState<any | null>(null);
@@ -58,17 +61,19 @@ export function useFeesData() {
 
     try {
       const activeScope = scope || summaryScope;
-      const [definitionsData, studentsData, summaryData, boardData] = await Promise.all([
+      const [definitionsData, studentsData, summaryData, boardData, catalogData] = await Promise.all([
         getFeeStructures(),
         getStudents(),
         getFeeSummary(activeScope, summaryMonth),
         getCollectionBoard(summaryMonth),
+        getFeeCatalogOptions(),
       ]);
 
       setDefinitions(definitionsData);
       setStudents(studentsData);
       setSummary(summaryData);
       setBoard(boardData);
+      setCatalog(catalogData);
 
       const targetStudentId = studentId || selectedStudentId;
       if (targetStudentId) {
@@ -245,22 +250,25 @@ export function useFeesData() {
       setMessage(editingStructureId ? "Fee definition updated." : "Fee definition saved.");
       setEditingStructureId(null);
       await loadPage(undefined, summaryScope);
+      return true;
     } catch (submitError: any) {
       setError(submitError.response?.data?.error || "Failed to save fee definition.");
+      return false;
     }
   };
 
   const handleEditDefinition = (definition: any) => {
     setEditingStructureId(definition.id);
-    setDefinitionForm({
-      name: definition.name,
-      program_type: definition.program_type,
-      board: definition.board || "CBSE",
-      class_name: definition.class_name || "",
-      course_name: definition.course_name || "",
-      academic_year: definition.academic_year || "",
-      duration_months: String(definition.duration_months || 12),
-      session_start_month: String(definition.session_start_month || 3),
+      setDefinitionForm({
+        name: definition.name,
+        program_type: definition.program_type,
+        board: definition.board || "CBSE",
+        class_id: definition.class_id ? String(definition.class_id) : "",
+        course_id: definition.course_id ? String(definition.course_id) : "",
+        batch_id: definition.batch_id ? String(definition.batch_id) : "",
+        academic_year: definition.academic_year || "",
+        duration_months: String(definition.duration_months || 12),
+        session_start_month: String(definition.session_start_month || 3),
       session_end_month: String(definition.session_end_month || 2),
       tuition_total: String(definition.tuition_total || 0),
       hostel_total: String(definition.hostel_total || 0),
@@ -408,6 +416,7 @@ export function useFeesData() {
     setPlanForm,
     definitionForm,
     setDefinitionForm,
+    catalog,
     message,
     setMessage,
     error,

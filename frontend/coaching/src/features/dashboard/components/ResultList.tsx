@@ -6,6 +6,7 @@ type ResultItem = {
   subject: string;
   class: string;
   last_result_at?: string | null;
+  child_name?: string | null;
 };
 
 type Props = {
@@ -34,6 +35,9 @@ export const ResultList = ({
             <div className="dashboard-listMeta">
               {item.class} | {item.subject}
             </div>
+            {item.child_name ? (
+              <div className="dashboard-listMeta">{item.child_name}</div>
+            ) : null}
           </div>
 
           <div className="dashboard-resultActions">
