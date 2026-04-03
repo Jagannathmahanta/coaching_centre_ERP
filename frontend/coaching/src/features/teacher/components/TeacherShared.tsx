@@ -12,7 +12,7 @@ export function Field({ children, label }: { children: ReactNode; label: string 
 
 export function StatCard({ accent, label, value }: { accent: string; label: string; value: number }) {
   return (
-    <div style={{ ...cardStyle, borderLeft: `4px solid ${accent}` }}>
+    <div className="teacherStatCard" style={{ ...cardStyle, borderLeft: `4px solid ${accent}` }}>
       <div style={{ color: "#64748b", fontWeight: 700, fontSize: 13 }}>{label}</div>
       <div style={{ marginTop: 8, color: "#0f172a", fontSize: 28, fontWeight: 800 }}>{value}</div>
     </div>

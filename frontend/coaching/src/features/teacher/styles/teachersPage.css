@@ -1,0 +1,86 @@
+.teachersPage {
+  display: grid;
+  gap: 20px;
+  min-width: 0;
+}
+
+.teachersPage__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.teachersPage__hero {
+  flex: 1 1 420px;
+  min-width: 0;
+}
+
+.teachersPage__title {
+  margin: 0;
+  font-size: 28px;
+  line-height: 1.1;
+}
+
+.teachersPage__subtitle {
+  color: #6b7280;
+  margin-top: 8px;
+  margin-bottom: 0;
+  max-width: 72ch;
+}
+
+.teachersPage__primaryAction {
+  flex: 0 0 auto;
+}
+
+.teachersPage__stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 16px;
+}
+
+.teacherStatCard {
+  min-width: 0;
+}
+
+.teacherListCard {
+  overflow: hidden;
+}
+
+.teacherListTableWrap {
+  padding: 0;
+}
+
+.teacherListTable {
+  min-width: 760px;
+}
+
+@media (max-width: 768px) {
+  .teachersPage__header {
+    align-items: stretch;
+  }
+
+  .teachersPage__hero,
+  .teachersPage__primaryAction {
+    flex-basis: 100%;
+  }
+
+  .teachersPage__title {
+    font-size: 24px;
+  }
+
+  .teachersPage__primaryAction {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .teachersPage__stats {
+    grid-template-columns: 1fr;
+  }
+
+  .teacherListCard {
+    padding: 14px;
+    border-radius: 16px;
+  }
+}

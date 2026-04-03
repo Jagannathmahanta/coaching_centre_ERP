@@ -39,7 +39,7 @@ const allMenus: Record<UserRole, NavItem[]> = {
   student: [
     { path: "/", label: "Dashboard", icon: LayoutDashboard },
     { path: "/assignment", label: "Assignment", icon: ClipboardList },
-    { path: "/leaves", label: "Leaves", icon: Calendar },
+    // { path: "/leaves", label: "Leaves", icon: Calendar },
     { path: "/holidays", label: "Holidays", icon: Calendar },
     { path: "/notices", label: "Notices", icon: FileText },
   ],
@@ -52,7 +52,7 @@ const allMenus: Record<UserRole, NavItem[]> = {
 
   teacher: [
     { path: "/", label: "Dashboard", icon: LayoutDashboard },
-    { path: "/students", label: "Students", icon: Users },
+    // { path: "/students", label: "Students", icon: Users },
     { path: "/attendance", label: "Attendance", icon: ClipboardList },
     { path: "/leaves", label: "Leaves", icon: Calendar },
     { path: "/holidays", label: "Holidays", icon: Calendar },

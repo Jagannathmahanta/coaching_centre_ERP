@@ -56,8 +56,9 @@ display: none;
   background: linear-gradient(180deg, #6d28d9 0%, #7c3aed 100%);
   display: flex;
   flex-direction: column;
-  height: 100%;
-  overflow-y: auto;
+  overflow: hidden;
+  top: 72px;
+  height: calc(100vh - 72px);
 }
 
 .appSidebar__brand {
@@ -69,9 +70,10 @@ display: none;
 }
 
 .appSidebar__nav {
-margin-top: auto;
+/* margin-top: auto; */
 padding: 16px;
 flex: 1; /* push footer to bottom */
+ overflow-y: auto; 
 }
 
 .appSidebar__link {
@@ -115,6 +117,7 @@ flex: 1; /* push footer to bottom */
 .appSidebar__footer {
   padding: 16px;
   border-top: 1px solid rgba(255, 255, 255, 0.15);
+   flex-shrink: 0;
 }
 
 .appSidebar__user {
@@ -269,7 +272,7 @@ font-size: 16px;
 /* Sidebar (mobile drawer) */
 .appSidebar {
 position: fixed;
-top: 60px;
+top: 72px;
 left: 0;
 bottom: 0;
 transform: translateX(-100%);
@@ -326,4 +329,28 @@ font-size: 13px;
 padding: 9px;
 font-size: 14px;
 }
+}
+
+/* For Chrome, Edge, Safari */
+.appSidebar__nav::-webkit-scrollbar {
+  width: 4px;  
+}
+
+.appSidebar__nav::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.appSidebar__nav::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 10px;
+}
+
+.appSidebar__nav::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.6);
+}
+
+/* For Firefox */
+.appSidebar__nav {
+  scrollbar-width: thin; 
+  scrollbar-color: rgba(255,255,255,0.4) transparent;
 }

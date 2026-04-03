@@ -7,7 +7,8 @@ export const cardStyle = {
 };
 
 export const inputStyle = {
-  width: "90%",
+  width: "100%",
+  boxSizing: "border-box" as const,
   padding: "12px 14px",
   borderRadius: 12,
   border: "1px solid #d1d5db",
@@ -22,6 +23,9 @@ export const buttonStyle = {
   padding: "12px 16px",
   fontWeight: 700,
   cursor: "pointer",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
 };
 
 export const secondaryButton = {
@@ -48,6 +52,6 @@ export const pickerStyle = {
 
 export const pickerGridStyle = {
   display: "grid",
-  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+  gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
   gap: 10,
 };

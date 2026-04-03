@@ -122,3 +122,40 @@
   cursor: pointer;
 }
 
+@media (max-width: 480px) {
+  .login-card {
+    padding: 18px;
+    border-radius: 16px;
+    width: 85%;
+  }
+
+  .login-title {
+    font-size: 26px;
+  }
+
+  .login-subtitle {
+    font-size: 13px;
+  }
+
+  .input-field {
+    font-size: 13px;
+    padding: 10px;
+    width:95%;
+  }
+
+  .login-button {
+    font-size: 14px;
+    padding: 10px;
+  }
+}
+
+/* 🔥 Tablet */
+@media (min-width: 768px) {
+  .login-card {
+    padding: 32px;
+  }
+
+  .login-title {
+    font-size: 36px;
+  }
+}

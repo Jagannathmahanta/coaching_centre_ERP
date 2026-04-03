@@ -575,3 +575,81 @@ LEFT JOIN student_allocations sa_t ON sa_t.student_id = s.id AND sa_t.type='tran
 LEFT JOIN transport_routes tr ON sa_t.route_id = tr.id
 LEFT JOIN student_allocations sa_h ON sa_h.student_id = s.id AND sa_h.type='hostel'
 LEFT JOIN hostel_rooms hr ON sa_h.room_id = hr.id;
+
+-- ══════════════════════════════════════════════════════════════════════
+-- ONLINE EXAM SYSTEM — Additional tables (run after main schema.sql)
+-- ══════════════════════════════════════════════════════════════════════
+
+CREATE TABLE online_exams (
+  id           SERIAL PRIMARY KEY,
+  title        VARCHAR(200) NOT NULL,
+  subject      VARCHAR(100),
+  class        VARCHAR(30),
+  duration     INT NOT NULL DEFAULT 60,
+  pass_mark    INT DEFAULT 40,
+  status       VARCHAR(20) DEFAULT 'draft',   -- draft | published | ended
+  start_time   TIMESTAMPTZ,
+  end_time     TIMESTAMPTZ,
+  instructions TEXT,
+  center_id    INT REFERENCES coaching_centers(id) ON DELETE CASCADE,
+  created_by   INT REFERENCES users(id),
+  created_at   TIMESTAMPTZ DEFAULT NOW(),
+  updated_at   TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE exam_questions (
+  id             SERIAL PRIMARY KEY,
+  exam_id        INT REFERENCES online_exams(id) ON DELETE CASCADE,
+  type           VARCHAR(20) NOT NULL DEFAULT 'mcq',   -- mcq | subjective
+  question_text  TEXT NOT NULL,
+  options        JSONB,              -- ["A","B","C","D"]  — null for subjective
+  correct_option INT,                -- 0-indexed; null for subjective
+  marks          INT NOT NULL DEFAULT 2,
+  explanation    TEXT,
+  order_no       INT DEFAULT 0,
+  created_at     TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX idx_exam_questions_exam ON exam_questions(exam_id);
+
+CREATE TABLE exam_submissions (
+  id                 SERIAL PRIMARY KEY,
+  exam_id            INT REFERENCES online_exams(id) ON DELETE CASCADE,
+  student_id         INT REFERENCES students(id) ON DELETE CASCADE,
+  answers            JSONB DEFAULT '{}',    -- { "questionId": selectedIndex }
+  sub_answers        JSONB DEFAULT '{}',    -- { "questionId": "text" }
+  detailed_results   JSONB DEFAULT '{}',    -- per-question breakdown
+  mcq_score          NUMERIC(8,2) DEFAULT 0,
+  sub_score          NUMERIC(8,2) DEFAULT 0,
+  total_score        NUMERIC(8,2) DEFAULT 0,
+  grade              VARCHAR(5),
+  time_taken_minutes INT,
+  status             VARCHAR(20) DEFAULT 'submitted',   -- submitted | graded
+  auto_submitted     BOOLEAN DEFAULT FALSE,
+  submitted_at       TIMESTAMPTZ DEFAULT NOW(),
+  updated_at         TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(exam_id, student_id)
+);
+CREATE INDEX idx_submissions_exam    ON exam_submissions(exam_id);
+CREATE INDEX idx_submissions_student ON exam_submissions(student_id);
+
+-- Leaderboard view
+CREATE OR REPLACE VIEW exam_leaderboard AS
+SELECT
+  es.exam_id,
+  oe.title           AS exam_title,
+  oe.class,
+  s.name             AS student_name,
+  s.roll_number,
+  es.mcq_score,
+  es.sub_score,
+  es.total_score,
+  oe.pass_mark,
+  CASE WHEN es.total_score >= oe.pass_mark THEN 'Pass' ELSE 'Fail' END AS result,
+  es.time_taken_minutes,
+  RANK() OVER (
+    PARTITION BY es.exam_id
+    ORDER BY es.total_score DESC, es.time_taken_minutes ASC
+  ) AS rank
+FROM exam_submissions es
+JOIN online_exams oe ON es.exam_id = oe.id
+JOIN students     s  ON es.student_id = s.id;

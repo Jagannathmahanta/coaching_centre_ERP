@@ -137,6 +137,7 @@ export async function updateStudentFeePlan(studentId: string, payload: ReturnTyp
     billing_cycle: payload.billing_cycle,
     academic_year: payload.academic_year,
     due_day: payload.due_day,
+    include_hostel: payload.include_hostel,
     include_transport: payload.include_transport,
     notes: payload.notes,
   });

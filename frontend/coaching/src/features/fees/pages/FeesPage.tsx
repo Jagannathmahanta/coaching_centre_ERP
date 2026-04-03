@@ -184,18 +184,6 @@ export default function FeesPage() {
         </p>
       </div>
 
-     
-
-      {!showDefinitionForm && state.editingStructureId === null ? (
-        <>
-          <FeeSummarySection
-            summary={state.summary}
-            summaryScope={state.summaryScope}
-            setSummaryScope={state.setSummaryScope}
-            summaryMonth={state.summaryMonth}
-            setSummaryMonth={state.setSummaryMonth}
-            board={state.board}
-          />
       <FeeDefinitionsSection
         showForm={showDefinitionForm}
         editingStructureId={state.editingStructureId}
@@ -218,6 +206,18 @@ export default function FeesPage() {
           setShowDefinitionForm(false);
         }}
       />
+
+      {!showDefinitionForm && state.editingStructureId === null ? (
+        <>
+          <FeeSummarySection
+            summary={state.summary}
+            summaryScope={state.summaryScope}
+            setSummaryScope={state.setSummaryScope}
+            summaryMonth={state.summaryMonth}
+            setSummaryMonth={state.setSummaryMonth}
+            board={state.board}
+          />
+     
           <StudentFeeReview
             students={state.students}
             selectedStudentId={state.selectedStudentId}

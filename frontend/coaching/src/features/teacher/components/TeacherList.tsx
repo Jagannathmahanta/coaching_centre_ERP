@@ -40,7 +40,7 @@ export function TeacherList({
   }, []);
 
   return (
-    <section style={cardStyle}>
+    <section className="teacherListCard" style={cardStyle}>
       {/* <div style={{ marginBottom: 18 }}>
         <h2 style={{ margin: 0 }}>Teacher List</h2>
         <p style={{ color: "#6b7280", marginTop: 8 }}>Compact teacher list with the same scan-first table pattern as students.</p>
@@ -51,8 +51,8 @@ export function TeacherList({
       ) : teachers.length === 0 ? (
         <div style={{ color: "#6b7280" }}>No teachers created yet.</div>
       ) : (
-        <div style={{ overflowX: "auto" }}>
-          <table className="dataTable" style={{ minWidth: 760 }}>
+        <div className="dataTableWrap teacherListTableWrap" style={{ overflowX: "auto" }}>
+          <table className="dataTable teacherListTable">
             <thead>
               <tr style={{ background: "#f8fafc" }}>
                 <th style={tableCellStyle}>Sl No</th>

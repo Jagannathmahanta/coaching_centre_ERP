@@ -6,25 +6,27 @@ import { StatCard } from "../components/TeacherShared";
 import { buttonStyle, cardStyle } from "../components/teacherStyles";
 import type { Teacher } from "../types/teacher.types";
 import { useTeachersData } from "../hooks/useTeachersData";
+import "../styles/teachersPage.css";
 
 export default function TeachersPage() {
   const state = useTeachersData();
   const [selectedTeacher, setSelectedTeacher] = useState<Teacher | null>(null);
 
   return (
-    <div style={{ display: "grid", gap: 20 }}>
+    <div className="teachersPage">
 
       {/* Header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16, flexWrap: "wrap" }}>
-        <div>
-          <h1 style={{ margin: 0, fontSize: 28 }}>Teacher Module</h1>
-          <p style={{ color: "#6b7280", marginTop: 8 }}>
+      <div className="teachersPage__header">
+        <div className="teachersPage__hero">
+          <h1 className="teachersPage__title">Teacher Module</h1>
+          <p className="teachersPage__subtitle">
             Create teachers, assign real classes, and use a controlled subject list so leave and attendance modules stay clean later.
           </p>
         </div>
         <button
           type="button"
           style={buttonStyle}
+          className="teachersPage__primaryAction"
           onClick={() => {
             state.setEditingTeacherId(null);
             state.setForm({
@@ -47,7 +49,7 @@ export default function TeachersPage() {
       </div>
 
       {!state.showForm ? (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 16 }}>
+        <div className="teachersPage__stats">
           <StatCard label="Total Teachers"    value={state.teacherStats.total}    accent="#2563eb" />
           <StatCard label="Active Teachers"   value={state.teacherStats.active}   accent="#059669" />
           <StatCard label="Absent Today"      value={state.teacherStats.absentToday} accent="#be123c" />
