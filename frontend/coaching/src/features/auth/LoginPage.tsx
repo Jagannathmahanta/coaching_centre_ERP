@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { AxiosError } from "axios";
 import { useNavigate } from "react-router-dom";
+import { Eye, EyeOff } from "lucide-react";
 import { isAuthenticated, saveAuth } from "../../shared/services/auth";
 import api from "../../shared/services/api";
 import "./styles/LoginPage.css"
@@ -12,6 +13,7 @@ export default function LoginPage() {
     const { setProfile } = useAuth();
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
 
@@ -60,14 +62,25 @@ export default function LoginPage() {
 
         <div className="input-group">
           <label className="input-label">Password</label>
-          <input
-            type="password"
-            placeholder="Enter your password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            className="input-field"
-          />
+          <div className="password-fieldWrap">
+            <input
+              type={showPassword ? "text" : "password"}
+              placeholder="Enter your password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              className="input-field input-field--password"
+            />
+            <button
+              type="button"
+              className="password-toggle"
+              onClick={() => setShowPassword((current) => !current)}
+              aria-label={showPassword ? "Hide password" : "Show password"}
+              aria-pressed={showPassword}
+            >
+              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
+          </div>
         </div>
 
         {error && <div className="error-text">{error}</div>}

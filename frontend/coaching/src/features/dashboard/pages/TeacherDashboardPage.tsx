@@ -3,10 +3,12 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   ArcElement,
   BarElement,
+  BarController,
   CategoryScale,
   Chart as ChartJS,
   type ChartData,
   type ChartOptions,
+  DoughnutController,
   Legend,
   LinearScale,
   Tooltip,
@@ -26,7 +28,7 @@ import { useDownloadResult } from "../hooks/useDownloadResult";
 import { teacherCheckIn, teacherCheckOut } from "../services/dashboard.service";
 import "../styles/dashboard.css";
 
-ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, Tooltip, Legend);
+ChartJS.register(CategoryScale, LinearScale, BarController, BarElement, DoughnutController, ArcElement, Tooltip, Legend);
 
 function formatClock(totalSeconds: number) {
   const hours = String(Math.floor(totalSeconds / 3600)).padStart(2, "0");

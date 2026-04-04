@@ -43,7 +43,7 @@ html, body, #root {
 
 body {
   margin: 0;
- background: red;
+  background: #f5f6fa;
   overflow-x: hidden;
 }
 
