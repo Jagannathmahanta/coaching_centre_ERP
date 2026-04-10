@@ -2,7 +2,7 @@
   "info": {
     "name": "BrightCoach Backend API",
     "_postman_id": "d5a8a0bb-3c28-4f8f-9a27-6f2d2c81a1b0",
-    "description": "Updated Postman collection for BrightCoach backend endpoints, including the new fee structure and installment flow.",
+    "description": "Updated Postman collection for BrightCoach backend endpoints. Covers auth, teachers with is_staff support, assignments, notices, and leaves.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -15,11 +15,27 @@
       "value": ""
     },
     {
+      "key": "teacherId",
+      "value": "1"
+    },
+    {
+      "key": "assignmentId",
+      "value": "1"
+    },
+    {
+      "key": "noticeId",
+      "value": "1"
+    },
+    {
+      "key": "leaveId",
+      "value": "1"
+    },
+    {
       "key": "studentId",
       "value": "1"
     },
     {
-      "key": "feeId",
+      "key": "parentId",
       "value": "1"
     }
   ],
@@ -28,7 +44,24 @@
       "name": "Auth",
       "item": [
         {
-          "name": "Login Demo Admin",
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Login successful\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const json = pm.response.json();",
+                  "if (json.token) {",
+                  "  pm.collectionVariables.set(\"jwt_token\", json.token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
           "request": {
             "method": "POST",
             "header": [
@@ -39,7 +72,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"admin@brightacademy.in\",\n  \"password\": \"Admin@123\"\n}",
+              "raw": "{\n  \"email\": \"admin@admin.com\",\n  \"password\": \"Admin@123\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -60,7 +93,7 @@
           "response": []
         },
         {
-          "name": "Register",
+          "name": "Register Center Admin",
           "request": {
             "method": "POST",
             "header": [
@@ -90,36 +123,9 @@
             }
           },
           "response": []
-        }
-      ]
-    },
-    {
-      "name": "Students",
-      "item": [
-        {
-          "name": "Get Students",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{jwt_token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/students",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "students"
-              ]
-            }
-          },
-          "response": []
         },
         {
-          "name": "Create Student",
+          "name": "Create Linked Teacher Account",
           "request": {
             "method": "POST",
             "header": [
@@ -134,7 +140,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Rohan Das\",\n  \"class\": \"Class X\"\n}",
+              "raw": "{\n  \"role\": \"teacher\",\n  \"teacher_id\": {{teacherId}},\n  \"phone\": \"989879786\",\n  \"password\": \"HARI2026\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -142,12 +148,13 @@
               }
             },
             "url": {
-              "raw": "{{baseUrl}}/students",
+              "raw": "{{baseUrl}}/auth/accounts",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "students"
+                "auth",
+                "accounts"
               ]
             }
           },
@@ -156,10 +163,10 @@
       ]
     },
     {
-      "name": "Fees",
+      "name": "Teachers",
       "item": [
         {
-          "name": "Get Fee Structures",
+          "name": "Get Teachers",
           "request": {
             "method": "GET",
             "header": [
@@ -169,26 +176,19 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/fees/structures?academic_year=2026-2027",
+              "raw": "{{baseUrl}}/teachers",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "fees",
-                "structures"
-              ],
-              "query": [
-                {
-                  "key": "academic_year",
-                  "value": "2026-2027"
-                }
+                "teachers"
               ]
             }
           },
           "response": []
         },
         {
-          "name": "Create Or Update Fee Structure",
+          "name": "Create Staff Or Teacher",
           "request": {
             "method": "POST",
             "header": [
@@ -203,7 +203,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"class\": \"Class X\",\n  \"academic_year\": \"2026-2027\",\n  \"yearly_amount\": 60000,\n  \"description\": \"Board batch yearly fee\"\n}",
+              "raw": "{\n  \"name\": \"Harihar\",\n  \"phone\": \"989879786\",\n  \"email\": \"\",\n  \"is_staff\": true,\n  \"gender\": \"male\",\n  \"qualification\": \"Graduation\",\n  \"assigned_subjects\": [],\n  \"assigned_classes\": [],\n  \"join_date\": \"2026-04-07\",\n  \"status\": \"active\",\n  \"notes\": \"\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -211,135 +211,19 @@
               }
             },
             "url": {
-              "raw": "{{baseUrl}}/fees/structures",
+              "raw": "{{baseUrl}}/teachers",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "fees",
-                "structures"
+                "teachers"
               ]
             }
           },
           "response": []
         },
         {
-          "name": "Create Student Fee Plan",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{jwt_token}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"billing_cycle\": \"monthly\",\n  \"academic_year\": \"2026-2027\",\n  \"plan_start_date\": \"2026-04-01\",\n  \"due_day\": 5,\n  \"include_transport\": false,\n  \"include_hostel\": false,\n  \"notes\": \"Monthly fee plan\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{baseUrl}}/fees/student/{{studentId}}/plan",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "fees",
-                "student",
-                "{{studentId}}",
-                "plan"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Get Student Fee Plan",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{jwt_token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/fees/student/{{studentId}}/plan",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "fees",
-                "student",
-                "{{studentId}}",
-                "plan"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Get Student Fees",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{jwt_token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/fees/student/{{studentId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "fees",
-                "student",
-                "{{studentId}}"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Get Fees",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{jwt_token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/fees?status=pending",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "fees"
-              ],
-              "query": [
-                {
-                  "key": "status",
-                  "value": "pending"
-                }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Pay Single Installment",
+          "name": "Update Staff Or Teacher",
           "request": {
             "method": "PATCH",
             "header": [
@@ -354,7 +238,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"amount\": 2000,\n  \"payment_date\": \"2026-04-10\",\n  \"payment_mode\": \"cash\",\n  \"notes\": \"Part payment for installment\"\n}",
+              "raw": "{\n  \"name\": \"Harihar\",\n  \"phone\": \"989879786\",\n  \"email\": \"\",\n  \"is_staff\": true,\n  \"gender\": \"male\",\n  \"qualification\": \"Graduation\",\n  \"assigned_subjects\": [],\n  \"assigned_classes\": [],\n  \"join_date\": \"2026-04-07\",\n  \"status\": \"active\",\n  \"notes\": \"\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -362,21 +246,70 @@
               }
             },
             "url": {
-              "raw": "{{baseUrl}}/fees/{{feeId}}/pay",
+              "raw": "{{baseUrl}}/teachers/{{teacherId}}",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "fees",
-                "{{feeId}}",
-                "pay"
+                "teachers",
+                "{{teacherId}}"
               ]
             }
           },
           "response": []
         },
         {
-          "name": "Pay Student Pending Fees",
+          "name": "Delete Teacher",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/teachers/{{teacherId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "teachers",
+                "{{teacherId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Assignments",
+      "item": [
+        {
+          "name": "Get Assignments",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/assignments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "assignments"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Assignment For Class",
           "request": {
             "method": "POST",
             "header": [
@@ -391,7 +324,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"amount\": 7000,\n  \"payment_date\": \"2026-04-10\",\n  \"payment_mode\": \"upi\",\n  \"transaction_id\": \"TXN-7000\",\n  \"notes\": \"Collected from student\"\n}",
+              "raw": "{\n  \"title\": \"Unit Test\",\n  \"description\": \"Complete chapter 3 questions.\",\n  \"class_id\": 1,\n  \"target_type\": \"class\",\n  \"due_date\": \"2026-04-15\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -399,173 +332,19 @@
               }
             },
             "url": {
-              "raw": "{{baseUrl}}/fees/students/{{studentId}}/pay",
+              "raw": "{{baseUrl}}/assignments",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "fees",
-                "students",
-                "{{studentId}}",
-                "pay"
+                "assignments"
               ]
             }
           },
           "response": []
         },
         {
-          "name": "Get Installment Payment History",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{jwt_token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/fees/{{feeId}}/payments",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "fees",
-                "{{feeId}}",
-                "payments"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Get Student Payment History",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{jwt_token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/fees/student/{{studentId}}/payments",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "fees",
-                "student",
-                "{{studentId}}",
-                "payments"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Get Student Fee Summary",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{jwt_token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/fees/student/{{studentId}}/summary",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "fees",
-                "student",
-                "{{studentId}}",
-                "summary"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Fees Summary",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{jwt_token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/fees/summary",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "fees",
-                "summary"
-              ]
-            }
-          },
-          "response": []
-        }
-      ]
-    },
-    {
-      "name": "Dashboard",
-      "item": [
-        {
-          "name": "Get Dashboard Stats",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{jwt_token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/dashboard",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "dashboard"
-              ]
-            }
-          },
-          "response": []
-        }
-      ]
-    },
-    {
-      "name": "Exams",
-      "item": [
-        {
-          "name": "Get Exams",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{jwt_token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/exams",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "exams"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Create Exam",
+          "name": "Create Assignment For Student",
           "request": {
             "method": "POST",
             "header": [
@@ -580,7 +359,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"subject\": \"Math\",\n  \"class\": \"Class X\",\n  \"exam_date\": \"2026-04-05\",\n  \"time\": \"10:00\",\n  \"duration\": 120,\n  \"max_marks\": 100,\n  \"examiner\": \"Mr. Das\"\n}",
+              "raw": "{\n  \"title\": \"Personal Practice\",\n  \"description\": \"Revise algebra worksheet.\",\n  \"class_id\": 1,\n  \"target_type\": \"student\",\n  \"student_id\": {{studentId}},\n  \"due_date\": \"2026-04-15\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -588,49 +367,21 @@
               }
             },
             "url": {
-              "raw": "{{baseUrl}}/exams",
+              "raw": "{{baseUrl}}/assignments",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "exams"
-              ]
-            }
-          },
-          "response": []
-        }
-      ]
-    },
-    {
-      "name": "Transport",
-      "item": [
-        {
-          "name": "Get Routes",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{jwt_token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/transport/routes",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "transport",
-                "routes"
+                "assignments"
               ]
             }
           },
           "response": []
         },
         {
-          "name": "Create Route",
+          "name": "Update Assignment",
           "request": {
-            "method": "POST",
+            "method": "PUT",
             "header": [
               {
                 "key": "Content-Type",
@@ -643,7 +394,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"route_name\": \"North Route\",\n  \"vehicle_number\": \"OR05AB1234\",\n  \"driver_name\": \"Suresh Kumar\",\n  \"driver_phone\": \"9876543210\",\n  \"monthly_fee\": 1500,\n  \"capacity\": 30\n}",
+              "raw": "{\n  \"title\": \"Unit Test Updated\",\n  \"description\": \"Complete chapter 3 and 4 questions.\",\n  \"class_id\": 1,\n  \"target_type\": \"class\",\n  \"due_date\": \"2026-04-18\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -651,77 +402,36 @@
               }
             },
             "url": {
-              "raw": "{{baseUrl}}/transport/routes",
+              "raw": "{{baseUrl}}/assignments/{{assignmentId}}",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "transport",
-                "routes"
-              ]
-            }
-          },
-          "response": []
-        }
-      ]
-    },
-    {
-      "name": "Hostel",
-      "item": [
-        {
-          "name": "Get Rooms",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{jwt_token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/hostel/rooms",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "hostel",
-                "rooms"
+                "assignments",
+                "{{assignmentId}}"
               ]
             }
           },
           "response": []
         },
         {
-          "name": "Create Room",
+          "name": "Delete Assignment",
           "request": {
-            "method": "POST",
+            "method": "DELETE",
             "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
               {
                 "key": "Authorization",
                 "value": "Bearer {{jwt_token}}"
               }
             ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"room_number\": \"101\",\n  \"floor\": \"1\",\n  \"type\": \"double\",\n  \"capacity\": 2,\n  \"monthly_fee\": 4000\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
             "url": {
-              "raw": "{{baseUrl}}/hostel/rooms",
+              "raw": "{{baseUrl}}/assignments/{{assignmentId}}",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "hostel",
-                "rooms"
+                "assignments",
+                "{{assignmentId}}"
               ]
             }
           },
@@ -770,7 +480,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"title\": \"Exam Schedule\",\n  \"content\": \"Final exams start on April 5th.\",\n  \"target_audience\": \"all\",\n  \"priority\": \"high\",\n  \"expires_at\": \"2026-04-30\"\n}",
+              "raw": "{\n  \"title\": \"Holiday Notice\",\n  \"content\": \"Center will remain closed on Friday.\",\n  \"target_audience\": \"teachers\",\n  \"target_scope\": \"all\",\n  \"priority\": \"medium\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -788,14 +498,37 @@
             }
           },
           "response": []
+        },
+        {
+          "name": "Delete Notice",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/notices/{{noticeId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notices",
+                "{{noticeId}}"
+              ]
+            }
+          },
+          "response": []
         }
       ]
     },
     {
-      "name": "Parents",
+      "name": "Leaves",
       "item": [
         {
-          "name": "Get Parents",
+          "name": "Get Leaves",
           "request": {
             "method": "GET",
             "header": [
@@ -805,12 +538,107 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/parents",
+              "raw": "{{baseUrl}}/leaves",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "parents"
+                "leaves"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Teacher Leave",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"applicant_type\": \"teacher\",\n  \"teacher_id\": {{teacherId}},\n  \"leave_type\": \"Sick Leave\",\n  \"from_date\": \"2026-04-10\",\n  \"to_date\": \"2026-04-10\",\n  \"reason\": \"Fever\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/leaves",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "leaves"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Leave Status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"approved\",\n  \"review_note\": \"Approved by admin\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/leaves/{{leaveId}}/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "leaves",
+                "{{leaveId}}",
+                "status"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Leave",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/leaves/{{leaveId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "leaves",
+                "{{leaveId}}"
               ]
             }
           },

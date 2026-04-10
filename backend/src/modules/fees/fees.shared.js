@@ -206,6 +206,7 @@ const generateInstallments = ({
   dueDay,
 }) => {
   const feeWindow = calculateFeeWindow(structure, planStartDate);
+  const admissionTotal = roundMoney(Number(structure.admission_total || 0));
   const tuitionMonthly = roundMoney(Number(structure.tuition_total) / Number(structure.duration_months));
   const hostelMonthly = includeHostel
     ? roundMoney(Number(structure.hostel_total) / Number(structure.duration_months))
@@ -226,10 +227,11 @@ const generateInstallments = ({
 
     const periodEnd = endOfMonth(addMonths(currentStart, cycleMonths - 1));
     const dueDate = new Date(currentStart.getFullYear(), currentStart.getMonth(), dueDay);
+    const admissionAmount = installmentNo === 1 ? admissionTotal : 0;
     const tuitionAmount = roundMoney(tuitionMonthly * cycleMonths);
     const hostelAmount = roundMoney(hostelMonthly * cycleMonths);
     const transportAmount = roundMoney(transportMonthly * cycleMonths);
-    const totalAmount = roundMoney(tuitionAmount + hostelAmount + transportAmount);
+    const totalAmount = roundMoney(admissionAmount + tuitionAmount + hostelAmount + transportAmount);
 
     installments.push({
       installment_no: installmentNo,
@@ -238,6 +240,7 @@ const generateInstallments = ({
       period_end: formatDate(periodEnd),
       due_date: formatDate(dueDate),
       months_covered: cycleMonths,
+      admission_amount: admissionAmount,
       tuition_amount: tuitionAmount,
       transport_amount: transportAmount,
       hostel_amount: hostelAmount,
@@ -255,6 +258,7 @@ const generateInstallments = ({
   return {
     installments,
     applicableMonths: feeWindow.applicableMonths,
+    admissionFeeTotal: admissionTotal,
     tuitionFeeTotal: roundMoney(tuitionMonthly * feeWindow.applicableMonths),
     hostelFeeTotal: roundMoney(hostelMonthly * feeWindow.applicableMonths),
     transportFeeTotal: roundMoney(transportMonthly * feeWindow.applicableMonths),
@@ -273,6 +277,7 @@ const getProfileByStudentId = async (client, centerId, studentId) => {
       fs.course_name,
       fs.academic_year,
       fs.duration_months,
+      fs.admission_total AS definition_admission_total,
       fs.tuition_total AS definition_tuition_total,
       fs.hostel_total AS definition_hostel_total,
       fs.transport_total AS definition_transport_total,
@@ -341,6 +346,7 @@ const createStudentFeePlan = async (client, req, options) => {
       due_day,
       include_transport,
       include_hostel,
+      admission_fee_total,
       transport_fee_total,
       hostel_fee_total,
       tuition_fee_total,
@@ -348,7 +354,7 @@ const createStudentFeePlan = async (client, req, options) => {
       notes,
       center_id
     )
-    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
+    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
     RETURNING *
     `,
     [
@@ -359,6 +365,7 @@ const createStudentFeePlan = async (client, req, options) => {
       dueDay,
       includeTransport,
       includeHostel,
+      generatedPlan.admissionFeeTotal,
       generatedPlan.transportFeeTotal,
       generatedPlan.hostelFeeTotal,
       generatedPlan.tuitionFeeTotal,
@@ -383,6 +390,7 @@ const createStudentFeePlan = async (client, req, options) => {
         period_end,
         due_date,
         months_covered,
+        admission_amount,
         tuition_amount,
         transport_amount,
         hostel_amount,
@@ -391,6 +399,7 @@ const createStudentFeePlan = async (client, req, options) => {
         discount_amount,
         waived_amount,
         paid_amount,
+        paid_admission_amount,
         paid_tuition_amount,
         paid_hostel_amount,
         paid_transport_amount,
@@ -400,7 +409,7 @@ const createStudentFeePlan = async (client, req, options) => {
         notes,
         center_id
       )
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,0,0,0,0,0,0,0,0,$13,'pending',$14,$15)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,0,0,0,0,0,0,0,0,0,$14,'pending',$15,$16)
       RETURNING *
       `,
       [
@@ -413,6 +422,7 @@ const createStudentFeePlan = async (client, req, options) => {
         installment.period_end,
         installment.due_date,
         installment.months_covered,
+        installment.admission_amount,
         installment.tuition_amount,
         installment.transport_amount,
         installment.hostel_amount,
@@ -430,10 +440,12 @@ const createStudentFeePlan = async (client, req, options) => {
     fee_structure: structure,
     installments: createdFees,
     breakdown: {
+      admission_total: generatedPlan.admissionFeeTotal,
       tuition_total: generatedPlan.tuitionFeeTotal,
       hostel_total: generatedPlan.hostelFeeTotal,
       transport_total: generatedPlan.transportFeeTotal,
       total_fee: roundMoney(
+        generatedPlan.admissionFeeTotal +
         generatedPlan.tuitionFeeTotal +
         generatedPlan.hostelFeeTotal +
         generatedPlan.transportFeeTotal

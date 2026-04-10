@@ -20,6 +20,7 @@ if (missing.length > 0) {
 const app = require("./src/app");
 require("./src/jobs/feeReminder.job");
 require("./src/jobs/monthlyFee.job");
+require("./src/jobs/onlineExam.job");
 require("./src/jobs/weeklyReport.job");
 
 const PORT = Number(process.env.PORT || 5000);

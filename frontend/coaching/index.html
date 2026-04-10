@@ -3,21 +3,85 @@
   <head>
     <meta charset="UTF-8" />
 
-    <!-- 🔥 Redirect FIRST (important) -->
+    <!-- 🔥 Redirect to www (SEO canonical fix) -->
     <script>
       const host = window.location.hostname;
       if (host === "tutorialhub.co.in") {
-        window.location.replace("https://www.tutorialhub.co.in" + window.location.pathname + window.location.search);
+        window.location.replace(
+          "https://www.tutorialhub.co.in" +
+            window.location.pathname +
+            window.location.search
+        );
       }
     </script>
 
-    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <!-- 📱 Viewport -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <!-- SEO -->
+    <!-- 🌐 Canonical (VERY IMPORTANT) -->
     <link rel="canonical" href="https://www.tutorialhub.co.in" />
-    <title>CoachingERP - Coaching Management System</title>
-    <meta name="description" content="Best coaching management ERP to manage students, fees, exams, attendance." />
+
+    <!-- 🤖 Robots -->
+    <meta name="robots" content="index, follow" />
+
+    <!-- 🔖 Title (SEO optimized) -->
+    <title>TutorialHub ERP</title>
+
+    <!-- 🧠 Description -->
+    <meta
+      name="description"
+      content="All-in-one TutorialHub ERP software with role-based login for Admin, Teachers, Students and Parents. Manage attendance, fees, exams and more easily."
+    />
+
+    <!-- 🔑 Keywords -->
+    <meta
+      name="keywords"
+      content="TutorialHub ERP, student management system, coaching software India, institute management"
+    />
+
+    <!-- 🎨 Favicon -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+
+    <!-- 📣 Open Graph (WhatsApp, Facebook, LinkedIn) -->
+    <meta property="og:title" content="TutorialHub ERP Software | TutorialHub" />
+    <meta
+      property="og:description"
+      content="Manage your coaching institute with students, fees, attendance and exams in one powerful ERP system."
+    />
+    <meta property="og:image" content="https://www.tutorialhub.co.in/ogimage.png" />
+    <meta property="og:url" content="https://www.tutorialhub.co.in" />
+    <meta property="og:type" content="website" />
+
+    <!-- 🐦 Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Coaching ERP Software | TutorialHub" />
+    <meta
+      name="twitter:description"
+      content="All-in-one ERP for coaching institutes with role-based login."
+    />
+    <meta name="twitter:image" content="https://www.tutorialhub.co.in/og-image.png" />
+
+    <!-- ⚡ Schema (BIG SEO BOOST) -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "TutorialHubERP",
+        "url": "https://www.tutorialhub.co.in",
+        "applicationCategory": "BusinessApplication",
+        "operatingSystem": "Web",
+        "description": "TutorialHub ERP software to manage students, teachers, parents, attendance, exams and fees with role-based login."
+      }
+    </script>
+
+    <!-- 🔤 Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Syne:wght@700;800&display=swap"
+      rel="stylesheet"
+    />
   </head>
 
   <body>

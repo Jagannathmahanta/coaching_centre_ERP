@@ -2,6 +2,7 @@ import { buttonStyle, cardStyle, inputStyle, pickerGridStyle, pickerStyle, secon
 import { Field } from "./TeacherShared";
 import { toggleSelection } from "../hooks/useTeachersData";
 import type { TeacherFormState } from "../types/teacher.types";
+import { sanitizeEmailInput, sanitizePhoneInput } from "../../../shared/utils/contact";
 
 export function TeacherFormPanel({
   classOptions,
@@ -50,7 +51,10 @@ export function TeacherFormPanel({
         <Field label="Phone">
           <input
             value={form.phone}
-            onChange={(e) => setForm((c) => ({ ...c, phone: e.target.value }))}
+            onChange={(e) => setForm((c) => ({ ...c, phone: sanitizePhoneInput(e.target.value) }))}
+            inputMode="numeric"
+            maxLength={10}
+            placeholder="10 digit mobile"
             style={inputStyle}
           />
         </Field>
@@ -58,7 +62,8 @@ export function TeacherFormPanel({
           <input
             type="email"
             value={form.email}
-            onChange={(e) => setForm((c) => ({ ...c, email: e.target.value }))}
+            onChange={(e) => setForm((c) => ({ ...c, email: sanitizeEmailInput(e.target.value) }))}
+            placeholder="name@example.com"
             style={inputStyle}
           />
         </Field>
@@ -66,6 +71,16 @@ export function TeacherFormPanel({
 
       {/* Row 2: Gender, Qualification, Joining Date */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 14, marginTop: 14 }}>
+        <Field label="Profile Type">
+          <label style={{ display: "flex", alignItems: "center", gap: 10, minHeight: 46 }}>
+            <input
+              type="checkbox"
+              checked={form.is_staff}
+              onChange={(e) => setForm((c) => ({ ...c, is_staff: e.target.checked }))}
+            />
+            <span>Non-teaching staff</span>
+          </label>
+        </Field>
         <Field label="Gender">
           <select
             value={form.gender}
@@ -185,7 +200,7 @@ export function TeacherFormPanel({
       {/* Actions */}
       <div style={{ display: "flex", gap: 12, marginTop: 18, flexWrap: "wrap" }}>
         <button type="submit" style={buttonStyle} disabled={isPending}>
-          {isPending ? "Saving..." : editingTeacherId ? "Update Teacher" : "Save Teacher"}
+          {isPending ? "Saving..." : editingTeacherId ? "Update Staff" : "Save Staff"}
         </button>
         <button type="button" style={secondaryButton} onClick={onCancel}>
           Cancel

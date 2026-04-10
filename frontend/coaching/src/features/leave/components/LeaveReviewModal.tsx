@@ -41,6 +41,7 @@ export function LeaveReviewModal({
   onConfirm: () => void;
   isPending: boolean;
 }) {
+  const { t } = useI18n();
   if (reviewDraft.leaveId <= 0) return null;
 
   return (
@@ -56,29 +57,30 @@ export function LeaveReviewModal({
           onConfirm();
         }}
       >
-        <h2 style={{ margin: 0 }}>Review Leave</h2>
-        <p style={{ color: "#6b7280", marginTop: 8 }}>Confirm the leave action and keep an internal note if needed.</p>
+        <h2 style={{ margin: 0 }}>{t("leave.reviewTitle")}</h2>
+        <p style={{ color: "#6b7280", marginTop: 8 }}>{t("leave.reviewSub")}</p>
         <label style={{ display: "block", color: "#374151", fontWeight: 700, fontSize: 14 }}>
-          Status
+          {t("leave.status")}
           <select value={reviewDraft.status} onChange={(event) => setReviewDraft((current) => ({ ...current, status: event.target.value }))} style={inputStyle}>
-            <option value="approved">Approve</option>
-            <option value="rejected">Reject</option>
-            <option value="pending">Move Back To Pending</option>
+            <option value="approved">{t("leave.approve")}</option>
+            <option value="rejected">{t("leave.reject")}</option>
+            <option value="pending">{t("leave.moveBackToPending")}</option>
           </select>
         </label>
         <label style={{ display: "block", color: "#374151", fontWeight: 700, fontSize: 14 }}>
-          Review Note
+          {t("leave.reviewNote")}
           <textarea rows={3} value={reviewDraft.review_note} onChange={(event) => setReviewDraft((current) => ({ ...current, review_note: event.target.value }))} style={{ ...inputStyle, resize: "vertical" as const }} />
         </label>
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 12, marginTop: 18 }}>
           <button type="button" style={secondaryButton} onClick={() => setReviewDraft({ leaveId: 0, status: "approved", review_note: "" })}>
-            Cancel
+            {t("leave.cancel")}
           </button>
           <button type="submit" style={buttonStyle} disabled={isPending}>
-            {isPending ? "Saving..." : "Confirm"}
+            {isPending ? t("leave.saving") : t("leave.confirm")}
           </button>
         </div>
       </form>
     </div>
   );
 }
+import { useI18n } from "../../../shared/i18n/I18nProvider";

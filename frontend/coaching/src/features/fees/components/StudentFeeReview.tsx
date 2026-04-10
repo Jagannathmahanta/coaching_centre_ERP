@@ -128,6 +128,7 @@ export function StudentFeeReview({
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12 }}>
+            <BreakdownCard title="Admission" billed={selectedStudentSummary.admission_billed} paid={selectedStudentSummary.admission_paid} pending={selectedStudentSummary.admission_pending} accent="#b45309" />
             <BreakdownCard title="Tuition" billed={selectedStudentSummary.tuition_billed} paid={selectedStudentSummary.tuition_paid} pending={selectedStudentSummary.tuition_pending} accent="#1d4ed8" />
             <BreakdownCard title="Hostel" billed={selectedStudentSummary.hostel_billed} paid={selectedStudentSummary.hostel_paid} pending={selectedStudentSummary.hostel_pending} accent="#7c3aed" />
             <BreakdownCard title="Transport" billed={selectedStudentSummary.transport_billed} paid={selectedStudentSummary.transport_paid} pending={selectedStudentSummary.transport_pending} accent="#0f766e" />
@@ -156,6 +157,7 @@ export function StudentFeeReview({
                   </div>
 
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12, marginTop: 14 }}>
+                    <Metric label="Admission" value={currency(installment.admission_amount)} />
                     <Metric label="Tuition" value={currency(installment.tuition_amount)} />
                     <Metric label="Hostel" value={currency(installment.hostel_amount)} />
                     <Metric label="Transport" value={currency(installment.transport_amount)} />
@@ -163,6 +165,7 @@ export function StudentFeeReview({
                   </div>
 
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12, marginTop: 12 }}>
+                    <Metric label="Due Admission" value={currency(remaining.admission)} />
                     <Metric label="Due Tuition" value={currency(remaining.tuition)} />
                     <Metric label="Due Hostel" value={currency(remaining.hostel)} />
                     <Metric label="Due Transport" value={currency(remaining.transport)} />
@@ -204,6 +207,9 @@ export function StudentFeeReview({
                           <button type="button" onClick={() => resetPaymentDraftToDue(installment)} style={buttonSecondary}>Use Due Amounts</button>
                         </div>
                         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 }}>
+                          <Field label="Admission Payment">
+                            <input type="number" min="0" max={remaining.admission} value={paymentDraft.admission} onChange={(e) => updatePaymentDraft(installment, "admission", e.target.value)} style={{ ...inputStyle, marginTop: 0, background: remaining.admission === 0 ? "#f3f4f6" : "#fff" }} disabled={remaining.admission === 0} />
+                          </Field>
                           <Field label="Tuition Payment">
                             <input type="number" min="0" max={remaining.tuition} value={paymentDraft.tuition} onChange={(e) => updatePaymentDraft(installment, "tuition", e.target.value)} style={{ ...inputStyle, marginTop: 0, background: remaining.tuition === 0 ? "#f3f4f6" : "#fff" }} disabled={remaining.tuition === 0} />
                           </Field>
@@ -246,7 +252,7 @@ export function StudentFeeReview({
                       <div style={{ fontWeight: 700 }}>{currency(payment.amount)}</div>
                     </div>
                     <div style={{ marginTop: 8, color: "#64748b" }}>
-                      Tuition {currency(payment.tuition_amount)} | Hostel {currency(payment.hostel_amount)} | Transport {currency(payment.transport_amount)} | Advance {currency(payment.advance_amount)}
+                      Admission {currency(payment.admission_amount)} | Tuition {currency(payment.tuition_amount)} | Hostel {currency(payment.hostel_amount)} | Transport {currency(payment.transport_amount)} | Advance {currency(payment.advance_amount)}
                     </div>
                     <div style={{ marginTop: 10 }}>
                       <button type="button" onClick={() => onGenerateHistoryReceipt(payment)} style={buttonSecondary}>Print Receipt</button>

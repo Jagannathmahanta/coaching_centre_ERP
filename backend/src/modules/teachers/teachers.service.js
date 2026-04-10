@@ -45,10 +45,25 @@ exports.getTeachers = async (req) => {
   const { rows } = await pool.query(
     `
     SELECT
-      t.*,
+      t.id,
+      t.name,
+      t.phone,
+      t.email,
+      COALESCE(t.is_staff, u.is_staff, FALSE) AS is_staff,
+      t.gender,
+      t.qualification,
+      t.assigned_subjects,
+      t.assigned_classes,
+      t.join_date,
+      t.status,
+      t.notes,
+      t.center_id,
+      t.created_at,
+      t.updated_at,
       u.id AS user_id,
       u.email AS login_email,
       u.phone AS login_phone,
+      COALESCE(u.is_staff, t.is_staff, FALSE) AS login_is_staff,
       CASE WHEN u.id IS NOT NULL THEN TRUE ELSE FALSE END AS has_login_account
     FROM teachers t
     LEFT JOIN users u
@@ -68,6 +83,7 @@ exports.createTeacher = async (req) => {
     name,
     phone,
     email,
+    is_staff,
     gender,
     qualification,
     assigned_subjects,
@@ -89,14 +105,15 @@ exports.createTeacher = async (req) => {
     const { rows } = await client.query(
       `
       INSERT INTO teachers
-      (name, phone, email, gender, qualification, assigned_subjects, assigned_classes, join_date, status, notes, center_id)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+      (name, phone, email, is_staff, gender, qualification, assigned_subjects, assigned_classes, join_date, status, notes, center_id)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
       RETURNING *
       `,
       [
         name,
         phone || null,
         email || null,
+        Boolean(is_staff),
         gender || null,
         qualification || null,
         normalizeTextArray(assigned_subjects),
@@ -133,11 +150,11 @@ exports.createTeacher = async (req) => {
       await client.query(
         `
         INSERT INTO users
-          (name, email, phone, password_hash, role, center_id, teacher_id, must_change_password)
+          (name, email, phone, password_hash, role, is_staff, center_id, teacher_id, must_change_password)
         VALUES
-          ($1,$2,$3,$4,'teacher',$5,$6,$7)
+          ($1,$2,$3,$4,'teacher',$5,$6,$7,$8)
         `,
-        [teacher.name, normalizedEmail, normalizedPhone, passwordHash, req.user.center_id, teacher.id, true]
+        [teacher.name, normalizedEmail, normalizedPhone, passwordHash, Boolean(teacher.is_staff), req.user.center_id, teacher.id, true]
       );
     }
 
@@ -167,21 +184,23 @@ exports.updateTeacher = async (req) => {
       name = $1,
       phone = $2,
       email = $3,
-      gender = $4,
-      qualification = $5,
-      assigned_subjects = $6,
-      assigned_classes = $7,
-      join_date = $8,
-      status = $9,
-      notes = $10,
+      is_staff = $4,
+      gender = $5,
+      qualification = $6,
+      assigned_subjects = $7,
+      assigned_classes = $8,
+      join_date = $9,
+      status = $10,
+      notes = $11,
       updated_at = NOW()
-    WHERE id = $11 AND center_id = $12
+    WHERE id = $12 AND center_id = $13
     RETURNING *
     `,
     [
       payload.name,
       payload.phone || null,
       payload.email || null,
+      Boolean(payload.is_staff),
       payload.gender || null,
       payload.qualification || null,
       normalizeTextArray(payload.assigned_subjects),
@@ -192,6 +211,17 @@ exports.updateTeacher = async (req) => {
       teacherId,
       req.user.center_id,
     ]
+  );
+
+  await pool.query(
+    `
+    UPDATE users
+    SET
+      name = $1,
+      is_staff = $2
+    WHERE teacher_id = $3 AND center_id = $4
+    `,
+    [payload.name, Boolean(payload.is_staff), teacherId, req.user.center_id]
   );
 
   return rows[0];

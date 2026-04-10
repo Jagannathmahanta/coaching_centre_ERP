@@ -58,6 +58,9 @@ export function FeeDefinitionSection({
               : ""}
             {selectedDefinition.batch_name ? ` • ${selectedDefinition.batch_name}` : ""}
           </div>
+          <div style={{ marginTop: 6 }}>
+            Admission: ₹{Number(selectedDefinition.admission_total || 0).toFixed(2)} • Tuition: ₹{Number(selectedDefinition.tuition_total || 0).toFixed(2)}
+          </div>
         </div>
       )}
     </FormSection>

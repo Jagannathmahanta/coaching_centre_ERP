@@ -16,7 +16,7 @@ export const inputStyle = {
 };
 
 export const buttonStyle = {
-  background: "linear-gradient(135deg, #7c3aed, #9333ea)",
+  background: "#334155",
   color: "#fff",
   border: "none",
   borderRadius: 12,
@@ -30,7 +30,7 @@ export const buttonStyle = {
 
 export const secondaryButton = {
   ...buttonStyle,
-  background: "linear-gradient(135deg, #7c3aed, #9333ea)",
+   background: "#334155",
   color: "#fff",
 };
 

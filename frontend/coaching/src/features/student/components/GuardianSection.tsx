@@ -15,10 +15,10 @@ export function GuardianSection({
           <input value={form.parent_name} onChange={(e) => onChange("parent_name", e.target.value)} style={inputStyle} />
         </Field>
         <Field label="Guardian Mobile">
-          <input value={form.parent_phone} onChange={(e) => onChange("parent_phone", e.target.value)} style={inputStyle} />
+          <input value={form.parent_phone} onChange={(e) => onChange("parent_phone", e.target.value)} inputMode="numeric" maxLength={10} placeholder="10 digit mobile" style={inputStyle} />
         </Field>
         <Field label="Guardian Email">
-          <input value={form.parent_email} onChange={(e) => onChange("parent_email", e.target.value)} style={inputStyle} />
+          <input value={form.parent_email} onChange={(e) => onChange("parent_email", e.target.value)} type="email" placeholder="name@example.com" style={inputStyle} />
         </Field>
       </div>
 

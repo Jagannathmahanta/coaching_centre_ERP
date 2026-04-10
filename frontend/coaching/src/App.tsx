@@ -2,7 +2,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Layout from "./layout/Layout";
 import ProtectedRoute from "./modules/auth/ProtectedRoute.tsx";
 import NotFoundPage from "./modules/NotFoundPage";
-import SignupPage from "./modules/auth/SignupPage.tsx";
+import SignupPage from "./features/auth/SignupPage.tsx";
 import DashboardRoute from "./features/dashboard/routes/DashboardRoute.tsx";
 import StudentsRoute from "./features/student/routes/StudentsRoute.tsx";
 import NewStudentRoute from "./features/student/routes/NewStudentRoute.tsx";
@@ -19,14 +19,19 @@ import NoticesRoute from "./features/notice/routes/NoticesRoute.tsx";
 import ParentsRoute from "./features/parent/routes/ParentsRoute.tsx";
 import LoginPage from "./features/auth/LoginPage.tsx";
 import CatalogRoute from "./features/catalog/routes/CatalogRoute.tsx";
+import LandingPage from "./features/marketing/pages/LandingPage.tsx";
+import OnlineExamRoute from "./features/onlineExam/routes/OnlineExamRoute.tsx";
+import AssignmentRoute from "./features/assignment/routes/AssignmentRoute.tsx";
+import InstituteSettingsRoute from "./features/settings/routes/InstituteSettingsRoute.tsx";
 export default function App() {
   return (
     <BrowserRouter>
       <Routes>
+        <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
         <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
-          <Route path="/" element={<DashboardRoute />} />
+          <Route path="/dashboard" element={<DashboardRoute />} />
           <Route path="/students" element={<StudentsRoute />} />
           <Route path="/catalog" element={<CatalogRoute />} />
           <Route path="/students/new" element={<NewStudentRoute />} />
@@ -37,10 +42,13 @@ export default function App() {
           <Route path="/teachers" element={<TeachersRoute />} />
           <Route path="/teacher-salary" element={<TeacherSalaryRoute />} />
           <Route path="/exams" element={<ExamsRoute />} />
+          <Route path="/assignment" element={<AssignmentRoute />} />
+          <Route path="/online-exam" element={<OnlineExamRoute />} />
           <Route path="/attendance" element={<AttendanceRoute />} />
           <Route path="/holidays" element={<HolidayRoute />} />
           <Route path="/leaves" element={<LeaveRoute />} />
           <Route path="/notices" element={<NoticesRoute />} />
+          <Route path="/settings" element={<InstituteSettingsRoute />} />
           <Route path="/parents" element={<ParentsRoute />} />
           <Route path="*" element={<NotFoundPage />} />
         </Route>

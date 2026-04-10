@@ -17,7 +17,7 @@ export function HostelSection({
   return (
     <FormSection title="Hostel And Transport">
       <p style={{ color: "#6b7280", marginTop: 8 }}>
-        Use the checkboxes below if the student is taking hostel or transport.
+        Admission fee stays separate as a one-time charge. Use the checkboxes below only for hostel or transport.
       </p>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 16 }}>
         <CheckboxCard

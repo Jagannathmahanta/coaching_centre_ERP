@@ -2,64 +2,84 @@ import {
   LayoutDashboard,
   Users,
   GraduationCap,
-  DollarSign,
+  IndianRupee,
   BookOpen,
   ClipboardList,
   FileText,
   Calendar,
   Layers3,
+  MonitorCheck,
+  Settings,
 } from "lucide-react";
 
-export type UserRole = "admin" | "student" | "parent" | "teacher";
+export type UserRole = "admin" | "student" | "parent" | "teacher" | "super_admin";
 
 export type NavItem = {
   path: string;
-  label: string;
+  labelKey: string;
   icon: React.ElementType;
 };
 
 const allMenus: Record<UserRole, NavItem[]> = {
   admin: [
-    { path: "/", label: "Dashboard", icon: LayoutDashboard },
-    { path: "/students", label: "Students", icon: Users },
-    { path: "/catalog", label: "Catalog", icon: Layers3 },
-    { path: "/teachers", label: "Staff's", icon: GraduationCap },
-    { path: "/fees", label: "Fees", icon: DollarSign },
-    // { path: "/transport", label: "Transport", icon: Users },
-    { path: "/hostel", label: "Hostel", icon: Users },
-    { path: "/teacher-salary", label: "Staff's Salary", icon: DollarSign },
-    { path: "/exams", label: "Exams", icon: BookOpen },
-    { path: "/attendance", label: "Attendance", icon: ClipboardList },
-    { path: "/holidays", label: "Holidays", icon: Calendar },
-    { path: "/leaves", label: "Leaves", icon: Calendar },
-    { path: "/notices", label: "Notices", icon: FileText },
+    { path: "/dashboard", labelKey: "nav.dashboard", icon: LayoutDashboard },
+    { path: "/students", labelKey: "nav.students", icon: Users },
+    { path: "/catalog", labelKey: "nav.catalog", icon: Layers3 },
+    { path: "/teachers", labelKey: "nav.staff", icon: GraduationCap },
+    { path: "/fees", labelKey: "nav.fees", icon: IndianRupee },
+    { path: "/hostel", labelKey: "nav.hostel", icon: Users },
+    { path: "/teacher-salary", labelKey: "nav.staffSalary", icon: IndianRupee },
+    { path: "/exams", labelKey: "nav.exams", icon: BookOpen },
+    { path: "/assignment", labelKey: "nav.assignment", icon: ClipboardList },
+    { path: "/online-exam", labelKey: "nav.onlineExam", icon: MonitorCheck },
+    { path: "/attendance", labelKey: "nav.attendance", icon: ClipboardList },
+    { path: "/holidays", labelKey: "nav.holidays", icon: Calendar },
+    { path: "/leaves", labelKey: "nav.leaves", icon: Calendar },
+    { path: "/notices", labelKey: "nav.notices", icon: FileText },
+    { path: "/settings", labelKey: "nav.settings", icon: Settings },
     // { path: "/parents", label: "Parents", icon: Users },
   ],
 
   student: [
-    { path: "/", label: "Dashboard", icon: LayoutDashboard },
-    { path: "/assignment", label: "Assignment", icon: ClipboardList },
+    { path: "/dashboard", labelKey: "nav.dashboard", icon: LayoutDashboard },
+    { path: "/assignment", labelKey: "nav.assignment", icon: ClipboardList },
+    { path: "/online-exam", labelKey: "nav.onlineExam", icon: MonitorCheck },
     // { path: "/leaves", label: "Leaves", icon: Calendar },
-    { path: "/holidays", label: "Holidays", icon: Calendar },
-    { path: "/notices", label: "Notices", icon: FileText },
+    { path: "/holidays", labelKey: "nav.holidays", icon: Calendar },
+    { path: "/notices", labelKey: "nav.notices", icon: FileText },
   ],
 
   parent: [
-    { path: "/", label: "Dashboard", icon: LayoutDashboard },
-   { path: "/holidays", label: "Holidays", icon: Calendar },
-    { path: "/notices", label: "Notices", icon: FileText },
+    { path: "/dashboard", labelKey: "nav.dashboard", icon: LayoutDashboard },
+   { path: "/holidays", labelKey: "nav.holidays", icon: Calendar },
+    { path: "/notices", labelKey: "nav.notices", icon: FileText },
   ],
 
   teacher: [
-    { path: "/", label: "Dashboard", icon: LayoutDashboard },
+    { path: "/dashboard", labelKey: "nav.dashboard", icon: LayoutDashboard },
     // { path: "/students", label: "Students", icon: Users },
-    { path: "/attendance", label: "Attendance", icon: ClipboardList },
-    { path: "/leaves", label: "Leaves", icon: Calendar },
-    { path: "/holidays", label: "Holidays", icon: Calendar },
-    { path: "/notices", label: "Notices", icon: FileText },
+    { path: "/assignment", labelKey: "nav.assignment", icon: ClipboardList },
+    { path: "/online-exam", labelKey: "nav.onlineExam", icon: MonitorCheck },
+    { path: "/attendance", labelKey: "nav.attendance", icon: ClipboardList },
+    { path: "/leaves", labelKey: "nav.leaves", icon: Calendar },
+    { path: "/holidays", labelKey: "nav.holidays", icon: Calendar },
+    { path: "/notices", labelKey: "nav.notices", icon: FileText },
+  ],
+
+  super_admin: [
+    { path: "/dashboard", labelKey: "nav.dashboard", icon: LayoutDashboard },
   ],
 };
 
-export function getSidebarMenu(role: UserRole): NavItem[] {
+const staffTeacherMenu: NavItem[] = [
+  { path: "/dashboard", labelKey: "nav.dashboard", icon: LayoutDashboard },
+  { path: "/leaves", labelKey: "nav.leaves", icon: Calendar },
+  { path: "/notices", labelKey: "nav.notices", icon: FileText },
+];
+
+export function getSidebarMenu(role: UserRole, isStaffTeacher = false): NavItem[] {
+  if (role === "teacher" && isStaffTeacher) {
+    return staffTeacherMenu;
+  }
   return allMenus[role] || [];
 }

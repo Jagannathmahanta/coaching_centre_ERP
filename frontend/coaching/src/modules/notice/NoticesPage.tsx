@@ -3,6 +3,7 @@ import api from "../../shared/services/api";
 import { useAuth } from "../../shared/hooks/AuthContext";
 import { getUser } from "../../shared/services/auth";
 import type { CatalogBatch, CatalogBootstrap, CatalogClass, CatalogCourse, CatalogProgramType } from "../../shared/types/catalog";
+import { useI18n } from "../../shared/i18n/I18nProvider";
 
 type NoticeAudience = "all" | "students" | "parents" | "teachers";
 type NoticeScope = "all" | "filtered";
@@ -77,21 +78,22 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-function formatTarget(notice: NoticeItem) {
+function formatTarget(notice: NoticeItem, t: (key: string) => string) {
   if ((notice.target_scope || "all") === "all") {
-    return "All";
+    return t("notice.all");
   }
 
   if (notice.program_type === "academic") {
-    const classText = notice.class_label || "Selected class";
+    const classText = notice.class_label || t("notice.selectedClass");
     return notice.batch_name ? `${classText} • ${notice.batch_name}` : classText;
   }
 
-  const courseText = notice.course_label || "Selected course";
+  const courseText = notice.course_label || t("notice.selectedCourse");
   return notice.batch_name ? `${courseText} • ${notice.batch_name}` : courseText;
 }
 
 export default function NoticesPage() {
+  const { t } = useI18n();
   const { profile } = useAuth();
   const role = (profile?.role ?? getUser()?.role ?? "").toLowerCase();
   const canManage = role === "admin" || role === "staff";
@@ -116,7 +118,7 @@ export default function NoticesPage() {
       setNotices(noticesRes.data || []);
       setCatalog((catalogRes.data || { classes: [], courses: [], batches: [] }) as CatalogBootstrap);
     } catch (loadError: any) {
-      setError(loadError.response?.data?.error || "Failed to load notices.");
+      setError(loadError.response?.data?.error || t("notice.failedLoad"));
     } finally {
       setLoading(false);
     }
@@ -157,27 +159,27 @@ export default function NoticesPage() {
         expires_at: form.expires_at || undefined,
       });
 
-      setMessage("Notice published.");
+      setMessage(t("notice.published"));
       setForm(initialForm);
       setShowForm(false);
       await loadPage();
     } catch (saveError: any) {
-      setError(saveError.response?.data?.error || "Failed to publish notice.");
+      setError(saveError.response?.data?.error || t("notice.failedPublish"));
     } finally {
       setSaving(false);
     }
   };
 
   const handleDelete = async (noticeId: number) => {
-    if (!window.confirm("Delete this notice?")) return;
+    if (!window.confirm(t("notice.deleteConfirm"))) return;
     setMessage("");
     setError("");
     try {
       await api.delete(`/notices/${noticeId}`);
-      setMessage("Notice deleted.");
+      setMessage(t("notice.deleted"));
       await loadPage();
     } catch (deleteError: any) {
-      setError(deleteError.response?.data?.error || "Failed to delete notice.");
+      setError(deleteError.response?.data?.error || t("notice.failedDelete"));
     }
   };
 
@@ -185,9 +187,9 @@ export default function NoticesPage() {
     <div style={{ display: "grid", gap: 20 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
         <div>
-          <h1 style={{ margin: 0, fontSize: 28 }}>Notice Module</h1>
+          <h1 style={{ margin: 0, fontSize: 28 }}>{t("notice.moduleTitle")}</h1>
           <p style={{ color: "#6b7280", marginTop: 8 }}>
-            Publish notices for everyone or for a specific class / course / batch group. If you want to send it to all, just choose <strong>Target Scope = All</strong>.
+            {t("notice.moduleSub")}
           </p>
         </div>
 
@@ -205,7 +207,7 @@ export default function NoticesPage() {
               cursor: "pointer",
             }}
           >
-            {showForm ? "Close Form" : "Create Notice"}
+            {showForm ? t("notice.closeForm") : t("notice.createNotice")}
           </button>
         ) : null}
       </div>
@@ -216,27 +218,27 @@ export default function NoticesPage() {
       {showForm && canManage ? (
         <section style={cardStyle}>
           <div style={{ marginBottom: 18 }}>
-            <h2 style={{ margin: 0 }}>Publish Notice</h2>
+            <h2 style={{ margin: 0 }}>{t("notice.publishTitle")}</h2>
             <p style={{ color: "#6b7280", marginTop: 8 }}>
-              Use <strong>All</strong> for center-wide notices. Use <strong>Specific Group</strong> only when the notice belongs to a selected class / course / batch.
+              {t("notice.publishSub")}
             </p>
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14 }}>
-            <Field label="Title">
+            <Field label={t("notice.title")}>
               <input value={form.title} onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))} style={inputStyle} />
             </Field>
 
-            <Field label="Audience">
+            <Field label={t("notice.audience")}>
               <select value={form.target_audience} onChange={(event) => setForm((current) => ({ ...current, target_audience: event.target.value as NoticeAudience }))} style={inputStyle}>
-                <option value="all">All</option>
-                <option value="students">Students</option>
-                <option value="parents">Parents</option>
-                <option value="teachers">Teachers</option>
+                <option value="all">{t("notice.all")}</option>
+                <option value="students">{t("notice.students")}</option>
+                <option value="parents">{t("notice.parents")}</option>
+                <option value="teachers">{t("notice.teachers")}</option>
               </select>
             </Field>
 
-            <Field label="Target Scope">
+            <Field label={t("notice.targetScope")}>
               <select
                 value={form.target_scope}
                 onChange={(event) =>
@@ -250,22 +252,22 @@ export default function NoticesPage() {
                 }
                 style={inputStyle}
               >
-                <option value="all">All</option>
-                <option value="filtered">Specific Group</option>
+                <option value="all">{t("notice.all")}</option>
+                <option value="filtered">{t("notice.specificGroup")}</option>
               </select>
             </Field>
 
-            <Field label="Priority">
+            <Field label={t("notice.priority")}>
               <select value={form.priority} onChange={(event) => setForm((current) => ({ ...current, priority: event.target.value as NoticeFormState["priority"] }))} style={inputStyle}>
-                <option value="high">High</option>
-                <option value="medium">Medium</option>
-                <option value="low">Low</option>
+                <option value="high">{t("notice.high")}</option>
+                <option value="medium">{t("notice.medium")}</option>
+                <option value="low">{t("notice.low")}</option>
               </select>
             </Field>
           </div>
 
           <div style={{ marginTop: 14 }}>
-            <Field label="Description">
+            <Field label={t("notice.description")}>
               <textarea
                 value={form.content}
                 onChange={(event) => setForm((current) => ({ ...current, content: event.target.value }))}
@@ -276,7 +278,7 @@ export default function NoticesPage() {
           </div>
 
           <div style={{ marginTop: 14, maxWidth: 260 }}>
-            <Field label="Expire On">
+            <Field label={t("notice.expireOn")}>
               <input type="date" value={form.expires_at} onChange={(event) => setForm((current) => ({ ...current, expires_at: event.target.value }))} style={inputStyle} />
             </Field>
           </div>
@@ -284,7 +286,7 @@ export default function NoticesPage() {
           {form.target_scope === "filtered" ? (
             <div style={{ marginTop: 18, display: "grid", gap: 14 }}>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14 }}>
-                <Field label="Program">
+                <Field label={t("notice.program")}>
                   <select
                     value={form.program_type}
                     onChange={(event) =>
@@ -298,24 +300,24 @@ export default function NoticesPage() {
                     }
                     style={inputStyle}
                   >
-                    <option value="academic">Academic</option>
-                    <option value="non_academic">Non-Academic</option>
+                    <option value="academic">{t("notice.academic")}</option>
+                    <option value="non_academic">{t("notice.nonAcademic")}</option>
                   </select>
                 </Field>
 
                 {form.program_type === "academic" ? (
-                  <Field label="Class">
+                  <Field label={t("notice.classLabel")}>
                     <select value={form.class_id} onChange={(event) => setForm((current) => ({ ...current, class_id: event.target.value, batch_id: "" }))} style={inputStyle}>
-                      <option value="">Choose class</option>
+                      <option value="">{t("notice.chooseClass")}</option>
                       {(catalog.classes || []).map((item: CatalogClass) => (
                         <option key={item.id} value={item.id}>{item.class_name}</option>
                       ))}
                     </select>
                   </Field>
                 ) : (
-                  <Field label="Course">
+                  <Field label={t("notice.course")}>
                     <select value={form.course_id} onChange={(event) => setForm((current) => ({ ...current, course_id: event.target.value, batch_id: "" }))} style={inputStyle}>
-                      <option value="">Choose course</option>
+                      <option value="">{t("notice.chooseCourse")}</option>
                       {(catalog.courses || []).map((item: CatalogCourse) => (
                         <option key={item.id} value={item.id}>{item.course_name}</option>
                       ))}
@@ -323,9 +325,9 @@ export default function NoticesPage() {
                   </Field>
                 )}
 
-                <Field label="Batch (Optional)">
+                <Field label={t("notice.batchOptional")}>
                   <select value={form.batch_id} onChange={(event) => setForm((current) => ({ ...current, batch_id: event.target.value }))} style={inputStyle}>
-                    <option value="">All matching batches</option>
+                    <option value="">{t("notice.allMatchingBatches")}</option>
                     {filteredBatches.map((batch: CatalogBatch) => (
                       <option key={batch.id} value={batch.id}>
                         {batch.batch_name}
@@ -353,7 +355,7 @@ export default function NoticesPage() {
                 cursor: saving ? "wait" : "pointer",
               }}
             >
-              {saving ? "Publishing..." : "Publish Notice"}
+              {saving ? t("notice.publishing") : t("notice.publishNotice")}
             </button>
             <button
               type="button"
@@ -371,7 +373,7 @@ export default function NoticesPage() {
                 cursor: "pointer",
               }}
             >
-              Cancel
+              {t("notice.cancel")}
             </button>
           </div>
         </section>
@@ -379,16 +381,16 @@ export default function NoticesPage() {
 
       <section style={cardStyle}>
         <div style={{ marginBottom: 18 }}>
-          <h2 style={{ margin: 0 }}>Published Notices</h2>
+          <h2 style={{ margin: 0 }}>{t("notice.publishedNotices")}</h2>
           <p style={{ color: "#6b7280", marginTop: 8 }}>
-            {canManage ? "All published notices for this center." : "Notices available to your account."}
+            {canManage ? t("notice.publishedSubManage") : t("notice.publishedSubView")}
           </p>
         </div>
 
         {loading ? (
-          <div style={{ color: "#6b7280" }}>Loading notices...</div>
+          <div style={{ color: "#6b7280" }}>{t("notice.loading")}</div>
         ) : notices.length === 0 ? (
-          <div style={{ color: "#6b7280" }}>No notices published yet.</div>
+          <div style={{ color: "#6b7280" }}>{t("notice.empty")}</div>
         ) : (
           <div style={{ display: "grid", gap: 14 }}>
             {notices.map((notice) => (
@@ -397,19 +399,19 @@ export default function NoticesPage() {
                   <div>
                     <h3 style={{ margin: 0, fontSize: 18 }}>{notice.title}</h3>
                     <div style={{ color: "#64748b", marginTop: 6 }}>
-                      Posted on {new Date(notice.created_at).toLocaleDateString()}
+                      {t("notice.postedOn", { date: new Date(notice.created_at).toLocaleDateString() })}
                     </div>
                   </div>
 
                   <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                     <span style={{ padding: "6px 10px", borderRadius: 999, background: "#ede9fe", color: "#6d28d9", fontWeight: 700, fontSize: 12 }}>
-                      {notice.priority || "medium"}
+                      {t(`notice.${(notice.priority || "medium").toLowerCase()}`)}
                     </span>
                     <span style={{ padding: "6px 10px", borderRadius: 999, background: "#eff6ff", color: "#1d4ed8", fontWeight: 700, fontSize: 12 }}>
-                      {(notice.target_audience || "all").replace("_", " ")}
+                      {t(`notice.${(notice.target_audience || "all").replace("_", "")}`)}
                     </span>
                     <span style={{ padding: "6px 10px", borderRadius: 999, background: "#ecfeff", color: "#0f766e", fontWeight: 700, fontSize: 12 }}>
-                      {formatTarget(notice)}
+                      {formatTarget(notice, t)}
                     </span>
                   </div>
                 </div>
@@ -418,7 +420,7 @@ export default function NoticesPage() {
 
                 <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", marginTop: 14, flexWrap: "wrap" }}>
                   <div style={{ color: "#64748b", fontSize: 13 }}>
-                    {notice.expires_at ? `Expires on ${new Date(notice.expires_at).toLocaleDateString()}` : "No expiry"}
+                    {notice.expires_at ? t("notice.expiresOn", { date: new Date(notice.expires_at).toLocaleDateString() }) : t("notice.noExpiry")}
                   </div>
 
                   {canManage ? (
@@ -435,7 +437,7 @@ export default function NoticesPage() {
                         cursor: "pointer",
                       }}
                     >
-                      Delete
+                      {t("notice.delete")}
                     </button>
                   ) : null}
                 </div>

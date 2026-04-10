@@ -1,6 +1,7 @@
 import { LeaveRequestList } from "../components/LeaveRequestList";
 import { LeaveReviewModal } from "../components/LeaveReviewModal";
 import { LEAVE_TYPES, useLeaveData } from "../hooks/useLeaveData";
+import { useI18n } from "../../../shared/i18n/I18nProvider";
 
 const cardStyle = {
   background: "#fff",
@@ -20,7 +21,7 @@ const inputStyle = {
 };
 
 const buttonStyle = {
-  background: "#1d4ed8",
+   background: "#334155",
   color: "#fff",
   border: "none",
   borderRadius: 12,
@@ -47,6 +48,7 @@ function StatCard({ accent, label, value }: { accent: string; label: string; val
 }
 
 export default function LeavePage() {
+  const { t } = useI18n();
   const {
     isManager,
     selfApplicantType,
@@ -77,20 +79,20 @@ export default function LeavePage() {
 
       {/* Page title */}
       <div>
-        <h1 style={{ margin: 0, fontSize: 28 }}>Leave Module</h1>
+        <h1 style={{ margin: 0, fontSize: 28 }}>{t("leave.moduleTitle")}</h1>
         <p style={{ color: "#6b7280", marginTop: 8 }}>
           {isManager
-            ? "Review recent leave activity, focus on pending approvals, and manage both teacher and student requests from one place."
-            : "Apply for leave, track your request status, and keep your leave history in one place."}
+            ? t("leave.managerSub")
+            : t("leave.selfSub")}
         </p>
       </div>
 
       {/* Stats */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 16 }}>
-        <StatCard label="Total Requests" value={leaveStats.total}    accent="#2563eb" />
-        <StatCard label="Pending"        value={leaveStats.pending}  accent="#d97706" />
-        <StatCard label="Approved"       value={leaveStats.approved} accent="#059669" />
-        <StatCard label="Rejected"       value={leaveStats.rejected} accent="#be123c" />
+        <StatCard label={t("leave.totalRequests")} value={leaveStats.total} accent="#2563eb" />
+        <StatCard label={t("leave.pending")} value={leaveStats.pending} accent="#d97706" />
+        <StatCard label={t("leave.approved")} value={leaveStats.approved} accent="#059669" />
+        <StatCard label={t("leave.rejected")} value={leaveStats.rejected} accent="#be123c" />
       </div>
 
       {message && <div style={{ ...cardStyle, background: "#f0fdf4", color: "#166534" }}>{message}</div>}
@@ -127,18 +129,18 @@ export default function LeavePage() {
             }}
           >
             <div style={{ marginBottom: 18 }}>
-              <h2 style={{ margin: 0 }}>Apply Leave</h2>
+              <h2 style={{ margin: 0 }}>{t("leave.applyLeave")}</h2>
               <p style={{ color: "#6b7280", marginTop: 8 }}>
-                Submit your leave request here and track approval from the same page.
+                {t("leave.applySub")}
               </p>
             </div>
 
             {/* Applicant Type + Student/Teacher */}
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 14 }}>
               <label style={fieldStyle}>
-                Applicant Type
+                {t("leave.applicantType")}
                 <input
-                  value={selfApplicantType === "teacher" ? "Teacher" : "Student"}
+                  value={selfApplicantType === "teacher" ? t("leave.teacher") : t("leave.student")}
                   style={{ ...inputStyle, background: "#f8fafc" }}
                   readOnly
                 />
@@ -146,13 +148,13 @@ export default function LeavePage() {
 
               {selfApplicantType === "student" ? (
                 <label style={fieldStyle}>
-                  Student
+                  {t("leave.student")}
                   {linkedStudentId ? (
                     <input
                       value={
                         activeStudents.find((s) => String(s.id) === linkedStudentId)
                           ? `${activeStudents.find((s) => String(s.id) === linkedStudentId)?.name} | ${activeStudents.find((s) => String(s.id) === linkedStudentId)?.class}`
-                          : "Linked student account"
+                          : t("leave.linkedStudentAccount")
                       }
                       style={{ ...inputStyle, background: "#f8fafc" }}
                       readOnly
@@ -164,10 +166,10 @@ export default function LeavePage() {
                       style={inputStyle}
                       required
                     >
-                      <option value="">Select your name</option>
+                      <option value="">{t("leave.selectYourName")}</option>
                       {activeStudents.map((s) => (
                         <option key={s.id} value={s.id}>
-                          {s.name} | {s.class} | {s.roll_number || "No admission no"}
+                          {s.name} | {s.class} | {s.roll_number || t("leave.noAdmissionNo")}
                         </option>
                       ))}
                     </select>
@@ -175,10 +177,10 @@ export default function LeavePage() {
                 </label>
               ) : (
                 <label style={fieldStyle}>
-                  Teacher
+                  {t("leave.teacher")}
                   {linkedTeacherId ? (
                     <input
-                      value={activeTeachers.find((t) => String(t.id) === linkedTeacherId)?.name || "Linked teacher account"}
+                      value={activeTeachers.find((t) => String(t.id) === linkedTeacherId)?.name || t("leave.linkedTeacherAccount")}
                       style={{ ...inputStyle, background: "#f8fafc" }}
                       readOnly
                     />
@@ -189,7 +191,7 @@ export default function LeavePage() {
                       style={inputStyle}
                       required
                     >
-                      <option value="">Select your name</option>
+                      <option value="">{t("leave.selectYourName")}</option>
                       {activeTeachers.map((t) => (
                         <option key={t.id} value={t.id}>{t.name}</option>
                       ))}
@@ -202,7 +204,7 @@ export default function LeavePage() {
             {/* Leave Type + From + To */}
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 14, marginTop: 14 }}>
               <label style={fieldStyle}>
-                Leave Type
+                {t("leave.leaveType")}
                 <select
                   value={form.leave_type}
                   onChange={(e) => setForm((c) => ({ ...c, leave_type: e.target.value }))}
@@ -214,7 +216,7 @@ export default function LeavePage() {
                 </select>
               </label>
               <label style={fieldStyle}>
-                From Date
+                {t("leave.fromDate")}
                 <input
                   type="date"
                   value={form.from_date}
@@ -224,7 +226,7 @@ export default function LeavePage() {
                 />
               </label>
               <label style={fieldStyle}>
-                To Date
+                {t("leave.toDate")}
                 <input
                   type="date"
                   value={form.to_date}
@@ -238,20 +240,20 @@ export default function LeavePage() {
             {/* Reason */}
             <div style={{ marginTop: 14 }}>
               <label style={fieldStyle}>
-                Reason
+                {t("leave.reason")}
                 <textarea
                   rows={4}
                   value={form.reason}
                   onChange={(e) => setForm((c) => ({ ...c, reason: e.target.value }))}
                   style={{ ...inputStyle, resize: "vertical" as const }}
-                  placeholder="Add the leave reason here"
+                  placeholder={t("leave.reasonPlaceholder")}
                 />
               </label>
             </div>
 
             <div style={{ marginTop: 18 }}>
               <button type="submit" style={buttonStyle} disabled={createLeaveMutation.isPending}>
-                {createLeaveMutation.isPending ? "Saving..." : "Save Leave Request"}
+                {createLeaveMutation.isPending ? t("leave.saving") : t("leave.saveRequest")}
               </button>
             </div>
           </form>
@@ -260,11 +262,11 @@ export default function LeavePage() {
         {/* Summary / Filters card */}
         <section style={cardStyle}>
           <div style={{ marginBottom: 18 }}>
-            <h2 style={{ margin: 0 }}>{isManager ? "Leave Filters" : "My Leave Summary"}</h2>
+            <h2 style={{ margin: 0 }}>{isManager ? t("leave.filtersTitle") : t("leave.summaryTitle")}</h2>
             <p style={{ color: "#6b7280", marginTop: 8 }}>
               {isManager
-                ? "Narrow the admin queue by applicant type or approval status."
-                : "Choose your profile first so the page shows only your leave requests."}
+                ? t("leave.filtersSub")
+                : t("leave.summarySub")}
             </p>
           </div>
 
@@ -272,49 +274,49 @@ export default function LeavePage() {
             {isManager ? (
               <>
                 <label style={fieldStyle}>
-                  Applicant Type
+                  {t("leave.applicantType")}
                   <select
                     value={filters.applicant_type}
                     onChange={(e) => setFilters((c) => ({ ...c, applicant_type: e.target.value }))}
                     style={inputStyle}
                   >
-                    <option value="all">All</option>
-                    <option value="student">Student</option>
-                    <option value="teacher">Teacher</option>
+                    <option value="all">{t("notice.all")}</option>
+                    <option value="student">{t("leave.student")}</option>
+                    <option value="teacher">{t("leave.teacher")}</option>
                   </select>
                 </label>
                 <label style={fieldStyle}>
-                  Status
+                  {t("leave.status")}
                   <select
                     value={filters.status}
                     onChange={(e) => setFilters((c) => ({ ...c, status: e.target.value }))}
                     style={inputStyle}
                   >
-                    <option value="all">All</option>
-                    <option value="pending">Pending</option>
-                    <option value="approved">Approved</option>
-                    <option value="rejected">Rejected</option>
+                    <option value="all">{t("notice.all")}</option>
+                    <option value="pending">{t("leave.pending")}</option>
+                    <option value="approved">{t("leave.approved")}</option>
+                    <option value="rejected">{t("leave.rejected")}</option>
                   </select>
                 </label>
               </>
             ) : (
               <>
                 <label style={fieldStyle}>
-                  Request Status
+                  {t("leave.requestStatus")}
                   <input
                     value={
                       !form.student_id && !form.teacher_id
-                        ? "Select your profile to see your leave history"
-                        : `${leaveStats.pending} pending | ${leaveStats.approved} approved | ${leaveStats.rejected} rejected`
+                        ? t("leave.selectProfileHistory")
+                        : t("leave.requestStatusSummary", { pending: leaveStats.pending, approved: leaveStats.approved, rejected: leaveStats.rejected })
                     }
                     style={{ ...inputStyle, background: "#f8fafc" }}
                     readOnly
                   />
                 </label>
                 <label style={fieldStyle}>
-                  Current Role
+                  {t("leave.currentRole")}
                   <input
-                    value={selfApplicantType === "teacher" ? "Teacher Login" : "Student Login"}
+                    value={selfApplicantType === "teacher" ? t("leave.teacherLogin") : t("leave.studentLogin")}
                     style={{ ...inputStyle, background: "#f8fafc" }}
                     readOnly
                   />
@@ -328,16 +330,16 @@ export default function LeavePage() {
       {/* Leave Requests table */}
       <section style={{ ...cardStyle, minWidth: 0, overflow: "hidden" }}>
         <div style={{ marginBottom: 18 }}>
-          <h2 style={{ margin: 0 }}>{isManager ? "Leave Requests" : "My Leave Requests"}</h2>
+          <h2 style={{ margin: 0 }}>{isManager ? t("leave.requestsTitle") : t("leave.myRequestsTitle")}</h2>
           <p style={{ color: "#6b7280", marginTop: 8 }}>
             {isManager
-              ? "Review recent requests, focus on pending items, and take approval action from one list."
-              : "Track your submitted leave requests and see the latest review status here."}
+              ? t("leave.requestsSub")
+              : t("leave.myRequestsSub")}
           </p>
         </div>
 
         {leavesQuery.isLoading ? (
-          <div>Loading leave requests...</div>
+          <div>{t("leave.loadingRequests")}</div>
         ) : (
           <LeaveRequestList
             isManager={isManager}
@@ -346,7 +348,7 @@ export default function LeavePage() {
             onApprove={(leave) => setReviewDraft({ leaveId: leave.id, status: "approved", review_note: leave.review_note || "" })}
             onReject={(leave) => setReviewDraft({ leaveId: leave.id, status: "rejected", review_note: leave.review_note || "" })}
             onDelete={(leaveId) => {
-              if (!window.confirm("Delete this pending leave request?")) return;
+              if (!window.confirm(t("leave.deleteConfirm"))) return;
               deleteLeaveMutation.mutate(leaveId);
             }}
           />

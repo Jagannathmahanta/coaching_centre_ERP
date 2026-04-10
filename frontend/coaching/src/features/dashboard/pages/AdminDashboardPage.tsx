@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { BookOpenCheck, BriefcaseBusiness, ChevronDown, Clock3, GraduationCap, IndianRupee, Plus, Users } from "lucide-react";
-import { getUser } from "../../../shared/services/auth";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../../shared/hooks/AuthContext";
+import { getUser, hasPlatformAuthBackup, restorePlatformAuth } from "../../../shared/services/auth";
 import { currency, isNewBatch, shortDate } from "../../../shared/utils/format";
 import getGreeting from "../../../shared/utils/greeting";
 import { DashboardTeacherAdmissionPanel } from "../components/DashboardTeacherAdmissionPanel";
@@ -14,8 +16,12 @@ import { useDashboardQuery } from "../hooks/useDashboardQuery";
 import { useDownloadResult } from "../hooks/useDownloadResult";
 import NewStudentPage from "../../student/pages/NewStudentPage";
 import "../styles/dashboard.css";
+import { useI18n } from "../../../shared/i18n/I18nProvider";
 
 export default function AdminDashboardPage() {
+    const navigate = useNavigate();
+    const { setProfile } = useAuth();
+    const { t } = useI18n();
     const { data, isLoading } = useDashboardQuery();
     const { download } = useDownloadResult();
     const user = useMemo(() => getUser(), []);
@@ -39,8 +45,22 @@ export default function AdminDashboardPage() {
         return () => document.removeEventListener("mousedown", handleOutside);
     }, []);
 
+    const showReturnToPlatform = Boolean(
+        user?.is_impersonated &&
+        user?.platform_role === "super_admin" &&
+        hasPlatformAuthBackup()
+    );
+
+    const handleReturnToPlatform = () => {
+        const restored = restorePlatformAuth();
+        if (restored?.user) {
+            setProfile(restored.user);
+            navigate("/dashboard", { replace: true });
+        }
+    };
+
     if (isLoading) {
-        return <div className="dashboard-panel">Loading...</div>;
+        return <div className="dashboard-panel">{t("dashboard.loading")}</div>;
     }
 
     return (
@@ -49,21 +69,35 @@ export default function AdminDashboardPage() {
             {/* HERO */}
             <div className="dashboard-hero">
                 <div className="dashboard-hero-left">
+                    {showReturnToPlatform ? (
+                        <div className="dashboard-platformReturn">
+                            <span className="dashboard-platformReturnLabel">
+                                Viewing {user?.center_name || user?.center_slug || "institute"} as Super Admin
+                            </span>
+                            <button
+                                type="button"
+                                className="dashboard-platformReturnButton"
+                                onClick={handleReturnToPlatform}
+                            >
+                                Return to platform
+                            </button>
+                        </div>
+                    ) : null}
 
                     <h1 className="dashboard-greeting">
                         {getGreeting()}
                     </h1>
 
                     <h2 className="dashboard-username">
-                        {user?.name || "Admin"}
+                        {user?.name || t("dashboard.adminDefaultName")}
                     </h2>
 
                     <p className="dashboard-subtext">
-                        Have a productive day!
+                        {t("dashboard.productiveDay")}
                     </p>
 
                     <p className="dashboard-description">
-                        Track notices, upcoming exams, recent results, holidays, and pending fee collections.
+                        {t("dashboard.adminHeroDesc")}
                     </p>
 
                 </div>
@@ -75,7 +109,7 @@ export default function AdminDashboardPage() {
                         onClick={() => setAdmissionMenuOpen((current) => !current)}
                     >
                         <Plus size={16} />
-                        <span>New Admission</span>
+                        <span>{t("dashboard.newAdmission")}</span>
                         <ChevronDown size={16} />
                     </button>
 
@@ -89,7 +123,7 @@ export default function AdminDashboardPage() {
                                     setAdmissionMenuOpen(false);
                                 }}
                             >
-                                Add Student
+                                {t("dashboard.addStudent")}
                             </button>
                             <button
                                 type="button"
@@ -99,7 +133,7 @@ export default function AdminDashboardPage() {
                                     setAdmissionMenuOpen(false);
                                 }}
                             >
-                                Add Teacher
+                                {t("dashboard.addTeacher")}
                             </button>
                         </div>
                     ) : null}
@@ -113,49 +147,49 @@ export default function AdminDashboardPage() {
             <section className="dashboard-stats">
                 <StatCard
                     accent="#2563eb"
-                    label="Total Students"
+                    label="dashboard.totalStudents"
                     value={stats?.total_students || 0}
-                    subvalue={`${stats?.active_students || 0} active`}
+                    subvalue={t("dashboard.activeCount", { count: stats?.active_students || 0 })}
                     icon={Users}
                 />
 
                 <StatCard
                     accent="#9333ea"
-                    label="Total Teachers"
+                    label="dashboard.totalTeachers"
                     value={stats?.total_teachers || 0}
-                    subvalue={`${stats?.active_teachers || 0} active`}
+                    subvalue={t("dashboard.activeCount", { count: stats?.active_teachers || 0 })}
                     icon={GraduationCap}
                 />
 
                 <StatCard
                     accent="#0f766e"
-                    label="Check In Teacher"
+                    label="dashboard.checkInTeacher"
                     value={stats?.checked_in_teachers_today || 0}
-                    subvalue={`${stats?.teachers_on_duty_now || 0} on duty • ${stats?.checked_out_teachers_today || 0} checked out`}
+                    subvalue={t("dashboard.onDutySummary", { onDuty: stats?.teachers_on_duty_now || 0, checkedOut: stats?.checked_out_teachers_today || 0 })}
                     icon={Clock3}
                 />
 
                 <StatCard
                     accent="#059669"
-                    label="Fee Collection"
+                    label="dashboard.feeCollection"
                     value={currency(stats?.collected_this_month || 0)}
-                    subvalue="Current month"
+                    subvalue="dashboard.currentMonth"
                     icon={IndianRupee}
                 />
 
                 <StatCard
                     accent="#d97706"
-                    label="Pending Fees"
+                    label="dashboard.pendingFees"
                     value={currency(stats?.pending_this_month || 0)}
-                    subvalue={`${stats?.pending_fee_count || 0} installments`}
+                    subvalue={t("dashboard.installmentsCount", { count: stats?.pending_fee_count || 0 })}
                     icon={BriefcaseBusiness}
                 />
 
                 <StatCard
                     accent="#ea580c"
-                    label="Avg. Attendance"
+                    label="dashboard.avgAttendance"
                     value={`${attendance?.this_month.present_percentage || 0}%`}
-                    subvalue={`${attendanceChange >= 0 ? "+" : ""}${attendanceChange}% vs last month`}
+                    subvalue={t("dashboard.vsLastMonth", { value: `${attendanceChange >= 0 ? "+" : ""}${attendanceChange}` })}
                     icon={BookOpenCheck}
                 />
             </section>
@@ -168,7 +202,7 @@ export default function AdminDashboardPage() {
                 {/* LEFT SIDE */}
                 <div className="dashboard-stack">
 
-                    <Panel title="Notice Board" subtitle="Recent updates">
+                    <Panel title="dashboard.noticeBoard" subtitle="dashboard.recentUpdates">
                         <NoticeList
                             notices={data?.recent_notices}
                             exams={data?.upcoming_exams}
@@ -178,7 +212,7 @@ export default function AdminDashboardPage() {
                             downloadResultBatch={download}
                         />
                     </Panel>
-                    <Panel title="Upcoming Holidays" subtitle="Holiday schedule">
+                    <Panel title="dashboard.upcomingHolidays" subtitle="dashboard.holidaySchedule">
                         <HolidayList holidays={data?.upcoming_holidays} shortDate={shortDate} />
                     </Panel>
 
@@ -187,7 +221,7 @@ export default function AdminDashboardPage() {
                 {/* RIGHT SIDE */}
                 <div className="dashboard-stack">
 
-                    <Panel title="Pending Fees" subtitle="Dues list">
+                    <Panel title="dashboard.pendingFeesPanel" subtitle="dashboard.duesList">
                         <PendingFeeTable
                             fees={data?.pending_fees}
                             shortDate={shortDate}
@@ -195,9 +229,9 @@ export default function AdminDashboardPage() {
                         />
                     </Panel>
 
-                    <Panel title="Teacher Attendance Today" subtitle="Check in and check out status">
+                    <Panel title="dashboard.teacherAttendanceToday" subtitle="dashboard.teacherAttendanceSub">
                         {!data?.teacher_attendance_today?.length ? (
-                            <div className="dashboard-empty">No teachers have checked in today yet.</div>
+                            <div className="dashboard-empty">{t("dashboard.noTeacherCheckIn")}</div>
                         ) : (
                             <div className="dashboard-list">
                                 {data.teacher_attendance_today.map((item) => (
@@ -205,19 +239,19 @@ export default function AdminDashboardPage() {
                                         <div>
                                             <div className="dashboard-listTitle">{item.teacher_name}</div>
                                             <div className="dashboard-listMeta">
-                                                Check in: {item.check_in_at ? new Date(item.check_in_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "-"}
+                                                {t("dashboard.checkIn")}: {item.check_in_at ? new Date(item.check_in_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "-"}
                                             </div>
                                             <div className="dashboard-listMeta">
-                                                Check out: {item.check_out_at ? new Date(item.check_out_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "-"}
+                                                {t("dashboard.checkOut")}: {item.check_out_at ? new Date(item.check_out_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "-"}
                                             </div>
                                         </div>
 
                                         <div className="dashboard-adminTeacherAttendanceMeta">
                                             <span className={`dashboard-badge ${item.status === "checked_out" ? "" : "newBatch"}`}>
-                                                {item.status === "checked_out" ? "Checked Out" : "On Duty"}
+                                                {item.status === "checked_out" ? t("dashboard.checkedOut") : t("dashboard.onDuty")}
                                             </span>
                                             <span className="dashboard-listMeta">
-                                                {item.total_minutes > 0 ? `${Math.floor(item.total_minutes / 60)}h ${item.total_minutes % 60}m` : "Live"}
+                                                {item.total_minutes > 0 ? `${Math.floor(item.total_minutes / 60)}h ${item.total_minutes % 60}m` : t("dashboard.live")}
                                             </span>
                                         </div>
                                     </div>

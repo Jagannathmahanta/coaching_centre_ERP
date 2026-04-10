@@ -27,6 +27,7 @@ import { useTeacherDashboardQuery } from "../hooks/useTeacherDashboardQuery";
 import { useDownloadResult } from "../hooks/useDownloadResult";
 import { teacherCheckIn, teacherCheckOut } from "../services/dashboard.service";
 import "../styles/dashboard.css";
+import { useI18n } from "../../../shared/i18n/I18nProvider";
 
 ChartJS.register(CategoryScale, LinearScale, BarController, BarElement, DoughnutController, ArcElement, Tooltip, Legend);
 
@@ -74,6 +75,7 @@ async function getCurrentLocation() {
 }
 
 export default function TeacherDashboardPage() {
+  const { t } = useI18n();
   const queryClient = useQueryClient();
   const user = useMemo(() => getUser(), []);
   const { data, isLoading } = useTeacherDashboardQuery();
@@ -87,12 +89,12 @@ export default function TeacherDashboardPage() {
       return teacherCheckIn(location);
     },
     onSuccess: async () => {
-      setActionMessage("Checked in successfully.");
+      setActionMessage(t("dashboard.checkedInSuccess"));
       setActionError("");
       await queryClient.invalidateQueries({ queryKey: ["teacher-dashboard"] });
     },
     onError: (error: any) => {
-      setActionError(error.response?.data?.error || error.message || "Check-in failed.");
+      setActionError(error.response?.data?.error || error.message || t("dashboard.checkInFailed"));
       setActionMessage("");
     },
   });
@@ -103,12 +105,12 @@ export default function TeacherDashboardPage() {
       return teacherCheckOut(location);
     },
     onSuccess: async () => {
-      setActionMessage("Checked out successfully.");
+      setActionMessage(t("dashboard.checkedOutSuccess"));
       setActionError("");
       await queryClient.invalidateQueries({ queryKey: ["teacher-dashboard"] });
     },
     onError: (error: any) => {
-      setActionError(error.response?.data?.error || error.message || "Check-out failed.");
+      setActionError(error.response?.data?.error || error.message || t("dashboard.checkOutFailed"));
       setActionMessage("");
     },
   });
@@ -119,10 +121,10 @@ export default function TeacherDashboardPage() {
   const classAttendance = data?.analytics.class_attendance || [];
   const isCheckedIn = Boolean(data?.today_attendance?.check_in_at && !data?.today_attendance?.check_out_at);
   const statusLabel = data?.today_attendance?.check_out_at
-    ? "Checked Out"
+    ? t("dashboard.checkedOut")
     : data?.today_attendance?.check_in_at
-      ? "Checked In"
-      : "Not Checked In";
+      ? t("dashboard.checkedIn")
+      : t("dashboard.notCheckedIn");
 
   const attendanceChartData: ChartData<"doughnut", number[], string> = {
     labels: ["Present", "Absent", "Leave"],
@@ -143,19 +145,19 @@ export default function TeacherDashboardPage() {
     labels: classAttendance.map((item) => item.label),
     datasets: [
       {
-        label: "Present",
+        label: t("dashboard.present"),
         data: classAttendance.map((item) => item.present_count),
         backgroundColor: "#22c55e",
         borderRadius: 10,
       },
       {
-        label: "Absent",
+        label: t("dashboard.absent"),
         data: classAttendance.map((item) => item.absent_count),
         backgroundColor: "#ef4444",
         borderRadius: 10,
       },
       {
-        label: "Leave",
+        label: t("dashboard.leave"),
         data: classAttendance.map((item) => item.leave_count),
         backgroundColor: "#f59e0b",
         borderRadius: 10,
@@ -183,32 +185,32 @@ export default function TeacherDashboardPage() {
   };
 
   if (isLoading) {
-    return <div className="dashboard-panel">Loading...</div>;
+    return <div className="dashboard-panel">{t("dashboard.loading")}</div>;
   }
 
   return (
     <div className="dashboard-page teacher-dashboard">
       <section className="dashboard-hero teacher-dashboard__hero">
         <div className="teacher-dashboard__heroCopy">
-          <div className="dashboard-chip">Teacher Workspace</div>
+          <div className="dashboard-chip">{t("dashboard.teacherWorkspace")}</div>
           <h1 className="dashboard-greeting">{getGreeting()}</h1>
-          <h2 className="dashboard-username">{user?.name || data?.teacher?.name || "Teacher"}</h2>
+          <h2 className="dashboard-username">{user?.name || data?.teacher?.name || t("dashboard.teacherDefaultName")}</h2>
           <p className="dashboard-description">
-            Track your day from one place with live attendance, assigned class activity, notices, holidays, and pending work.
+            {t("dashboard.teacherHeroDesc")}
           </p>
         </div>
 
         <article className="dashboard-panel teacher-dashboard__attendanceCard">
           <div className="teacher-dashboard__attendanceHeader">
             <div>
-              <div className="dashboard-statLabel">Today&apos;s Attendance</div>
+              <div className="dashboard-statLabel">{t("dashboard.todaysAttendance")}</div>
               <div className={`teacher-dashboard__status teacher-dashboard__status--${isCheckedIn ? "in" : data?.today_attendance?.check_out_at ? "out" : "idle"}`}>
                 {statusLabel}
               </div>
             </div>
             <div className="teacher-dashboard__locationHint">
               <MapPin size={16} />
-              <span>Location enabled check-in</span>
+              <span>{t("dashboard.locationEnabledCheckIn")}</span>
             </div>
           </div>
 
@@ -221,8 +223,8 @@ export default function TeacherDashboardPage() {
           </div>
 
           <div className="teacher-dashboard__attendanceMeta">
-            <span>Check-in: {data?.today_attendance?.check_in_at ? new Date(data.today_attendance.check_in_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "-"}</span>
-            <span>Check-out: {data?.today_attendance?.check_out_at ? new Date(data.today_attendance.check_out_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "-"}</span>
+            <span>{t("dashboard.checkIn")}: {data?.today_attendance?.check_in_at ? new Date(data.today_attendance.check_in_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "-"}</span>
+            <span>{t("dashboard.checkOut")}: {data?.today_attendance?.check_out_at ? new Date(data.today_attendance.check_out_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "-"}</span>
           </div>
 
           {actionMessage ? <div className="dashboard-inlineMessage success">{actionMessage}</div> : null}
@@ -239,7 +241,7 @@ export default function TeacherDashboardPage() {
                 checkInMutation.mutate();
               }}
             >
-              {checkInMutation.isPending ? "Checking In..." : "Check In"}
+              {checkInMutation.isPending ? t("dashboard.checkingIn") : t("dashboard.checkIn")}
             </button>
             <button
               type="button"
@@ -251,25 +253,25 @@ export default function TeacherDashboardPage() {
                 checkOutMutation.mutate();
               }}
             >
-              {checkOutMutation.isPending ? "Checking Out..." : "Check Out"}
+              {checkOutMutation.isPending ? t("dashboard.checkingOut") : t("dashboard.checkOut")}
             </button>
           </div>
         </article>
       </section>
 
       <section className="dashboard-stats">
-        <StatCard accent="#2563eb" label="Assigned Classes" value={data?.stats.assigned_class_count || 0} subvalue={`${(data?.teacher?.assigned_classes || []).length || 0} mapped labels`} icon={GraduationCap} />
-        <StatCard accent="#059669" label="Total Students" value={data?.stats.total_student_count || 0} subvalue="Across assigned classes / courses" icon={Users} />
-        <StatCard accent="#ea580c" label="Pending Leave" value={data?.stats.pending_leave_count || 0} subvalue="Your pending leave requests" icon={CalendarDays} />
-        <StatCard accent="#7c3aed" label="Attendance Pending" value={data?.stats.classes_pending_attendance || 0} subvalue="Assigned classes with no marks today" icon={BookCheck} />
+        <StatCard accent="#2563eb" label="dashboard.assignedClasses" value={data?.stats.assigned_class_count || 0} subvalue={t("dashboard.mappedLabels", { count: (data?.teacher?.assigned_classes || []).length || 0 })} icon={GraduationCap} />
+        <StatCard accent="#059669" label="dashboard.totalStudents" value={data?.stats.total_student_count || 0} subvalue="dashboard.totalStudentsAcross" icon={Users} />
+        <StatCard accent="#ea580c" label="dashboard.pendingLeave" value={data?.stats.pending_leave_count || 0} subvalue="dashboard.pendingLeaveSub" icon={CalendarDays} />
+        <StatCard accent="#7c3aed" label="dashboard.attendancePending" value={data?.stats.classes_pending_attendance || 0} subvalue="dashboard.attendancePendingSub" icon={BookCheck} />
       </section>
 
       <section className="dashboard-insights teacher-dashboard__insights">
         <article className="dashboard-panel dashboard-chartCard">
           <div className="dashboard-cardHeader">
             <div>
-              <h2>Students Attendance Today</h2>
-              <p>All marked attendance from your assigned classes and courses</p>
+              <h2>{t("dashboard.studentsAttendanceToday")}</h2>
+              <p>{t("dashboard.studentsAttendanceSub")}</p>
             </div>
           </div>
           <div className="dashboard-doughnutWrap">
@@ -277,16 +279,16 @@ export default function TeacherDashboardPage() {
               <Doughnut data={attendanceChartData} options={{ responsive: true, maintainAspectRatio: false, plugins: { legend: { position: "bottom" } } }} />
               <div className="dashboard-doughnutCenter">
                 <strong>{attendance?.present_percentage || 0}%</strong>
-                <span>present</span>
+                <span>{t("dashboard.presentLower")}</span>
               </div>
             </div>
             <div className="dashboard-chartSummary">
               <div className="dashboard-chartSummaryCard success">
-                <span>Present</span>
+                <span>{t("dashboard.present")}</span>
                 <strong>{attendance?.present_count || 0}</strong>
               </div>
               <div className="dashboard-chartSummaryCard danger">
-                <span>Absent</span>
+                <span>{t("dashboard.absent")}</span>
                 <strong>{attendance?.absent_count || 0}</strong>
               </div>
             </div>
@@ -296,15 +298,15 @@ export default function TeacherDashboardPage() {
         <article className="dashboard-panel dashboard-chartCard dashboard-chartCardWide">
           <div className="dashboard-cardHeader">
             <div>
-              <h2>Class-wise Attendance</h2>
-              <p>Today&apos;s attendance split across your assigned classes and courses</p>
+              <h2>{t("dashboard.classWiseAttendance")}</h2>
+              <p>{t("dashboard.classWiseAttendanceSub")}</p>
             </div>
           </div>
           <div className="dashboard-chartArea teacher-dashboard__barChart">
             {classAttendance.length ? (
               <Bar data={classChartData} options={classChartOptions} />
             ) : (
-              <div className="dashboard-empty">No student attendance marked yet for your assigned classes today.</div>
+              <div className="dashboard-empty">{t("dashboard.noStudentAttendance")}</div>
             )}
           </div>
         </article>
@@ -312,7 +314,7 @@ export default function TeacherDashboardPage() {
 
       <section className="dashboard-grid">
         <div className="dashboard-stack">
-          <Panel title="Notice Board" subtitle="Recent updates">
+          <Panel title="dashboard.noticeBoard" subtitle="dashboard.recentUpdates">
             <NoticeList
               notices={data?.recent_notices}
               exams={data?.upcoming_exams}
@@ -323,38 +325,38 @@ export default function TeacherDashboardPage() {
             />
           </Panel>
 
-          <Panel title="Upcoming Holidays" subtitle="Plan ahead">
+          <Panel title="dashboard.upcomingHolidays" subtitle="dashboard.planAhead">
             <HolidayList holidays={data?.upcoming_holidays} shortDate={shortDate} />
           </Panel>
         </div>
 
         <div className="dashboard-stack">
-          <Panel title="Pending Work" subtitle="Things that still need your attention">
+          <Panel title="dashboard.pendingWork" subtitle="dashboard.pendingWorkSub">
             <div className="teacher-dashboard__pendingList">
               <div className="teacher-dashboard__pendingItem">
                 <Bell size={18} />
                 <div>
-                  <strong>{data?.stats.classes_pending_attendance || 0} classes pending attendance</strong>
-                  <p>Classes or courses under you with no marked student attendance today.</p>
+                  <strong>{t("dashboard.classesPendingAttendance", { count: data?.stats.classes_pending_attendance || 0 })}</strong>
+                  <p>{t("dashboard.classesPendingAttendanceDesc")}</p>
                 </div>
               </div>
               <div className="teacher-dashboard__pendingItem">
                 <CalendarDays size={18} />
                 <div>
-                  <strong>{data?.stats.pending_leave_count || 0} leave requests pending</strong>
-                  <p>Your leave applications that are still waiting for review.</p>
+                  <strong>{t("dashboard.leaveRequestsPending", { count: data?.stats.pending_leave_count || 0 })}</strong>
+                  <p>{t("dashboard.leaveRequestsPendingDesc")}</p>
                 </div>
               </div>
               <div className="teacher-dashboard__pendingItem">
                 <Timer size={18} />
                 <div>
-                  <strong>{data?.today_attendance?.check_in_at ? (data?.today_attendance?.check_out_at ? "Day closed" : "Check-out pending") : "Check-in pending"}</strong>
+                  <strong>{data?.today_attendance?.check_in_at ? (data?.today_attendance?.check_out_at ? t("dashboard.dayClosed") : t("dashboard.checkOutPending")) : t("dashboard.checkInPending")}</strong>
                   <p>
                     {data?.today_attendance?.check_in_at
                       ? data?.today_attendance?.check_out_at
-                        ? "Your attendance for today is complete."
-                        : "Remember to check out once your day is over."
-                      : "Start the day with a location-based check-in."}
+                        ? t("dashboard.attendanceComplete")
+                        : t("dashboard.rememberCheckOut")
+                      : t("dashboard.startDayCheckIn")}
                   </p>
                 </div>
               </div>

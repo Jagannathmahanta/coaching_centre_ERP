@@ -21,6 +21,7 @@ export type FeeDefinition = {
   duration_months: number;
   session_start_month?: number | null;
   session_end_month?: number | null;
+  admission_total: string | number;
   tuition_total: string | number;
   hostel_total: string | number;
   transport_total: string | number;
@@ -46,10 +47,12 @@ export type Installment = {
   late_fee_amount?: string | number;
   discount_amount?: string | number;
   waived_amount?: string | number;
+  admission_amount: string | number;
   tuition_amount: string | number;
   hostel_amount: string | number;
   transport_amount: string | number;
   paid_amount: string | number;
+  paid_admission_amount?: string | number;
   paid_tuition_amount?: string | number;
   paid_hostel_amount?: string | number;
   paid_transport_amount?: string | number;
@@ -67,6 +70,10 @@ export type FeeSummary = {
   total_collected?: string | number;
   total_paid?: string | number;
   total_pending: string | number;
+  admission_billed: string | number;
+  admission_collected?: string | number;
+  admission_paid?: string | number;
+  admission_pending: string | number;
   tuition_billed: string | number;
   tuition_collected?: string | number;
   tuition_paid?: string | number;
@@ -92,6 +99,7 @@ export type FeePaymentRecord = {
   fee_id?: number | null;
   amount: string | number;
   advance_amount?: string | number;
+  admission_amount?: string | number;
   tuition_amount?: string | number;
   hostel_amount?: string | number;
   transport_amount?: string | number;
@@ -125,7 +133,7 @@ export type CollectionBoard = {
   }>;
 };
 
-export type PaymentDraftState = Record<number, { tuition: string; hostel: string; transport: string; adjustment: string }>;
+export type PaymentDraftState = Record<number, { admission: string; tuition: string; hostel: string; transport: string; adjustment: string }>;
 export type AdjustmentDraftState = Record<number, { late_fee_amount: string; discount_amount: string; waived_amount: string }>;
 
 export type PlanFormState = {
@@ -149,6 +157,7 @@ export type DefinitionFormState = {
   duration_months: string;
   session_start_month: string;
   session_end_month: string;
+  admission_total: string;
   tuition_total: string;
   hostel_total: string;
   transport_total: string;
@@ -163,6 +172,10 @@ export const emptyFeeSummary: FeeSummary = {
   total_collected: 0,
   total_paid: 0,
   total_pending: 0,
+  admission_billed: 0,
+  admission_collected: 0,
+  admission_paid: 0,
+  admission_pending: 0,
   tuition_billed: 0,
   tuition_collected: 0,
   tuition_paid: 0,
@@ -198,6 +211,7 @@ export const initialDefinitionForm: DefinitionFormState = {
   duration_months: "12",
   session_start_month: "3",
   session_end_month: "2",
+  admission_total: "3000",
   tuition_total: "24000",
   hostel_total: "18000",
   transport_total: "18000",

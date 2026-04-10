@@ -14,6 +14,7 @@ import {
   SUBJECT_OPTIONS,
   type TeacherFormState,
 } from "../types/teacher.types";
+import { validateOptionalEmail, validateOptionalPhone } from "../../../shared/utils/contact";
 
 export function toggleSelection(values: string[], item: string) {
   return values.includes(item) ? values.filter((value) => value !== item) : [...values, item];
@@ -62,7 +63,15 @@ export function useTeachersData() {
   };
 
   const saveTeacherMutation = useMutation({
-    mutationFn: () => saveTeacher(editingTeacherId, form),
+    mutationFn: () => {
+      const contactError =
+        validateOptionalPhone(form.phone, "Teacher mobile")
+        || validateOptionalEmail(form.email, "Teacher email");
+      if (contactError) {
+        throw new Error(contactError);
+      }
+      return saveTeacher(editingTeacherId, form);
+    },
     onSuccess: async () => {
       setMessage(editingTeacherId ? "Teacher updated." : "Teacher created.");
       setError("");
@@ -70,7 +79,7 @@ export function useTeachersData() {
       await queryClient.invalidateQueries({ queryKey: ["teachers"] });
     },
     onError: (mutationError: any) => {
-      setError(mutationError.response?.data?.error || "Failed to save teacher.");
+      setError(mutationError.response?.data?.error || mutationError.message || "Failed to save teacher.");
       setMessage("");
     },
   });
@@ -94,6 +103,7 @@ export function useTeachersData() {
       name: teacher.name || "",
       phone: teacher.phone || "",
       email: teacher.email || "",
+      is_staff: Boolean(teacher.is_staff),
       gender: teacher.gender || "male",
       qualification: teacher.qualification || "",
       assigned_subjects: teacher.assigned_subjects || [],

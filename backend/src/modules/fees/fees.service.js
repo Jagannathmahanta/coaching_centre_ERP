@@ -17,6 +17,9 @@ const buildComponentSummarySelect = (totalPaidAlias, statusExpr) => `
   COALESCE(SUM(total_amount), 0) AS total_billed,
   COALESCE(SUM(paid_amount), 0) AS ${totalPaidAlias},
   COALESCE(SUM(balance), 0) AS total_pending,
+  COALESCE(SUM(admission_amount), 0) AS admission_billed,
+  COALESCE(SUM(paid_admission_amount), 0) AS admission_paid,
+  COALESCE(SUM(admission_amount - paid_admission_amount), 0) AS admission_pending,
   COALESCE(SUM(tuition_amount), 0) AS tuition_billed,
   COALESCE(SUM(paid_tuition_amount), 0) AS tuition_paid,
   COALESCE(SUM(tuition_amount - paid_tuition_amount), 0) AS tuition_pending,
@@ -32,11 +35,17 @@ const buildComponentSummarySelect = (totalPaidAlias, statusExpr) => `
 `;
 
 const getFeeComponentBalances = (fee) => {
+  let admission = roundMoney(Number(fee.admission_amount || 0) - Number(fee.paid_admission_amount || 0));
   let tuition = roundMoney(Number(fee.tuition_amount) - Number(fee.paid_tuition_amount || 0));
   let hostel = roundMoney(Number(fee.hostel_amount) - Number(fee.paid_hostel_amount || 0));
   let transport = roundMoney(Number(fee.transport_amount) - Number(fee.paid_transport_amount || 0));
 
   let concessionLeft = roundMoney(Number(fee.discount_amount || 0) + Number(fee.waived_amount || 0));
+  if (concessionLeft > 0) {
+    const admissionReduction = roundMoney(Math.min(concessionLeft, admission));
+    admission = roundMoney(admission - admissionReduction);
+    concessionLeft = roundMoney(concessionLeft - admissionReduction);
+  }
   if (concessionLeft > 0) {
     const tuitionReduction = roundMoney(Math.min(concessionLeft, tuition));
     tuition = roundMoney(tuition - tuitionReduction);
@@ -55,12 +64,15 @@ const getFeeComponentBalances = (fee) => {
 
   const adjustment = roundMoney(Math.max(0, Number(fee.late_fee_amount || 0) - Number(fee.paid_adjustment_amount || 0)));
 
-  return { tuition, hostel, transport, adjustment };
+  return { admission, tuition, hostel, transport, adjustment };
 };
 
 const allocateSequentially = (amount, fee) => {
   const remaining = getFeeComponentBalances(fee);
   let pending = amount;
+
+  const admission = roundMoney(Math.min(pending, remaining.admission));
+  pending = roundMoney(pending - admission);
 
   const tuition = roundMoney(Math.min(pending, remaining.tuition));
   pending = roundMoney(pending - tuition);
@@ -72,11 +84,12 @@ const allocateSequentially = (amount, fee) => {
   pending = roundMoney(pending - transport);
   const adjustment = roundMoney(Math.min(pending, remaining.adjustment));
 
-  return { tuition, hostel, transport, adjustment };
+  return { admission, tuition, hostel, transport, adjustment };
 };
 
 const parsePaymentBreakdown = (paymentInput, fee) => {
   const hasExplicitBreakdown =
+    paymentInput.admission_amount !== undefined ||
     paymentInput.tuition_amount !== undefined ||
     paymentInput.hostel_amount !== undefined ||
     paymentInput.transport_amount !== undefined ||
@@ -94,30 +107,32 @@ const parsePaymentBreakdown = (paymentInput, fee) => {
   }
 
   const remaining = getFeeComponentBalances(fee);
+  const admission = roundMoney(Number(paymentInput.admission_amount || 0));
   const tuition = roundMoney(Number(paymentInput.tuition_amount || 0));
   const hostel = roundMoney(Number(paymentInput.hostel_amount || 0));
   const transport = roundMoney(Number(paymentInput.transport_amount || 0));
   const adjustment = roundMoney(Number(paymentInput.adjustment_amount || 0));
-  const amount = roundMoney(tuition + hostel + transport + adjustment);
+  const amount = roundMoney(admission + tuition + hostel + transport + adjustment);
 
   if (amount <= 0) {
     throw createAppError("Enter at least one fee head amount to record payment.");
   }
 
   if (
+    admission > remaining.admission ||
     tuition > remaining.tuition ||
     hostel > remaining.hostel ||
     transport > remaining.transport ||
     adjustment > remaining.adjustment
   ) {
-    throw createAppError("Entered installment payment is greater than the pending tuition, hostel, transport, or adjustment amount. For extra or advance payment, use Student Payment And Advance.");
+    throw createAppError("Entered installment payment is greater than the pending admission, tuition, hostel, transport, or adjustment amount. For extra or advance payment, use Student Payment And Advance.");
   }
 
   if (amount > Number(fee.balance)) {
     throw createAppError("Payment amount cannot be greater than the remaining balance for this installment.");
   }
 
-  return { amount, tuition, hostel, transport, adjustment };
+  return { amount, admission, tuition, hostel, transport, adjustment };
 };
 
 const normalizeStudentPaymentMode = (value) => {
@@ -234,12 +249,13 @@ exports.createFeeStructure = async (req) => {
       duration_months,
       session_start_month,
       session_end_month,
+      admission_total,
       tuition_total,
       hostel_total,
       transport_total,
       description
     )
-    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
+    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)
     RETURNING *
     `,
     [
@@ -256,6 +272,7 @@ exports.createFeeStructure = async (req) => {
       durationMonths,
       body.session_start_month ? Number(body.session_start_month) : null,
       body.session_end_month ? Number(body.session_end_month) : null,
+      roundMoney(body.admission_total || 0),
       validatePositiveAmount(body.tuition_total, "tuition_total"),
       roundMoney(body.hostel_total || 0),
       roundMoney(body.transport_total || 0),
@@ -321,13 +338,14 @@ exports.updateFeeStructure = async (req) => {
       duration_months = $10,
       session_start_month = $11,
       session_end_month = $12,
-      tuition_total = $13,
-      hostel_total = $14,
-      transport_total = $15,
-      description = $16,
+      admission_total = $13,
+      tuition_total = $14,
+      hostel_total = $15,
+      transport_total = $16,
+      description = $17,
       updated_at = NOW()
-    WHERE id = $17
-      AND center_id = $18
+    WHERE id = $18
+      AND center_id = $19
     RETURNING *
     `,
     [
@@ -343,6 +361,7 @@ exports.updateFeeStructure = async (req) => {
       durationMonths,
       body.session_start_month !== undefined ? Number(body.session_start_month || 0) || null : current.session_start_month,
       body.session_end_month !== undefined ? Number(body.session_end_month || 0) || null : current.session_end_month,
+      roundMoney(body.admission_total !== undefined ? body.admission_total : current.admission_total || 0),
       validatePositiveAmount(body.tuition_total !== undefined ? body.tuition_total : current.tuition_total, "tuition_total"),
       roundMoney(body.hostel_total !== undefined ? body.hostel_total : current.hostel_total || 0),
       roundMoney(body.transport_total !== undefined ? body.transport_total : current.transport_total || 0),
@@ -569,6 +588,7 @@ const applyPaymentToFee = async (client, fee, paymentInput, req) => {
   const paymentDate = paymentInput.payment_date || formatDate(new Date());
 
   const newPaidAmount = roundMoney(Number(fee.paid_amount) + amount);
+  const newPaidAdmissionAmount = roundMoney(Number(fee.paid_admission_amount || 0) + paymentBreakdown.admission);
   const newPaidTuitionAmount = roundMoney(Number(fee.paid_tuition_amount || 0) + paymentBreakdown.tuition);
   const newPaidHostelAmount = roundMoney(Number(fee.paid_hostel_amount || 0) + paymentBreakdown.hostel);
   const newPaidTransportAmount = roundMoney(Number(fee.paid_transport_amount || 0) + paymentBreakdown.transport);
@@ -580,20 +600,22 @@ const applyPaymentToFee = async (client, fee, paymentInput, req) => {
     `
     UPDATE fees
     SET paid_amount = $1,
-        paid_tuition_amount = $2,
-        paid_hostel_amount = $3,
-        paid_transport_amount = $4,
-        paid_adjustment_amount = $5,
-        balance = $6,
-        status = $7,
-        last_payment_date = $8,
+        paid_admission_amount = $2,
+        paid_tuition_amount = $3,
+        paid_hostel_amount = $4,
+        paid_transport_amount = $5,
+        paid_adjustment_amount = $6,
+        balance = $7,
+        status = $8,
+        last_payment_date = $9,
         updated_at = NOW()
-    WHERE id = $9
-      AND center_id = $10
+    WHERE id = $10
+      AND center_id = $11
     RETURNING *
     `,
     [
       newPaidAmount,
+      newPaidAdmissionAmount,
       newPaidTuitionAmount,
       newPaidHostelAmount,
       newPaidTransportAmount,
@@ -613,6 +635,7 @@ const applyPaymentToFee = async (client, fee, paymentInput, req) => {
       student_id,
       center_id,
       amount,
+      admission_amount,
       tuition_amount,
       hostel_amount,
       transport_amount,
@@ -622,13 +645,14 @@ const applyPaymentToFee = async (client, fee, paymentInput, req) => {
       transaction_id,
       notes
     )
-    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
     `,
     [
       fee.id,
       fee.student_id,
       req.user.center_id,
       amount,
+      paymentBreakdown.admission,
       paymentBreakdown.tuition,
       paymentBreakdown.hostel,
       paymentBreakdown.transport,
@@ -668,6 +692,7 @@ const createAdvancePaymentRecord = async (client, req, studentId, paymentInput) 
       center_id,
       amount,
       advance_amount,
+      admission_amount,
       tuition_amount,
       hostel_amount,
       transport_amount,
@@ -677,7 +702,7 @@ const createAdvancePaymentRecord = async (client, req, studentId, paymentInput) 
       transaction_id,
       notes
     )
-    VALUES (NULL,$1,$2,$3,$4,0,0,0,0,$5,$6,$7,$8)
+    VALUES (NULL,$1,$2,$3,$4,0,0,0,0,0,$5,$6,$7,$8)
     `,
     [
       studentId,
@@ -981,7 +1006,12 @@ exports.adjustFee = async (req) => {
       throw createAppError("late_fee_amount, discount_amount, and waived_amount cannot be negative.");
     }
 
-    const baseAmount = roundMoney(Number(fee.tuition_amount) + Number(fee.hostel_amount) + Number(fee.transport_amount));
+    const baseAmount = roundMoney(
+      Number(fee.admission_amount || 0) +
+      Number(fee.tuition_amount) +
+      Number(fee.hostel_amount) +
+      Number(fee.transport_amount)
+    );
     const adjustedTotal = roundMoney(baseAmount + lateFeeAmount - discountAmount - waivedAmount);
     if (adjustedTotal < 0) {
       throw createAppError("Adjusted total cannot be negative.");

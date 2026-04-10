@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import { useI18n } from "../../../shared/i18n/I18nProvider";
 
 type ResultItem = {
   exam_id: number;
@@ -21,9 +22,10 @@ export const ResultList = ({
   downloadResultBatch,
 }: Props) => {
   const navigate = useNavigate();
+  const { t } = useI18n();
 
   if (!results?.length) {
-    return <div className="dashboard-empty">No recent result batches yet.</div>;
+    return <div className="dashboard-empty">{t("dashboard.noRecentResultBatches")}</div>;
   }
 
   return (
@@ -42,21 +44,21 @@ export const ResultList = ({
 
           <div className="dashboard-resultActions">
             {isNewBatch(item.last_result_at) && (
-              <span className="dashboard-badge new">New</span>
+              <span className="dashboard-badge new">{t("dashboard.new")}</span>
             )}
 
             <button
               className="dashboard-actionLink"
               onClick={() => downloadResultBatch(item.exam_id)}
             >
-              Download Result
+              {t("dashboard.downloadResult")}
             </button>
 
             <button
               className="dashboard-actionLink secondary"
               onClick={() => navigate("/exams")}
             >
-              Open
+              {t("dashboard.open")}
             </button>
           </div>
         </div>

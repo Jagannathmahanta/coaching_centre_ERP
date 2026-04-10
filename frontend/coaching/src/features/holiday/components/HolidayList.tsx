@@ -1,4 +1,5 @@
 import type { Holiday } from "../types/holiday.types";
+import { useI18n } from "../../../shared/i18n/I18nProvider";
 
 const dangerButton = {
   background: "#fff1f2",
@@ -21,7 +22,8 @@ export function HolidayList({
   onDelete: (holidayId: number) => void;
   isDisabled: boolean;
 }) {
-  if (isLoading) return <div>Loading holidays...</div>;
+  const { t } = useI18n();
+  if (isLoading) return <div>{t("holiday.loading")}</div>;
 
   return (
     <div style={{ display: "grid", gap: 14 }}>
@@ -30,18 +32,18 @@ export function HolidayList({
           <div>
             <div style={{ fontWeight: 800, color: "#0f172a" }}>{holiday.title}</div>
             <div style={{ color: "#64748b", marginTop: 6 }}>
-              {new Date(holiday.start_date).toLocaleDateString()} to {new Date(holiday.end_date).toLocaleDateString()}
+              {new Date(holiday.start_date).toLocaleDateString()} {t("holiday.to")} {new Date(holiday.end_date).toLocaleDateString()}
             </div>
             {holiday.description && <div style={{ color: "#475569", marginTop: 8 }}>{holiday.description}</div>}
           </div>
           {!isDisabled && (
             <button type="button" style={dangerButton} onClick={() => onDelete(holiday.id)}>
-              Delete
+              {t("holiday.delete")}
             </button>
           )}
         </div>
       ))}
-      {holidays.length === 0 && <div style={{ color: "#6b7280" }}>No holidays added yet.</div>}
+      {holidays.length === 0 && <div style={{ color: "#6b7280" }}>{t("holiday.empty")}</div>}
     </div>
   );
 }

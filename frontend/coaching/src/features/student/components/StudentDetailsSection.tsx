@@ -17,10 +17,10 @@ export function StudentDetailsSection({
           <input value={form.name} onChange={(e) => onChange("name", e.target.value)} required style={inputStyle} />
         </Field>
         <Field label="Phone">
-          <input value={form.phone} onChange={(e) => onChange("phone", e.target.value)} style={inputStyle} />
+          <input value={form.phone} onChange={(e) => onChange("phone", e.target.value)} inputMode="numeric" maxLength={10} placeholder="10 digit mobile" style={inputStyle} />
         </Field>
         <Field label="Email">
-          <input value={form.email} onChange={(e) => onChange("email", e.target.value)} type="email" style={inputStyle} />
+          <input value={form.email} onChange={(e) => onChange("email", e.target.value)} type="email" placeholder="name@example.com" style={inputStyle} />
         </Field>
         <Field label="Gender">
           <select value={form.gender} onChange={(e) => onChange("gender", e.target.value)} style={inputStyle}>

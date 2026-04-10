@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { useI18n } from "../../../shared/i18n/I18nProvider";
 
 type Props = {
   title: string;
@@ -7,12 +8,13 @@ type Props = {
 };
 
 export const Panel = ({ title, subtitle, children }: Props) => {
+  const { t } = useI18n();
   return (
     <section className="dashboard-panel">
       <div className="dashboard-cardHeader">
         <div>
-          <h2>{title}</h2>
-          <p>{subtitle}</p>
+          <h2>{t(title)}</h2>
+          <p>{t(subtitle)}</p>
         </div>
       </div>
       {children}

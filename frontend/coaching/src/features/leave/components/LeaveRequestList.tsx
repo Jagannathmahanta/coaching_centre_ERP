@@ -1,4 +1,5 @@
 import type { LeaveRequest } from "../types/leave.types";
+import { useI18n } from "../../../shared/i18n/I18nProvider";
 
 const secondaryButton = {
   background: "#eff6ff",
@@ -45,6 +46,7 @@ export function LeaveRequestList({
   onReject: (leave: LeaveRequest) => void;
   onDelete: (leaveId: number) => void;
 }) {
+  const { t } = useI18n();
   return (
     <div style={{ display: "grid", gap: 14 }}>
       {leaves.map((leave) => (
@@ -62,22 +64,22 @@ export function LeaveRequestList({
                 fontSize: 12,
                 textTransform: "capitalize",
               }}>
-                {leave.status}
+                {leave.status === "approved" ? t("leave.approved") : leave.status === "rejected" ? t("leave.rejected") : t("leave.pending")}
               </span>
-              <span style={{ color: "#64748b", textTransform: "capitalize" }}>{leave.applicant_type}</span>
+              <span style={{ color: "#64748b", textTransform: "capitalize" }}>{leave.applicant_type === "teacher" ? t("leave.teacher") : t("leave.student")}</span>
             </div>
             <div style={{ color: "#334155" }}>
-              {leave.leave_type} | {new Date(leave.from_date).toLocaleDateString("en-IN")} to {new Date(leave.to_date).toLocaleDateString("en-IN")} | {leave.total_days} day{leave.total_days > 1 ? "s" : ""}
+              {leave.leave_type} | {new Date(leave.from_date).toLocaleDateString("en-IN")} {t("holiday.to")} {new Date(leave.to_date).toLocaleDateString("en-IN")} | {leave.total_days > 1 ? t("leave.days", { count: leave.total_days }) : t("leave.day", { count: leave.total_days })}
             </div>
             {(leave.student_class || leave.roll_number) && (
               <div style={{ color: "#64748b" }}>
-                {leave.student_class ? `Class: ${leave.student_class}` : ""}{leave.student_class && leave.roll_number ? " | " : ""}{leave.roll_number ? `Admission No: ${leave.roll_number}` : ""}
+                {leave.student_class ? `${t("leave.classLabel")}: ${leave.student_class}` : ""}{leave.student_class && leave.roll_number ? " | " : ""}{leave.roll_number ? `${t("leave.admissionNo")}: ${leave.roll_number}` : ""}
               </div>
             )}
             {leave.reason && <div style={{ color: "#475569" }}>{leave.reason}</div>}
             {(leave.reviewed_by_name || leave.review_note) && (
               <div style={{ color: "#64748b" }}>
-                Reviewed by {leave.reviewed_by_name || "admin"}{leave.reviewed_at ? ` on ${new Date(leave.reviewed_at).toLocaleDateString("en-IN")}` : ""}{leave.review_note ? ` | ${leave.review_note}` : ""}
+                {t("leave.reviewedBy", { name: leave.reviewed_by_name || "admin" })}{leave.reviewed_at ? ` ${t("leave.reviewedOn", { date: new Date(leave.reviewed_at).toLocaleDateString("en-IN") })}` : ""}{leave.review_note ? ` | ${leave.review_note}` : ""}
               </div>
             )}
           </div>
@@ -85,12 +87,12 @@ export function LeaveRequestList({
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap", justifyContent: "flex-end" }}>
             {isManager && (
               <>
-                <button type="button" style={secondaryButton} onClick={() => onReview(leave)}>Review</button>
+                <button type="button" style={secondaryButton} onClick={() => onReview(leave)}>{t("leave.review")}</button>
                 {leave.status === "pending" && (
                   <>
-                    <button type="button" style={successButton} onClick={() => onApprove(leave)}>Approve</button>
-                    <button type="button" style={dangerButton} onClick={() => onReject(leave)}>Reject</button>
-                    <button type="button" style={dangerButton} onClick={() => onDelete(leave.id)}>Delete</button>
+                    <button type="button" style={successButton} onClick={() => onApprove(leave)}>{t("leave.approve")}</button>
+                    <button type="button" style={dangerButton} onClick={() => onReject(leave)}>{t("leave.reject")}</button>
+                    <button type="button" style={dangerButton} onClick={() => onDelete(leave.id)}>{t("leave.delete")}</button>
                   </>
                 )}
               </>
@@ -98,7 +100,7 @@ export function LeaveRequestList({
           </div>
         </div>
       ))}
-      {leaves.length === 0 && <div style={{ color: "#6b7280" }}>No leave requests found.</div>}
+      {leaves.length === 0 && <div style={{ color: "#6b7280" }}>{t("leave.noRequests")}</div>}
     </div>
   );
 }

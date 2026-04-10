@@ -1,3 +1,5 @@
+import { useI18n } from "../../../shared/i18n/I18nProvider";
+
 type HolidayItem = {
   id: number;
   title: string;
@@ -12,8 +14,9 @@ type Props = {
 };
 
 export const HolidayList = ({ holidays, shortDate }: Props) => {
+  const { t } = useI18n();
   if (!holidays?.length) {
-    return <div className="dashboard-empty">No holidays added yet.</div>;
+    return <div className="dashboard-empty">{t("dashboard.noHolidaysAdded")}</div>;
   }
 
   return (
@@ -26,7 +29,7 @@ export const HolidayList = ({ holidays, shortDate }: Props) => {
           </div>
 
           <div className="dashboard-listMeta">
-            {shortDate(holiday.start_date)} to {shortDate(holiday.end_date)}
+            {shortDate(holiday.start_date)} {t("holiday.to")} {shortDate(holiday.end_date)}
           </div>
         </div>
       ))}

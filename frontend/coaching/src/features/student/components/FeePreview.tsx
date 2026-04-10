@@ -17,6 +17,7 @@ export function FeePreview({
     <FormSection title="Live Fee Preview">
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12 }}>
         <Metric label="Applicable Months" value={String(preview.applicableMonths)} />
+        <Metric label="Admission Fee" value={formatCurrency(preview.admissionTotal)} />
         <Metric label="Tuition Total" value={formatCurrency(preview.tuitionTotal)} />
         <Metric label="Hostel Total" value={formatCurrency(preview.hostelTotal)} />
         <Metric label="Transport Total" value={formatCurrency(preview.transportTotal)} />

@@ -112,6 +112,15 @@ export type DashboardAnalytics = {
 };
 
 export type DashboardResponse = {
+  tenant?: {
+    id: number;
+    name: string;
+    slug: string;
+    city?: string | null;
+    status: string;
+    plan?: string | null;
+    created_at: string;
+  } | null;
   stats: DashboardStatBlock;
   recent_notices: NoticeItem[];
   upcoming_exams: ExamItem[];
@@ -129,6 +138,23 @@ export type DashboardResponse = {
   }>;
   pending_fees: PendingFeeItem[];
   analytics: DashboardAnalytics;
+};
+
+export type PlatformCenterItem = {
+  id: number;
+  name: string;
+  slug: string;
+  city?: string | null;
+  status: string;
+  plan?: string | null;
+  created_at: string;
+  admin_count: number;
+  student_count: number;
+  active_teacher_count: number;
+};
+
+export type PlatformCentersResponse = {
+  centers: PlatformCenterItem[];
 };
 
 export type TeacherTodaySession = {

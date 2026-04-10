@@ -9,6 +9,7 @@ import { useCreateStudentLogin } from "../hooks/useCreateStudentLogin";
 import { useStudentsQuery } from "../hooks/useStudentsQuery";
 import { deleteStudent as deleteStudentRequest } from "../services/students.service";
 import { initialStudentLoginDraft, type StudentRecord } from "../types/students.types";
+import { validateOptionalEmail, validateOptionalPhone } from "../../../shared/utils/contact";
 
 const cardStyle = {
   background: "#fff",
@@ -94,6 +95,13 @@ export default function StudentsPage() {
 
   const handleCreateStudentLogin = async () => {
     try {
+      const contactError =
+        validateOptionalEmail(state.accountDraft.email, "Login email")
+        || validateOptionalPhone(state.accountDraft.phone, "Login mobile");
+      if (contactError) {
+        throw new Error(contactError);
+      }
+
       await createLoginMutation.mutateAsync({
         role: "student",
         student_id: state.accountDraft.studentId,
@@ -106,7 +114,7 @@ export default function StudentsPage() {
       state.setAccountDraft(initialStudentLoginDraft);
       await state.loadStudents();
     } catch (createError: any) {
-      state.setError(createError.response?.data?.error || "Failed to create student login.");
+      state.setError(createError.response?.data?.error || createError.message || "Failed to create student login.");
       state.setMessage("");
     }
   };
@@ -125,8 +133,8 @@ export default function StudentsPage() {
         <button
           onClick={() => navigate("/students/new")}
           style={{
-            background: "linear-gradient(135deg, #7c3aed, #9333ea)",
-            color: "#fff",
+            background: "#334155",
+            color: "#ffffff",
             border: "none",
             borderRadius: 10,
             padding: "12px 18px",

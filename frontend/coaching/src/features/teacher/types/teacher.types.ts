@@ -3,6 +3,7 @@ export type Teacher = {
   name: string;
   phone?: string | null;
   email?: string | null;
+  is_staff?: boolean;
   gender?: string | null;
   qualification?: string | null;
   assigned_subjects?: string[] | null;
@@ -13,6 +14,7 @@ export type Teacher = {
   has_login_account?: boolean;
   login_email?: string | null;
   login_phone?: string | null;
+  login_is_staff?: boolean;
 };
 
 export type FeeStructureOption = {
@@ -31,6 +33,7 @@ export type TeacherFormState = {
   name: string;
   phone: string;
   email: string;
+  is_staff: boolean;
   gender: string;
   qualification: string;
   assigned_subjects: string[];
@@ -68,6 +71,7 @@ export const initialTeacherForm: TeacherFormState = {
   name: "",
   phone: "",
   email: "",
+  is_staff: false,
   gender: "male",
   qualification: "",
   assigned_subjects: [],

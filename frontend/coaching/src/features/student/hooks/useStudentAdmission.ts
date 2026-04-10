@@ -7,6 +7,12 @@ import {
   updateStudentAdmission,
   updateStudentFeePlan,
 } from "../services/students.service";
+import {
+  sanitizeEmailInput,
+  sanitizePhoneInput,
+  validateOptionalEmail,
+  validateOptionalPhone,
+} from "../../../shared/utils/contact";
 import type {
   CatalogBatch,
   CatalogClass,
@@ -196,6 +202,7 @@ export function useStudentAdmission() {
 
     if (applicableMonths <= 0) return null;
 
+    const admissionTotal = Number(selectedDefinition.admission_total || 0);
     const tuitionMonthly = Number(selectedDefinition.tuition_total) / Number(selectedDefinition.duration_months);
     const hostelMonthly = form.include_hostel
       ? Number(selectedDefinition.hostel_total) / Number(selectedDefinition.duration_months)
@@ -219,17 +226,28 @@ export function useStudentAdmission() {
       applicableMonths,
       installmentCount,
       firstInstallmentMonths,
+      admissionTotal,
       tuitionTotal,
       hostelTotal,
       transportTotal,
-      grandTotal: tuitionTotal + hostelTotal + transportTotal,
-      firstInstallmentTotal: (tuitionMonthly + hostelMonthly + transportMonthly) * firstInstallmentMonths,
+      grandTotal: admissionTotal + tuitionTotal + hostelTotal + transportTotal,
+      firstInstallmentTotal: admissionTotal + ((tuitionMonthly + hostelMonthly + transportMonthly) * firstInstallmentMonths),
     };
   }, [selectedDefinition, form.join_date, form.include_hostel, form.include_transport, form.billing_cycle]);
 
   const handleChange = (key: keyof StudentAdmissionForm, value: string | boolean) => {
     setForm((current) => {
-      const next = { ...current, [key]: value };
+      let normalizedValue = value;
+      if (typeof value === "string") {
+        if (key === "phone" || key === "parent_phone") {
+          normalizedValue = sanitizePhoneInput(value);
+        }
+        if (key === "email" || key === "parent_email") {
+          normalizedValue = sanitizeEmailInput(value);
+        }
+      }
+
+      const next = { ...current, [key]: normalizedValue };
 
       if (key === "program_type") {
         next.program_type = String(value) as StudentAdmissionForm["program_type"];
@@ -314,6 +332,16 @@ export function useStudentAdmission() {
     setSuccess("");
 
     try {
+      const contactError =
+        validateOptionalPhone(form.phone, "Student mobile")
+        || validateOptionalEmail(form.email, "Student email")
+        || validateOptionalPhone(form.parent_phone, "Guardian mobile")
+        || validateOptionalEmail(form.parent_email, "Guardian email");
+
+      if (contactError) {
+        throw new Error(contactError);
+      }
+
       if (isEditMode && id) {
         const payload = await updateStudentAdmission(id, form);
         const feePlanChanged = Boolean(
@@ -343,7 +371,7 @@ export function useStudentAdmission() {
         setTimeout(() => navigate("/fees"), 1200);
       }
     } catch (submitError: any) {
-      setError(submitError.response?.data?.error || `Failed to ${isEditMode ? "update" : "create"} admission.`);
+      setError(submitError.response?.data?.error || submitError.message || `Failed to ${isEditMode ? "update" : "create"} admission.`);
     } finally {
       setLoading(false);
     }

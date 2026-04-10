@@ -43,6 +43,7 @@ export async function saveTeacher(editingTeacherId: number | null, form: Teacher
     name: form.name,
     phone: form.phone,
     email: form.email,
+    is_staff: form.is_staff,
     gender: form.gender,
     qualification: form.qualification,
     assigned_subjects: form.assigned_subjects,

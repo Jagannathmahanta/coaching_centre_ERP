@@ -15,7 +15,7 @@ export default function LoginPage() {
 
     useEffect(() => {
         if (isAuthenticated()) {
-            navigate("/", { replace: true });
+            navigate("/dashboard", { replace: true });
         }
     }, [navigate]);
 
@@ -28,7 +28,7 @@ export default function LoginPage() {
             const response = await api.post("/auth/login", { email, password });
             saveAuth(response.data);
             setProfile(response.data.user);
-            navigate("/", { replace: true });
+            navigate("/dashboard", { replace: true });
         } catch (err: any) {
             setError(err?.response?.data?.error || "Login failed. Check your credentials.");
         } finally {

@@ -1,4 +1,5 @@
 import type { StudentLoginDraft } from "../types/students.types";
+import { sanitizeEmailInput, sanitizePhoneInput } from "../../../shared/utils/contact";
 
 const cardStyle = {
   background: "#fff",
@@ -57,7 +58,9 @@ export default function CreateLoginModal({
             Email
             <input
               value={draft.email}
-              onChange={(event) => setDraft((current) => ({ ...current, email: event.target.value }))}
+              onChange={(event) => setDraft((current) => ({ ...current, email: sanitizeEmailInput(event.target.value) }))}
+              type="email"
+              placeholder="name@example.com"
               style={{ ...inputStyle, marginTop: 6 }}
             />
           </label>
@@ -65,7 +68,10 @@ export default function CreateLoginModal({
             Mobile
             <input
               value={draft.phone}
-              onChange={(event) => setDraft((current) => ({ ...current, phone: event.target.value }))}
+              onChange={(event) => setDraft((current) => ({ ...current, phone: sanitizePhoneInput(event.target.value) }))}
+              inputMode="numeric"
+              maxLength={10}
+              placeholder="10 digit mobile"
               style={{ ...inputStyle, marginTop: 6 }}
             />
           </label>

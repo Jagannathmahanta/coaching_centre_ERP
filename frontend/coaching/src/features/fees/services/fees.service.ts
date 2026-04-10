@@ -56,6 +56,7 @@ export async function saveFeeDefinition(editingStructureId: number | null, form:
     duration_months: Number(form.duration_months),
     session_start_month: form.program_type === "academic" ? Number(form.session_start_month) : undefined,
     session_end_month: form.program_type === "academic" ? Number(form.session_end_month) : undefined,
+    admission_total: Number(form.admission_total || 0),
     tuition_total: Number(form.tuition_total),
     hostel_total: Number(form.hostel_total || 0),
     transport_total: Number(form.transport_total || 0),
@@ -114,6 +115,7 @@ export async function updateInstallmentAdjustments(installmentId: number, draft:
 
 export async function payInstallment(installmentId: number, payload: {
   amount: number;
+  admission_amount: number;
   tuition_amount: number;
   hostel_amount: number;
   transport_amount: number;
@@ -137,6 +139,7 @@ export function currency(value: string | number | null | undefined) {
 }
 
 export function getRemainingByHead(installment: Installment, getAdjustmentPreview: (installment: Installment) => { lateFee: number; discount: number; waived: number; adjustedTotal: number; balance: number }) {
+  let admission = Math.max(0, Number(installment.admission_amount || 0) - Number(installment.paid_admission_amount || 0));
   let tuition = Math.max(0, Number(installment.tuition_amount) - Number(installment.paid_tuition_amount || 0));
   let hostel = Math.max(0, Number(installment.hostel_amount) - Number(installment.paid_hostel_amount || 0));
   let transport = Math.max(0, Number(installment.transport_amount) - Number(installment.paid_transport_amount || 0));
@@ -144,6 +147,11 @@ export function getRemainingByHead(installment: Installment, getAdjustmentPrevie
   const adjustmentPreview = getAdjustmentPreview(installment);
   let concessionLeft = Math.max(0, adjustmentPreview.discount + adjustmentPreview.waived);
 
+  if (concessionLeft > 0) {
+    const admissionReduction = Math.min(concessionLeft, admission);
+    admission -= admissionReduction;
+    concessionLeft -= admissionReduction;
+  }
   if (concessionLeft > 0) {
     const tuitionReduction = Math.min(concessionLeft, tuition);
     tuition -= tuitionReduction;
@@ -160,5 +168,5 @@ export function getRemainingByHead(installment: Installment, getAdjustmentPrevie
   }
 
   const adjustment = Math.max(0, adjustmentPreview.lateFee - Number(installment.paid_adjustment_amount || 0));
-  return { tuition, hostel, transport, adjustment };
+  return { admission, tuition, hostel, transport, adjustment };
 }

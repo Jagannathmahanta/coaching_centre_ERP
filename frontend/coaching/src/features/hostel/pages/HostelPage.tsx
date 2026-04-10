@@ -12,7 +12,7 @@ const cardStyle = {
 };
 
 const primaryButton = {
-  background: "linear-gradient(135deg, #7c3aed, #9333ea)",
+   background: "#334155",
   color: "#fff",
   border: "none",
   borderRadius: 10,

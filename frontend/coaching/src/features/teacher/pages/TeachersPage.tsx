@@ -33,6 +33,7 @@ export default function TeachersPage() {
               name: "",
               phone: "",
               email: "",
+              is_staff: false,
               gender: "male",
               qualification: "",
               assigned_subjects: [],
@@ -44,7 +45,7 @@ export default function TeachersPage() {
             state.setShowForm((current) => !current);
           }}
         >
-          {state.showForm ? "Close Form" : "Add Teacher"}
+          {state.showForm ? "Close Form" : "Add Staff"}
         </button>
       </div>
 

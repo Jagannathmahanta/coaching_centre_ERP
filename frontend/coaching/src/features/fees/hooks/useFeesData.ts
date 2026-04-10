@@ -132,6 +132,7 @@ export function useFeesData() {
     const discount = Number(draft.discount_amount || 0);
     const waived = Number(draft.waived_amount || 0);
     const baseAmount =
+      Number(installment.admission_amount || 0) +
       Number(installment.tuition_amount || 0) +
       Number(installment.hostel_amount || 0) +
       Number(installment.transport_amount || 0);
@@ -145,6 +146,7 @@ export function useFeesData() {
   const getPaymentDraft = (installment: Installment) => {
     const remaining = getRemaining(installment);
     return paymentStates[installment.id] || {
+      admission: remaining.admission ? String(remaining.admission) : "",
       tuition: remaining.tuition ? String(remaining.tuition) : "",
       hostel: remaining.hostel ? String(remaining.hostel) : "",
       transport: remaining.transport ? String(remaining.transport) : "",
@@ -159,7 +161,7 @@ export function useFeesData() {
     return String(Math.min(parsed, maxValue));
   };
 
-  const updatePaymentDraft = (installment: Installment, field: "tuition" | "hostel" | "transport" | "adjustment", value: string) => {
+  const updatePaymentDraft = (installment: Installment, field: "admission" | "tuition" | "hostel" | "transport" | "adjustment", value: string) => {
     const remaining = getRemaining(installment);
     const current = getPaymentDraft(installment);
     setPaymentStates((state) => ({
@@ -176,6 +178,7 @@ export function useFeesData() {
     setPaymentStates((state) => ({
       ...state,
       [installment.id]: {
+        admission: remaining.admission ? String(remaining.admission) : "",
         tuition: remaining.tuition ? String(remaining.tuition) : "",
         hostel: remaining.hostel ? String(remaining.hostel) : "",
         transport: remaining.transport ? String(remaining.transport) : "",
@@ -192,10 +195,16 @@ export function useFeesData() {
     const lateFee = Number(nextDraft.late_fee_amount || 0);
     const discount = Number(nextDraft.discount_amount || 0);
     const waived = Number(nextDraft.waived_amount || 0);
+    let admission = Math.max(0, Number(installment.admission_amount || 0) - Number(installment.paid_admission_amount || 0));
     let tuition = Math.max(0, Number(installment.tuition_amount) - Number(installment.paid_tuition_amount || 0));
     let hostel = Math.max(0, Number(installment.hostel_amount) - Number(installment.paid_hostel_amount || 0));
     let transport = Math.max(0, Number(installment.transport_amount) - Number(installment.paid_transport_amount || 0));
     let concessionLeft = Math.max(0, discount + waived);
+    if (concessionLeft > 0) {
+      const reduction = Math.min(concessionLeft, admission);
+      admission -= reduction;
+      concessionLeft -= reduction;
+    }
     if (concessionLeft > 0) {
       const reduction = Math.min(concessionLeft, tuition);
       tuition -= reduction;
@@ -214,6 +223,7 @@ export function useFeesData() {
     setPaymentStates((state) => ({
       ...state,
       [installment.id]: {
+        admission: admission ? String(admission) : "",
         tuition: tuition ? String(tuition) : "",
         hostel: hostel ? String(hostel) : "",
         transport: transport ? String(transport) : "",
@@ -238,7 +248,7 @@ export function useFeesData() {
 
   const getDraftTotal = (installment: Installment) => {
     const draft = getPaymentDraft(installment);
-    return Number(draft.tuition || 0) + Number(draft.hostel || 0) + Number(draft.transport || 0) + Number(draft.adjustment || 0);
+    return Number(draft.admission || 0) + Number(draft.tuition || 0) + Number(draft.hostel || 0) + Number(draft.transport || 0) + Number(draft.adjustment || 0);
   };
 
   const handleCreateDefinition = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -270,6 +280,7 @@ export function useFeesData() {
         duration_months: String(definition.duration_months || 12),
         session_start_month: String(definition.session_start_month || 3),
       session_end_month: String(definition.session_end_month || 2),
+      admission_total: String(definition.admission_total || 0),
       tuition_total: String(definition.tuition_total || 0),
       hostel_total: String(definition.hostel_total || 0),
       transport_total: String(definition.transport_total || 0),
@@ -346,11 +357,12 @@ export function useFeesData() {
     const installment = studentFees?.installments.find((item: Installment) => item.id === installmentId);
     if (!installment) return;
     const draft = getPaymentDraft(installment);
+    const admissionAmount = Number(draft.admission || 0);
     const tuitionAmount = Number(draft.tuition || 0);
     const hostelAmount = Number(draft.hostel || 0);
     const transportAmount = Number(draft.transport || 0);
     const adjustmentAmount = Number(draft.adjustment || 0);
-    const amount = tuitionAmount + hostelAmount + transportAmount + adjustmentAmount;
+    const amount = admissionAmount + tuitionAmount + hostelAmount + transportAmount + adjustmentAmount;
     if (!amount) return;
     setMessage("");
     setError("");
@@ -358,6 +370,7 @@ export function useFeesData() {
       await persistAdjustmentIfNeeded(installment);
       await payInstallment(installmentId, {
         amount,
+        admission_amount: admissionAmount,
         tuition_amount: tuitionAmount,
         hostel_amount: hostelAmount,
         transport_amount: transportAmount,

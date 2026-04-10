@@ -1,3 +1,6 @@
+import { FileText } from "lucide-react";
+import { useI18n } from "../../../shared/i18n/I18nProvider";
+
 type NoticeItem = {
   id: number;
   title: string;
@@ -70,13 +73,14 @@ export const NoticeList = ({
   isNewBatch,
   downloadResultBatch,
 }: Props) => {
+  const { t } = useI18n();
   const feed: FeedItem[] = [
     ...(notices || []).map((notice) => ({
       kind: "notice" as const,
       id: `notice-${notice.id}`,
       title: notice.title,
       description: notice.content,
-      meta: `Posted ${shortDate(notice.created_at)}`,
+      meta: t("dashboard.posted", { date: shortDate(notice.created_at) }),
       priority: (notice.priority || "medium").toLowerCase(),
       timestamp: new Date(notice.created_at).getTime(),
     })),
@@ -84,7 +88,7 @@ export const NoticeList = ({
       kind: "exam" as const,
       id: `exam-${exam.id}`,
       title: exam.exam_name,
-      description: `${exam.subject} | ${exam.class} | ${exam.board || "No board"}`,
+      description: `${exam.subject} | ${exam.class} | ${exam.board || t("dashboard.noBoard")}`,
       meta: `${shortDate(exam.exam_date)}${exam.time ? `, ${exam.time.slice(0, 5)}` : ""}`,
       timestamp: new Date(exam.exam_date).getTime(),
     })),
@@ -93,7 +97,7 @@ export const NoticeList = ({
       id: `result-${result.exam_id}-${index}`,
       title: result.exam_name,
       description: `${result.class} | ${result.subject}`,
-      meta: result.last_result_at ? `Published ${shortDate(result.last_result_at)}` : "Recently published",
+      meta: result.last_result_at ? t("dashboard.publishedLabel", { date: shortDate(result.last_result_at) }) : t("dashboard.recentlyPublished"),
       timestamp: result.last_result_at ? new Date(result.last_result_at).getTime() : 0,
       examId: result.exam_id,
       isNew: isNewBatch ? isNewBatch(result.last_result_at) : false,
@@ -101,7 +105,7 @@ export const NoticeList = ({
   ].sort((a, b) => b.timestamp - a.timestamp);
 
   if (!feed.length) {
-    return <div className="dashboard-empty">No recent notices, exams, or result batches yet.</div>;
+    return <div className="dashboard-empty">{t("dashboard.noRecentFeed")}</div>;
   }
 
   return (
@@ -125,11 +129,11 @@ export const NoticeList = ({
           </div>
 
           {item.kind === "notice" ? (
-            <span className={`dashboard-priority ${item.priority}`}>{item.priority}</span>
+            <span className={`dashboard-priority ${item.priority}`}>{t(`notice.${item.priority}`)}</span>
           ) : null}
 
           {item.kind === "exam" ? (
-            <span className="dashboard-badge">Exam</span>
+            <span className="dashboard-badge">{t("dashboard.examBadge")}</span>
           ) : null}
 
           {item.kind === "result" ? (
@@ -137,7 +141,7 @@ export const NoticeList = ({
               {item.isNew ? (
                 <span className="dashboard-resultNewWrap">
                   <FileText size={16} className="dashboard-resultPdfIcon" />
-                  <span className="dashboard-badge newBatch">New</span>
+                  <span className="dashboard-badge newBatch">{t("dashboard.new")}</span>
                 </span>
               ) : null}
               {downloadResultBatch ? (
@@ -145,7 +149,7 @@ export const NoticeList = ({
                   className="dashboard-actionLink dashboard-actionLink--text"
                   onClick={() => downloadResultBatch(item.examId)}
                 >
-                  Download
+                  {t("dashboard.download")}
                 </button>
               ) : null}
             </div>
@@ -155,4 +159,3 @@ export const NoticeList = ({
     </div>
   );
 };
-import { FileText } from "lucide-react";

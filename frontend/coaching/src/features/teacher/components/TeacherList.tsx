@@ -18,6 +18,20 @@ const tableCellStyle = {
   verticalAlign: "top" as const,
 };
 
+const roleBadgeStyle = (isStaff?: boolean) => ({
+  display: "inline-flex",
+  alignItems: "center",
+  padding: "4px 10px",
+  borderRadius: 999,
+  fontSize: 12,
+  fontWeight: 700,
+  whiteSpace: "nowrap" as const,
+  border: "1px solid",
+  background: isStaff ? "#fff7ed" : "#eff6ff",
+  color: isStaff ? "#c2410c" : "#1d4ed8",
+  borderColor: isStaff ? "#fdba74" : "#bfdbfe",
+});
+
 export function TeacherList({
   teachers,
   loading,
@@ -32,6 +46,9 @@ export function TeacherList({
   onDelete: (teacherId: number) => void;
 }) {
   const [openMenuId, setOpenMenuId] = useState<number | null>(null);
+
+  const isNonTeachingStaff = (teacher: Teacher) =>
+    Boolean(teacher.is_staff ?? teacher.login_is_staff);
 
   useEffect(() => {
     const handleClick = () => setOpenMenuId(null);
@@ -57,6 +74,7 @@ export function TeacherList({
               <tr style={{ background: "#f8fafc" }}>
                 <th style={tableCellStyle}>Sl No</th>
                 <th style={tableCellStyle}>Name</th>
+                <th style={tableCellStyle}>Type</th>
                 <th style={tableCellStyle}>Class / Subject</th>
                 <th style={tableCellStyle}>Contact</th>
                 <th style={tableCellStyle}>Join Date</th>
@@ -65,12 +83,20 @@ export function TeacherList({
               </tr>
             </thead>
             <tbody>
-              {teachers.map((teacher, index) => (
-                <tr key={teacher.id} className="dataTable__row" onClick={() => onView(teacher)}>
+              {teachers.map((teacher, index) => {
+                const isStaff = isNonTeachingStaff(teacher);
+
+                return (
+                  <tr key={teacher.id} className="dataTable__row" onClick={() => onView(teacher)}>
                   <td style={tableCellStyle}>{index + 1}</td>
                   <td style={tableCellStyle}>
                     <div className="dataTable__strong">{teacher.name}</div>
                     <div className="dataTable__subtle">{teacher.qualification || "No qualification added"}</div>
+                  </td>
+                  <td style={tableCellStyle}>
+                    <span style={roleBadgeStyle(isStaff)}>
+                      {isStaff ? "Non-teaching staff" : "Teacher"}
+                    </span>
                   </td>
                   <td style={tableCellStyle}>
                     <div className="dataTable__strong">
@@ -112,8 +138,9 @@ export function TeacherList({
                       ) : null}
                     </div>
                   </td>
-                </tr>
-              ))}
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

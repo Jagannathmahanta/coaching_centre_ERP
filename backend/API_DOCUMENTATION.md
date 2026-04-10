@@ -13,9 +13,13 @@
   ```json
   {
     "email": "admin@example.com",
-    "password": "your_password"
+    "password": "your_password",
+    "centerSlug": "bright-coaching"
   }
   ```
+- Notes:
+  - Institute users should send `centerSlug`.
+  - Platform `super_admin` users log in without `centerSlug`.
 - Response:
   ```json
   {
@@ -40,10 +44,24 @@
     "email": "admin@example.com",
     "password": "securePassword123",
     "centerName": "Bright Coaching",
+    "centerSlug": "bright-coaching",
     "city": "Bhubaneswar"
   }
   ```
 - Response: newly created user record.
+
+### Bootstrap Super Admin
+
+- Description: Create the first platform-level `super_admin` user directly against the configured database.
+- Command:
+  ```bash
+  cd backend
+  npm run bootstrap:super-admin -- --name "Platform Owner" --email owner@example.com --password "StrongPass123" --phone 9999999999
+  ```
+- Notes:
+  - The script reads database credentials from `backend/.env`.
+  - `super_admin` users are stored with `center_id = NULL`.
+  - After creation, log in through `/login` without a `center` slug.
 
 ## Authorization
 
@@ -179,6 +197,21 @@
   - `hostel`
   - `transport`
   - `notices`
+  - `tenant`
+
+### GET /dashboard/platform/centers
+
+- Description: List all institutes for the authenticated `super_admin`.
+
+### POST /dashboard/platform/impersonate
+
+- Description: Create an admin-scoped impersonation session for one institute.
+- Body:
+  ```json
+  {
+    "center_id": 2
+  }
+  ```
 
 ## Exams
 

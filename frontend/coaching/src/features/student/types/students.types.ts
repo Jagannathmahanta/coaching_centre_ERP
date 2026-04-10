@@ -59,6 +59,7 @@ export type FeeDefinition = {
   duration_months: number;
   session_start_month?: number | null;
   session_end_month?: number | null;
+  admission_total: string | number;
   tuition_total: string | number;
   hostel_total: string | number;
   transport_total: string | number;
@@ -156,6 +157,7 @@ export type FeePreview = {
   applicableMonths: number;
   installmentCount: number;
   firstInstallmentMonths: number;
+  admissionTotal: number;
   tuitionTotal: number;
   hostelTotal: number;
   transportTotal: number;

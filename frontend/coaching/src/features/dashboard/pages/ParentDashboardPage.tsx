@@ -12,14 +12,16 @@ import { StatCard } from "../components/StatCard";
 import { useDownloadResult } from "../hooks/useDownloadResult";
 import { useParentDashboardQuery } from "../hooks/useParentDashboardQuery";
 import "../styles/dashboard.css";
+import { useI18n } from "../../../shared/i18n/I18nProvider";
 
 export default function ParentDashboardPage() {
+  const { t } = useI18n();
   const { data, isLoading } = useParentDashboardQuery();
   const { download } = useDownloadResult();
   const user = getUser();
 
   if (isLoading) {
-    return <div className="dashboard-panel">Loading...</div>;
+    return <div className="dashboard-panel">{t("dashboard.loading")}</div>;
   }
 
   return (
@@ -27,9 +29,9 @@ export default function ParentDashboardPage() {
       <section className="dashboard-hero">
         <div>
           <h1 className="dashboard-greeting">{getGreeting()}</h1>
-          <h2 className="dashboard-username">{user?.name || data?.parent?.name || "Parent"}</h2>
+          <h2 className="dashboard-username">{user?.name || data?.parent?.name || t("dashboard.parentDefaultName")}</h2>
           <p className="dashboard-description">
-            Track your children&apos;s attendance, exams, results, notices, holidays, and fee status in one dashboard.
+            {t("dashboard.parentHeroDesc")}
           </p>
         </div>
       </section>
@@ -37,39 +39,39 @@ export default function ParentDashboardPage() {
       <section className="dashboard-stats dashboard-stats--studentParent">
         <StatCard
           accent="#2563eb"
-          label="Children"
+          label="dashboard.children"
           value={data?.stats.total_children || 0}
-          subvalue={`${data?.stats.active_children || 0} active`}
+          subvalue={t("dashboard.activeCount", { count: data?.stats.active_children || 0 })}
           icon={Users}
         />
         <StatCard
           accent="#16a34a"
-          label="Today Attendance"
+          label="dashboard.todayAttendance"
           value={`${data?.analytics.today_attendance.present_percentage || 0}%`}
-          subvalue={`${data?.analytics.today_attendance.present_count || 0} present today`}
+          subvalue={t("dashboard.presentToday", { count: data?.analytics.today_attendance.present_count || 0 })}
           icon={CalendarDays}
         />
         <StatCard
           accent="#ea580c"
-          label="Pending Fees"
+          label="dashboard.pendingFees"
           value={currency(data?.stats.pending_amount || 0)}
-          subvalue={`${data?.stats.pending_fee_count || 0} due items`}
+          subvalue={t("dashboard.dueItems", { count: data?.stats.pending_fee_count || 0 })}
           icon={IndianRupee}
         />
         <StatCard
           accent="#7c3aed"
-          label="Upcoming Exams"
+          label="dashboard.upcomingExams"
           value={data?.stats.upcoming_exam_count || 0}
-          subvalue={`${data?.recent_results?.length || 0} recent results`}
+          subvalue={t("dashboard.recentResultsCount", { count: data?.recent_results?.length || 0 })}
           icon={ReceiptText}
         />
       </section>
 
       <section className="dashboard-grid">
         <div className="dashboard-stack">
-          <Panel title="Children Overview" subtitle="Linked students">
+          <Panel title="dashboard.childrenOverview" subtitle="dashboard.linkedStudents">
             {!data?.children?.length ? (
-              <div className="dashboard-empty">No children linked to this parent account yet.</div>
+              <div className="dashboard-empty">{t("dashboard.noChildrenLinked")}</div>
             ) : (
               <div className="dashboard-list">
                 {data.children.map((child) => (
@@ -82,7 +84,7 @@ export default function ParentDashboardPage() {
                       </div>
                     </div>
                     <span className={`dashboard-badge ${child.status === "active" ? "newBatch" : ""}`}>
-                      {child.status}
+                      {child.status === "active" ? t("dashboard.statusActive") : t("dashboard.statusInactive")}
                     </span>
                   </div>
                 ))}
@@ -90,21 +92,21 @@ export default function ParentDashboardPage() {
             )}
           </Panel>
 
-          <Panel title="Notice Board" subtitle="Recent updates">
+          <Panel title="dashboard.noticeBoard" subtitle="dashboard.recentUpdates">
             <NoticeList notices={data?.recent_notices} shortDate={shortDate} />
           </Panel>
 
-          <Panel title="Upcoming Holidays" subtitle="Plan ahead">
+          <Panel title="dashboard.upcomingHolidays" subtitle="dashboard.planAhead">
             <HolidayList holidays={data?.upcoming_holidays} shortDate={shortDate} />
           </Panel>
         </div>
 
         <div className="dashboard-stack">
-          <Panel title="Upcoming Exams" subtitle="Across your children">
+          <Panel title="dashboard.upcomingExams" subtitle="dashboard.acrossChildren">
             <ExamList exams={data?.upcoming_exams} shortDate={shortDate} />
           </Panel>
 
-          <Panel title="Results" subtitle="Latest result updates">
+          <Panel title="dashboard.results" subtitle="dashboard.latestResultUpdates">
             <ResultList
               results={data?.recent_results}
               isNewBatch={isNewBatch}
@@ -112,7 +114,7 @@ export default function ParentDashboardPage() {
             />
           </Panel>
 
-          <Panel title="Fee Status" subtitle="Pending dues">
+          <Panel title="dashboard.feeStatus" subtitle="dashboard.pendingDues">
             <PendingFeeTable
               fees={data?.pending_fees}
               shortDate={shortDate}

@@ -5,6 +5,7 @@ import { getUser } from "../../../shared/services/auth";
 import AdminDashboardPage from "../pages/AdminDashboardPage";
 import ParentDashboardPage from "../pages/ParentDashboardPage";
 import StudentDashboardPage from "../pages/StudentDashboardPage";
+import SuperAdminDashboardPage from "../pages/SuperAdminDashboardPage";
 import TeacherDashboardPage from "../pages/TeacherDashboardPage";
 
 
@@ -19,6 +20,8 @@ export default function DashboardRoute() {
   switch (role) {
     case "admin":
       return <AdminDashboardPage />;
+    case "super_admin":
+      return <SuperAdminDashboardPage />;
     case "student":
       return <StudentDashboardPage />;
     case "teacher":

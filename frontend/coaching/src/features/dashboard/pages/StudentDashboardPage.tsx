@@ -12,14 +12,16 @@ import { StatCard } from "../components/StatCard";
 import { useDownloadResult } from "../hooks/useDownloadResult";
 import { useStudentDashboardQuery } from "../hooks/useStudentDashboardQuery";
 import "../styles/dashboard.css";
+import { useI18n } from "../../../shared/i18n/I18nProvider";
 
 export default function StudentDashboardPage() {
+  const { t } = useI18n();
   const { data, isLoading } = useStudentDashboardQuery();
   const { download } = useDownloadResult();
   const user = getUser();
 
   if (isLoading) {
-    return <div className="dashboard-panel">Loading...</div>;
+    return <div className="dashboard-panel">{t("dashboard.loading")}</div>;
   }
 
   return (
@@ -27,9 +29,9 @@ export default function StudentDashboardPage() {
       <section className="dashboard-hero">
         <div>
           <h1 className="dashboard-greeting">{getGreeting()}</h1>
-          <h2 className="dashboard-username">{user?.name || data?.student?.name || "Student"}</h2>
+          <h2 className="dashboard-username">{user?.name || data?.student?.name || t("dashboard.studentDefaultName")}</h2>
           <p className="dashboard-description">
-            Stay on top of your attendance, upcoming exams, results, notices, holidays, and pending fee reminders from one place.
+            {t("dashboard.studentHeroDesc")}
           </p>
         </div>
       </section>
@@ -37,51 +39,51 @@ export default function StudentDashboardPage() {
       <section className="dashboard-stats dashboard-stats--studentParent">
         <StatCard
           accent="#2563eb"
-          label="Class"
+          label="dashboard.class"
           value={data?.student?.class || "-"}
-          subvalue={data?.student?.roll_number ? `Roll ${data.student.roll_number}` : "Current class"}
+          subvalue={data?.student?.roll_number ? t("dashboard.rollLabel", { roll: data.student.roll_number }) : "dashboard.currentClass"}
           icon={BookCheck}
         />
         <StatCard
           accent="#16a34a"
-          label="Today Attendance"
+          label="dashboard.todayAttendance"
           value={`${data?.analytics.today_attendance.present_percentage || 0}%`}
-          subvalue={`${data?.analytics.today_attendance.present_count || 0} present today`}
+          subvalue={t("dashboard.presentToday", { count: data?.analytics.today_attendance.present_count || 0 })}
           icon={CalendarDays}
         />
         <StatCard
           accent="#ea580c"
-          label="Pending Fees"
+          label="dashboard.pendingFees"
           value={currency(data?.stats.pending_amount || 0)}
-          subvalue={`${data?.stats.pending_fee_count || 0} dues`}
+          subvalue={t("dashboard.dues", { count: data?.stats.pending_fee_count || 0 })}
           icon={IndianRupee}
         />
         <StatCard
           accent="#7c3aed"
-          label="Recent Results"
+          label="dashboard.recentResults"
           value={data?.stats.recent_result_count || 0}
-          subvalue={`${data?.stats.upcoming_exam_count || 0} upcoming exams`}
+          subvalue={t("dashboard.upcomingExamsCount", { count: data?.stats.upcoming_exam_count || 0 })}
           icon={ReceiptText}
         />
       </section>
 
       <section className="dashboard-grid">
         <div className="dashboard-stack">
-          <Panel title="Notice Board" subtitle="Recent updates">
+          <Panel title="dashboard.noticeBoard" subtitle="dashboard.recentUpdates">
             <NoticeList notices={data?.recent_notices} shortDate={shortDate} />
           </Panel>
 
-          <Panel title="Upcoming Exams" subtitle="Your class schedule">
+          <Panel title="dashboard.upcomingExams" subtitle="dashboard.classSchedule">
             <ExamList exams={data?.upcoming_exams} shortDate={shortDate} />
           </Panel>
 
-          <Panel title="Upcoming Holidays" subtitle="Plan ahead">
+          <Panel title="dashboard.upcomingHolidays" subtitle="dashboard.planAhead">
             <HolidayList holidays={data?.upcoming_holidays} shortDate={shortDate} />
           </Panel>
         </div>
 
         <div className="dashboard-stack">
-          <Panel title="Results" subtitle="Latest updates">
+          <Panel title="dashboard.results" subtitle="dashboard.latestUpdates">
             <ResultList
               results={data?.recent_results}
               isNewBatch={isNewBatch}
@@ -89,7 +91,7 @@ export default function StudentDashboardPage() {
             />
           </Panel>
 
-          <Panel title="Fee Status" subtitle="Pending dues">
+          <Panel title="dashboard.feeStatus" subtitle="dashboard.pendingDues">
             <PendingFeeTable
               fees={data?.pending_fees}
               shortDate={shortDate}
@@ -98,26 +100,26 @@ export default function StudentDashboardPage() {
             />
           </Panel>
 
-          <Panel title="Attendance This Month" subtitle="Your current month summary">
+          <Panel title="dashboard.attendanceThisMonth" subtitle="dashboard.currentMonthSummary">
             <div className="dashboard-list">
               <div className="dashboard-listItem">
                 <div>
-                  <div className="dashboard-listTitle">Present</div>
-                  <div className="dashboard-listMeta">Marked present this month</div>
+                  <div className="dashboard-listTitle">{t("dashboard.present")}</div>
+                  <div className="dashboard-listMeta">{t("dashboard.presentMonthDesc")}</div>
                 </div>
                 <strong>{data?.analytics.month_attendance.present_count || 0}</strong>
               </div>
               <div className="dashboard-listItem">
                 <div>
-                  <div className="dashboard-listTitle">Absent</div>
-                  <div className="dashboard-listMeta">Marked absent this month</div>
+                  <div className="dashboard-listTitle">{t("dashboard.absent")}</div>
+                  <div className="dashboard-listMeta">{t("dashboard.absentMonthDesc")}</div>
                 </div>
                 <strong>{data?.analytics.month_attendance.absent_count || 0}</strong>
               </div>
               <div className="dashboard-listItem">
                 <div>
-                  <div className="dashboard-listTitle">Leave</div>
-                  <div className="dashboard-listMeta">Approved leave / leave marked</div>
+                  <div className="dashboard-listTitle">{t("dashboard.leave")}</div>
+                  <div className="dashboard-listMeta">{t("dashboard.leaveMonthDesc")}</div>
                 </div>
                 <strong>{data?.analytics.month_attendance.leave_count || 0}</strong>
               </div>

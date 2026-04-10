@@ -7,6 +7,7 @@ import { useHolidaysQuery } from "../hooks/useHolidaysQuery";
 import type { HolidayFormValues } from "../types/holiday.types";
 import { useAuth } from "../../../shared/hooks/AuthContext";
 import { getUser } from "../../../shared/services/auth";
+import { useI18n } from "../../../shared/i18n/I18nProvider";
 
 const cardStyle = {
   background: "#fff",
@@ -25,6 +26,7 @@ const initialForm: HolidayFormValues = {
 };
 
 export default function HolidayPage() {
+  const { t } = useI18n();
   const [form, setForm] = useState(initialForm);
   const [showForm, setShowForm] = useState(false);
   const [message, setMessage] = useState("");
@@ -37,7 +39,7 @@ export default function HolidayPage() {
 
   const createHolidayMutation = useCreateHoliday(
     () => {
-      setMessage("Holiday created.");
+      setMessage(t("holiday.created"));
       setError("");
       setForm(initialForm);
       setShowForm(false);
@@ -50,7 +52,7 @@ export default function HolidayPage() {
 
   const deleteHolidayMutation = useDeleteHoliday(
     () => {
-      setMessage("Holiday deleted.");
+      setMessage(t("holiday.deleted"));
       setError("");
     },
     (mutationError) => {
@@ -63,11 +65,11 @@ export default function HolidayPage() {
     <div style={{ display: "grid", gap: 20 }}>
       <div style={{ display: "flex", justifyContent: "space-between", gap: 16, alignItems: "center", flexWrap: "wrap" }}>
         <div>
-          <h1 style={{ margin: 0, fontSize: 28 }}>Holiday Module</h1>
+          <h1 style={{ margin: 0, fontSize: 28 }}>{t("holiday.moduleTitle")}</h1>
           {
             !isDisabled&&
             <p style={{ color: "#6b7280", marginTop: 8 }}>
-            Create upcoming holidays and keep the holiday list visible for admin planning and dashboard updates.
+            {t("holiday.moduleSub")}
           </p>
           }
           
@@ -79,7 +81,7 @@ export default function HolidayPage() {
     type="button"
     disabled={isDisabled}
     style={{
-      background: "linear-gradient(135deg, #7c3aed, #9333ea)",
+      background: "#334155",
       color: "#fff",
       border: "none",
       borderRadius: 12,
@@ -90,7 +92,7 @@ export default function HolidayPage() {
     }}
     onClick={() => setShowForm(true)}
   >
-    Add Holiday
+    {t("holiday.addHoliday")}
   </button>
 ) : null}
       </div>
@@ -115,14 +117,14 @@ export default function HolidayPage() {
       ) : (
       <section style={cardStyle}>
         <div style={{ marginBottom: 18 }}>
-          <h2 style={{ margin: 0 }}>Holiday List</h2>
-          <p style={{ color: "#6b7280", marginTop: 8 }}>All upcoming and past holidays for this center.</p>
+          <h2 style={{ margin: 0 }}>{t("holiday.listTitle")}</h2>
+          <p style={{ color: "#6b7280", marginTop: 8 }}>{t("holiday.listSub")}</p>
         </div>
         <HolidayList
           holidays={holidaysQuery.data || []}
           isLoading={holidaysQuery.isLoading}
           onDelete={(holidayId) => {
-            if (!window.confirm("Delete this holiday?")) return;
+            if (!window.confirm(t("holiday.deleteConfirm"))) return;
             deleteHolidayMutation.mutate(holidayId);
           }}
           isDisabled={isDisabled}

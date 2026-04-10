@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { clearAuth, getUser } from "../shared/services/auth";
+import { clearAuth, getUser, isStaffTeacher } from "../shared/services/auth";
 import { getSidebarMenu, type UserRole } from "../shared/utils/sidebarMenu";
 import { LogOut } from "lucide-react";
 import api from "../shared/services/api";
-
+import { useI18n } from "../shared/i18n/I18nProvider";
+import Logo from "../assets/newLogo.png";
+import "./layout.css"
 type Props = {
   collapsed: boolean;
   currentPath: string;
@@ -20,13 +22,14 @@ export default function Sidebar({
 }: Props) {
   const navigate = useNavigate();
   const user = getUser();
+  const { t } = useI18n();
   const [hasNewNotice, setHasNewNotice] = useState(false);
 
   const role: UserRole =
-    user?.role === "admin" || user?.role === "student" || user?.role === "parent" || user?.role === "teacher"
+    user?.role === "admin" || user?.role === "student" || user?.role === "parent" || user?.role === "teacher" || user?.role === "super_admin"
       ? user.role
       : "student";
-  const navItems = getSidebarMenu(role);
+  const navItems = getSidebarMenu(role, isStaffTeacher(user));
   const shouldCheckNoticeBadge = role === "student" || role === "parent";
 
   const recentCutoff = useMemo(() => {
@@ -79,8 +82,17 @@ export default function Sidebar({
       
       {/* Brand */}
       <div className="appSidebar__brand">
-        {!collapsed ? "CoachingERP" : "C"}
-      </div>
+  {!collapsed ? (
+    <div className="sidebar-brand">
+      <img src={Logo} alt="Logo" className="sidebar-brand__logo" />
+      <span>
+        Tutorial<span style={{ color: "#fd6900" }}>Hub</span>ERP
+      </span>
+    </div>
+  ) : (
+    "T"
+  )}
+</div>
 
       {/* Menu */}
       <nav className="appSidebar__nav">
@@ -100,9 +112,9 @@ export default function Sidebar({
               <Icon size={20} className="appSidebar__icon" />
               {!collapsed ? (
                 <>
-                  <span className="appSidebar__label">{item.label}</span>
+                  <span className="appSidebar__label">{t(item.labelKey)}</span>
                   {item.path === "/notices" && hasNewNotice ? (
-                    <span className="appSidebar__badge">New</span>
+                    <span className="appSidebar__badge">{t("common.new")}</span>
                   ) : null}
                 </>
               ) : null}
@@ -115,13 +127,13 @@ export default function Sidebar({
       <div className="appSidebar__footer">
         {!collapsed && (
           <div className="appSidebar__user">
-            {user ? `Welcome, ${user.name || user.email}` : "Guest"}
+            {user ? t("topbar.welcome", { name: user.name || user.email || t("common.guest") }) : t("common.guest")}
           </div>
         )}
 
         <button className="appSidebar__logout" onClick={handleLogout}>
           <LogOut size={18} />
-          {!collapsed && "Logout"}
+          {!collapsed && t("common.logout")}
         </button>
       </div>
     </div>

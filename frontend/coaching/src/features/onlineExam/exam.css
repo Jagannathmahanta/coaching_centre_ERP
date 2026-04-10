@@ -1,0 +1,21 @@
+.exam-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  display: flex;
+  gap: 20px;
+  align-items: center;
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .exam-card {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .exam-actions {
+    justify-content: flex-start;
+  }
+}

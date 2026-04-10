@@ -1,4 +1,6 @@
 const pool = require("../../config/db");
+const jwt = require("jsonwebtoken");
+const bcrypt = require("bcryptjs");
 
 const toNumber = (value) => Number(value || 0);
 
@@ -7,6 +9,24 @@ const createError = (message, statusCode = 400) => {
   error.statusCode = statusCode;
   return error;
 };
+
+const normalizeEmail = (value) => {
+  const normalized = String(value || "").trim().toLowerCase();
+  return normalized || null;
+};
+
+const normalizePhone = (value) => {
+  const normalized = String(value || "").trim();
+  return normalized || null;
+};
+
+const slugifyCenterName = (value) =>
+  String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 60);
 
 const buildAttendancePeriod = (row) => {
   const data = row || {};
@@ -46,6 +66,69 @@ const ensureParentUser = (req) => {
     throw createError("Parent profile not linked to this account.", 403);
   }
   return parentId;
+};
+
+const ensureSuperAdmin = (req) => {
+  if ((req.user && req.user.role) !== "super_admin") {
+    throw createError("Only super admin can access this resource.", 403);
+  }
+};
+
+const getTenantSummary = async (centerId) => {
+  const { rows } = await pool.query(
+    `
+    SELECT
+      id,
+      name,
+      slug,
+      city,
+      status,
+      plan,
+      created_at
+    FROM coaching_centers
+    WHERE id = $1
+    LIMIT 1
+    `,
+    [centerId]
+  );
+
+  if (!rows[0]) {
+    throw createError("Institute not found.", 404);
+  }
+
+  return rows[0];
+};
+
+const resolveUniqueCenterSlug = async (client, requestedSlug, centerName, excludeCenterId = null) => {
+  const baseSlug = slugifyCenterName(requestedSlug || centerName);
+  if (!baseSlug) {
+    throw createError("Center slug could not be generated. Add a valid center name.", 400);
+  }
+
+  const params = [baseSlug, `${baseSlug}-%`];
+  let query = `
+    SELECT slug
+    FROM coaching_centers
+    WHERE (slug = $1 OR slug LIKE $2)
+  `;
+
+  if (excludeCenterId) {
+    params.push(excludeCenterId);
+    query += ` AND id <> $3`;
+  }
+
+  const { rows } = await client.query(query, params);
+  const usedSlugs = new Set(rows.map((row) => row.slug));
+  if (!usedSlugs.has(baseSlug)) {
+    return baseSlug;
+  }
+
+  let suffix = 2;
+  while (usedSlugs.has(`${baseSlug}-${suffix}`)) {
+    suffix += 1;
+  }
+
+  return `${baseSlug}-${suffix}`;
 };
 
 const getTeacherProfile = async (centerId, teacherId) => {
@@ -101,8 +184,12 @@ const getParentProfile = async (centerId, parentId) => {
 
 exports.getDashboard = async (req) => {
   const cid = req.user.center_id;
+  if (!cid) {
+    throw createError("Center context is required for this dashboard.", 403);
+  }
 
   const [
+    tenantRes,
     studentStatsRes,
     teacherStatsRes,
     teacherAttendanceSummaryRes,
@@ -120,6 +207,23 @@ exports.getDashboard = async (req) => {
     classWiseStudentsRes,
     courseWiseStudentsRes,
   ] = await Promise.all([
+    pool.query(
+      `
+      SELECT
+        id,
+        name,
+        slug,
+        city,
+        status,
+        plan,
+        created_at
+      FROM coaching_centers
+      WHERE id = $1
+      LIMIT 1
+      `,
+      [cid]
+    ),
+
     pool.query(
       `
       SELECT 
@@ -456,6 +560,7 @@ exports.getDashboard = async (req) => {
   }, {});
 
   return {
+    tenant: tenantRes.rows[0] || null,
     stats: {
       total_students: toNumber(studentStatsRes.rows[0] && studentStatsRes.rows[0].total_students),
       active_students: toNumber(studentStatsRes.rows[0] && studentStatsRes.rows[0].active_students),
@@ -513,6 +618,245 @@ exports.getDashboard = async (req) => {
       total_amount: toNumber(row.total_amount),
     })),
   };
+};
+
+exports.getPlatformCenters = async (req) => {
+  ensureSuperAdmin(req);
+
+  const { rows } = await pool.query(
+    `
+    SELECT
+      c.id,
+      c.name,
+      c.slug,
+      c.city,
+      c.status,
+      c.plan,
+      c.created_at,
+      COUNT(DISTINCT u.id) FILTER (WHERE u.role = 'admin')::int AS admin_count,
+      COUNT(DISTINCT s.id)::int AS student_count,
+      COUNT(DISTINCT t.id) FILTER (WHERE t.status = 'active')::int AS active_teacher_count
+    FROM coaching_centers c
+    LEFT JOIN users u
+      ON u.center_id = c.id
+    LEFT JOIN students s
+      ON s.center_id = c.id
+    LEFT JOIN teachers t
+      ON t.center_id = c.id
+    GROUP BY c.id
+    ORDER BY c.created_at DESC, c.id DESC
+    `
+  );
+
+  return {
+    centers: rows,
+  };
+};
+
+exports.impersonateCenter = async (req) => {
+  ensureSuperAdmin(req);
+
+  const centerId = Number(req.body && req.body.center_id);
+  if (!centerId) {
+    throw createError("center_id is required.", 400);
+  }
+
+  const tenant = await getTenantSummary(centerId);
+
+  const token = jwt.sign(
+    {
+      id: req.user.id,
+      name: req.user.name,
+      email: req.user.email,
+      phone: req.user.phone,
+      role: "admin",
+      platform_role: "super_admin",
+      is_staff: false,
+      center_id: tenant.id,
+      center_slug: tenant.slug,
+      center_name: tenant.name,
+      student_id: null,
+      teacher_id: null,
+      parent_id: null,
+      is_impersonated: true,
+      impersonator_id: req.user.id,
+    },
+    process.env.JWT_SECRET,
+    { expiresIn: "7d" }
+  );
+
+  return {
+    token,
+    user: {
+      id: req.user.id,
+      name: req.user.name,
+      email: req.user.email,
+      phone: req.user.phone,
+      role: "admin",
+      platform_role: "super_admin",
+      is_staff: false,
+      center_id: tenant.id,
+      center_slug: tenant.slug,
+      center_name: tenant.name,
+      student_id: null,
+      teacher_id: null,
+      parent_id: null,
+      is_impersonated: true,
+      impersonator_id: req.user.id,
+    },
+  };
+};
+
+exports.createPlatformCenter = async (req) => {
+  ensureSuperAdmin(req);
+
+  const centerName = String(req.body && req.body.name || "").trim();
+  const city = String(req.body && req.body.city || "").trim() || null;
+  const requestedSlug = String(req.body && req.body.slug || "").trim();
+  const plan = String(req.body && req.body.plan || "basic").trim().toLowerCase();
+  const adminName = String(req.body && req.body.admin_name || "").trim();
+  const adminEmail = normalizeEmail(req.body && req.body.admin_email);
+  const adminPhone = normalizePhone(req.body && req.body.admin_phone);
+  const adminPassword = String(req.body && req.body.admin_password || "");
+
+  if (!centerName) throw createError("Institute name is required.");
+  if (!adminName) throw createError("Admin name is required.");
+  if (!adminEmail) throw createError("Admin email is required.");
+  if (adminPassword.length < 6) throw createError("Admin password must be at least 6 characters.");
+  if (!["basic", "standard", "premium"].includes(plan)) {
+    throw createError("Plan must be basic, standard, or premium.");
+  }
+
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    const centerSlug = await resolveUniqueCenterSlug(client, requestedSlug, centerName);
+    const passwordHash = await bcrypt.hash(adminPassword, 10);
+
+    const existingAdmin = await client.query(
+      `
+      SELECT id
+      FROM users
+      WHERE center_id IS NOT NULL
+        AND (($1::text IS NOT NULL AND LOWER(email) = $1) OR ($2::text IS NOT NULL AND phone = $2))
+      LIMIT 1
+      `,
+      [adminEmail, adminPhone]
+    );
+
+    if (existingAdmin.rows[0]) {
+      throw createError("Another institute user already exists with this admin email or phone.");
+    }
+
+    const centerInsert = await client.query(
+      `
+      INSERT INTO coaching_centers (name, slug, city, plan, status)
+      VALUES ($1, $2, $3, $4, 'active')
+      RETURNING id, name, slug, city, status, plan, created_at
+      `,
+      [centerName, centerSlug, city, plan]
+    );
+
+    const center = centerInsert.rows[0];
+
+    const adminInsert = await client.query(
+      `
+      INSERT INTO users (name, email, phone, password_hash, role, center_id, is_staff)
+      VALUES ($1, $2, $3, $4, 'admin', $5, FALSE)
+      RETURNING id, name, email, phone, role, center_id, created_at
+      `,
+      [adminName, adminEmail, adminPhone, passwordHash, center.id]
+    );
+
+    await client.query("COMMIT");
+
+    return {
+      center,
+      admin: adminInsert.rows[0],
+    };
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+};
+
+exports.updatePlatformCenter = async (req) => {
+  ensureSuperAdmin(req);
+
+  const centerId = Number(req.params.id);
+  if (!centerId) {
+    throw createError("Valid center id is required.");
+  }
+
+  const existing = await getTenantSummary(centerId);
+  const centerName = String(req.body && req.body.name || existing.name || "").trim();
+  const city = String(req.body && req.body.city !== undefined ? req.body.city : existing.city || "").trim() || null;
+  const requestedSlug = String(req.body && req.body.slug || existing.slug || "").trim();
+  const plan = String(req.body && req.body.plan || existing.plan || "basic").trim().toLowerCase();
+
+  if (!centerName) throw createError("Institute name is required.");
+  if (!["basic", "standard", "premium"].includes(plan)) {
+    throw createError("Plan must be basic, standard, or premium.");
+  }
+
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+    const centerSlug = await resolveUniqueCenterSlug(client, requestedSlug, centerName, centerId);
+
+    const { rows } = await client.query(
+      `
+      UPDATE coaching_centers
+      SET name = $1,
+          slug = $2,
+          city = $3,
+          plan = $4
+      WHERE id = $5
+      RETURNING id, name, slug, city, status, plan, created_at
+      `,
+      [centerName, centerSlug, city, plan, centerId]
+    );
+
+    await client.query("COMMIT");
+    return rows[0];
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+};
+
+exports.updatePlatformCenterStatus = async (req) => {
+  ensureSuperAdmin(req);
+
+  const centerId = Number(req.params.id);
+  const status = String(req.body && req.body.status || "").trim().toLowerCase();
+  if (!centerId) throw createError("Valid center id is required.");
+  if (!["active", "inactive"].includes(status)) {
+    throw createError("Status must be active or inactive.");
+  }
+
+  const { rows } = await pool.query(
+    `
+    UPDATE coaching_centers
+    SET status = $1
+    WHERE id = $2
+    RETURNING id, name, slug, city, status, plan, created_at
+    `,
+    [status, centerId]
+  );
+
+  if (!rows[0]) {
+    throw createError("Institute not found.", 404);
+  }
+
+  return rows[0];
 };
 
 exports.getStudentDashboard = async (req) => {

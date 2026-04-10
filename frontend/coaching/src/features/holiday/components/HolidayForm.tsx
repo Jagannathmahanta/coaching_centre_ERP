@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import type { HolidayFormValues } from "../types/holiday.types";
+import { useI18n } from "../../../shared/i18n/I18nProvider";
 
 const inputStyle = {
   width: "100%",                // ← was 90%
@@ -33,6 +34,7 @@ export function HolidayForm({
   onCancel: () => void;
   isPending: boolean;
 }) {
+  const { t } = useI18n();
   return (
     <form
       onSubmit={(e) => {
@@ -42,17 +44,17 @@ export function HolidayForm({
     >
       <div style={{ marginBottom: 18 }}>
         <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
-          <h2 style={{ margin: 0 }}>Create Holiday</h2>
+          <h2 style={{ margin: 0 }}>{t("holiday.createTitle")}</h2>
           <button type="button" onClick={onCancel} style={{ ...buttonStyle, background: "#fff", color: "#1d4ed8", border: "1px solid #bfdbfe" }}>
-            Close
+            {t("holiday.close")}
           </button>
         </div>
-        <p style={{ color: "#6b7280", marginTop: 8 }}>Add one-day or multi-day holidays here.</p>
+        <p style={{ color: "#6b7280", marginTop: 8 }}>{t("holiday.createSub")}</p>
       </div>
 
       {/* Responsive 3-col → stacks on mobile */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 14 }}>
-        <Field label="Holiday Title">
+        <Field label={t("holiday.holidayTitle")}>
           <input
             value={form.title}
             onChange={(e) => onChange("title", e.target.value)}
@@ -60,7 +62,7 @@ export function HolidayForm({
             required
           />
         </Field>
-        <Field label="Start Date">
+        <Field label={t("holiday.startDate")}>
           <input
             type="date"
             value={form.start_date}
@@ -69,7 +71,7 @@ export function HolidayForm({
             required
           />
         </Field>
-        <Field label="End Date">
+        <Field label={t("holiday.endDate")}>
           <input
             type="date"
             value={form.end_date}
@@ -82,7 +84,7 @@ export function HolidayForm({
 
       {/* Description — full width, below grid */}
       <div style={{ marginTop: 14 }}>
-        <Field label="Description">
+        <Field label={t("holiday.description")}>
           <textarea
             rows={3}
             value={form.description}
@@ -94,7 +96,7 @@ export function HolidayForm({
 
       <div style={{ marginTop: 16 }}>
         <button type="submit" style={buttonStyle} disabled={isPending}>
-          {isPending ? "Saving..." : "Save Holiday"}
+          {isPending ? t("holiday.saving") : t("holiday.saveHoliday")}
         </button>
       </div>
     </form>

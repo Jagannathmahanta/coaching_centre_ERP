@@ -61,10 +61,10 @@ export function FeeDefinitionsSection({
                     : `Course • ${definition.course_label || definition.course_name} • ${definition.batch_name || "No batch"} • ${definition.duration_months} months`}
                 </div>
                 <div style={{ marginTop: 8, color: "#1f2937" }}>
-                  Tuition {currency(definition.tuition_total)} | Hostel {currency(definition.hostel_total)} | Transport {currency(definition.transport_total)}
+                  Admission {currency(definition.admission_total)} | Tuition {currency(definition.tuition_total)} | Hostel {currency(definition.hostel_total)} | Transport {currency(definition.transport_total)}
                 </div>
                 <div style={{ marginTop: 6, color: "#6b7280" }}>
-                  Monthly view: {currency(definition.monthly_tuition_fee)} tuition + {currency(definition.monthly_hostel_fee)} hostel + {currency(definition.monthly_transport_fee)} transport
+                  Monthly view: one-time {currency(definition.admission_total)} admission + {currency(definition.monthly_tuition_fee)} tuition + {currency(definition.monthly_hostel_fee)} hostel + {currency(definition.monthly_transport_fee)} transport
                 </div>
                 <div style={{ display: "flex", gap: 12, marginTop: 12, flexWrap: "wrap" }}>
                   <button type="button" onClick={() => onEdit(definition)} style={secondaryActionButton}>Edit</button>
@@ -165,6 +165,9 @@ export function FeeDefinitionsSection({
         )}
 
         <div className="formGrid">
+          <Field label="Admission Fee">
+            <input type="number" min="0" value={definitionForm.admission_total} onChange={(e) => setDefinitionForm((current) => ({ ...current, admission_total: e.target.value }))} style={inputStyle} />
+          </Field>
           <Field label="Tuition Total">
             <input type="number" min="0" value={definitionForm.tuition_total} onChange={(e) => setDefinitionForm((current) => ({ ...current, tuition_total: e.target.value }))} style={inputStyle} />
           </Field>
@@ -191,7 +194,7 @@ export function FeeDefinitionsSection({
 
 const primaryButton = {
   marginTop: 18,
-  background: "linear-gradient(135deg, #7c3aed, #9333ea)",
+  background: "#334155",
   color: "#fff",
   border: "none",
   borderRadius: 10,

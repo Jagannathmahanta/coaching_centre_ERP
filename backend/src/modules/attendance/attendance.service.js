@@ -11,9 +11,20 @@ function ensureManageAccess(req) {
   if (!["admin", "staff", "teacher"].includes(role)) {
     throw createError("Only admin, staff, or teacher can update attendance.", 403);
   }
+  if (role === "teacher" && req.user?.is_staff) {
+    throw createError("Staff accounts do not have access to attendance.", 403);
+  }
+}
+
+function ensureTeacherAttendanceAccess(req) {
+  const role = String(req.user?.role || "").toLowerCase();
+  if (role === "teacher" && req.user?.is_staff) {
+    throw createError("Staff accounts do not have access to attendance.", 403);
+  }
 }
 
 exports.getRoster = async (req) => {
+  ensureTeacherAttendanceAccess(req);
   const { class: className, session, date, student_id } = req.query;
   const attendanceDate = date || new Date().toISOString().slice(0, 10);
 
@@ -127,6 +138,7 @@ exports.saveAttendance = async (req) => {
 };
 
 exports.getHistory = async (req) => {
+  ensureTeacherAttendanceAccess(req);
   const { class: className, session, student_id, from_date, to_date } = req.query;
 
   let query = `

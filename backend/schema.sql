@@ -10,6 +10,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE TABLE coaching_centers (
   id          SERIAL PRIMARY KEY,
   name        VARCHAR(200) NOT NULL,
+  slug        VARCHAR(80) NOT NULL UNIQUE,
   city        VARCHAR(100),
   address     TEXT,
   phone       VARCHAR(15),
@@ -25,11 +26,12 @@ CREATE TABLE coaching_centers (
 CREATE TABLE users (
   id            SERIAL PRIMARY KEY,
   name          VARCHAR(150) NOT NULL,
-  email         VARCHAR(150) UNIQUE,
+  email         VARCHAR(150),
   password_hash TEXT NOT NULL,
-  role          VARCHAR(30) DEFAULT 'admin',  -- admin | staff | parent
+  role          VARCHAR(30) DEFAULT 'admin',  -- admin | teacher | student | parent | staff(legacy)
   center_id     INT REFERENCES coaching_centers(id) ON DELETE CASCADE,
   phone         VARCHAR(15),
+  is_staff      BOOLEAN NOT NULL DEFAULT FALSE,
   student_id    INT,
   teacher_id    INT,
   parent_id     INT,
@@ -39,7 +41,10 @@ CREATE TABLE users (
 CREATE UNIQUE INDEX idx_users_student_id_unique ON users(student_id) WHERE student_id IS NOT NULL;
 CREATE UNIQUE INDEX idx_users_teacher_id_unique ON users(teacher_id) WHERE teacher_id IS NOT NULL;
 CREATE UNIQUE INDEX idx_users_parent_id_unique ON users(parent_id) WHERE parent_id IS NOT NULL;
-CREATE UNIQUE INDEX idx_users_phone_unique ON users(phone) WHERE phone IS NOT NULL;
+CREATE UNIQUE INDEX idx_users_center_email_unique ON users(center_id, LOWER(email)) WHERE email IS NOT NULL AND center_id IS NOT NULL;
+CREATE UNIQUE INDEX idx_users_center_phone_unique ON users(center_id, phone) WHERE phone IS NOT NULL AND center_id IS NOT NULL;
+CREATE UNIQUE INDEX idx_users_platform_email_unique ON users(LOWER(email)) WHERE email IS NOT NULL AND center_id IS NULL;
+CREATE UNIQUE INDEX idx_users_platform_phone_unique ON users(phone) WHERE phone IS NOT NULL AND center_id IS NULL;
 
 -- ─── Parents ──────────────────────────────────────────────────────
 CREATE TABLE parents (
@@ -162,6 +167,7 @@ CREATE TABLE fee_structures (
   duration_months        INT NOT NULL CHECK (duration_months BETWEEN 1 AND 24),
   session_start_month    INT CHECK (session_start_month BETWEEN 1 AND 12),
   session_end_month      INT CHECK (session_end_month BETWEEN 1 AND 12),
+  admission_total        NUMERIC(10,2) NOT NULL DEFAULT 0 CHECK (admission_total >= 0),
   tuition_total          NUMERIC(10,2) NOT NULL CHECK (tuition_total >= 0),
   hostel_total           NUMERIC(10,2) NOT NULL DEFAULT 0 CHECK (hostel_total >= 0),
   transport_total        NUMERIC(10,2) NOT NULL DEFAULT 0 CHECK (transport_total >= 0),
@@ -193,6 +199,7 @@ CREATE TABLE student_fee_profiles (
   due_day                INT DEFAULT 5 CHECK (due_day BETWEEN 1 AND 28),
   include_transport      BOOLEAN DEFAULT FALSE,
   include_hostel         BOOLEAN DEFAULT FALSE,
+  admission_fee_total    NUMERIC(10,2) DEFAULT 0 CHECK (admission_fee_total >= 0),
   transport_fee_total    NUMERIC(10,2) DEFAULT 0 CHECK (transport_fee_total >= 0),
   hostel_fee_total       NUMERIC(10,2) DEFAULT 0 CHECK (hostel_fee_total >= 0),
   tuition_fee_total      NUMERIC(10,2) DEFAULT 0 CHECK (tuition_fee_total >= 0),
@@ -222,6 +229,7 @@ CREATE TABLE fees (
   period_end       DATE NOT NULL,
   due_date         DATE NOT NULL,
   months_covered   INT NOT NULL CHECK (months_covered BETWEEN 1 AND 24),
+  admission_amount NUMERIC(10,2) NOT NULL DEFAULT 0 CHECK (admission_amount >= 0),
   tuition_amount   NUMERIC(10,2) NOT NULL CHECK (tuition_amount >= 0),
   transport_amount NUMERIC(10,2) NOT NULL DEFAULT 0 CHECK (transport_amount >= 0),
   hostel_amount    NUMERIC(10,2) NOT NULL DEFAULT 0 CHECK (hostel_amount >= 0),
@@ -230,6 +238,7 @@ CREATE TABLE fees (
   discount_amount  NUMERIC(10,2) NOT NULL DEFAULT 0 CHECK (discount_amount >= 0),
   waived_amount    NUMERIC(10,2) NOT NULL DEFAULT 0 CHECK (waived_amount >= 0),
   paid_amount      NUMERIC(10,2) NOT NULL DEFAULT 0 CHECK (paid_amount >= 0),
+  paid_admission_amount NUMERIC(10,2) NOT NULL DEFAULT 0 CHECK (paid_admission_amount >= 0),
   paid_tuition_amount NUMERIC(10,2) NOT NULL DEFAULT 0 CHECK (paid_tuition_amount >= 0),
   paid_hostel_amount  NUMERIC(10,2) NOT NULL DEFAULT 0 CHECK (paid_hostel_amount >= 0),
   paid_transport_amount NUMERIC(10,2) NOT NULL DEFAULT 0 CHECK (paid_transport_amount >= 0),
@@ -425,11 +434,39 @@ CREATE TABLE holidays (
 );
 CREATE INDEX idx_holidays_center_dates ON holidays(center_id, start_date, end_date);
 
+CREATE TABLE assignments (
+  id          SERIAL PRIMARY KEY,
+  title       VARCHAR(200) NOT NULL,
+  description TEXT NOT NULL,
+  target_type VARCHAR(20) NOT NULL CHECK (target_type IN ('class', 'student')),
+  class_id    INT REFERENCES class_definitions(id) ON DELETE SET NULL,
+  student_id  INT REFERENCES students(id) ON DELETE CASCADE,
+  due_date    DATE,
+  attachment_name VARCHAR(255),
+  attachment_mime_type VARCHAR(120),
+  attachment_path TEXT,
+  attachment_size INT,
+  status      VARCHAR(20) NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'archived')),
+  center_id   INT REFERENCES coaching_centers(id) ON DELETE CASCADE,
+  created_by  INT REFERENCES users(id) ON DELETE SET NULL,
+  created_at  TIMESTAMPTZ DEFAULT NOW(),
+  updated_at  TIMESTAMPTZ DEFAULT NOW(),
+  CHECK (
+    (target_type = 'class' AND class_id IS NOT NULL AND student_id IS NULL)
+    OR
+    (target_type = 'student' AND student_id IS NOT NULL)
+  )
+);
+CREATE INDEX idx_assignments_center_created ON assignments(center_id, created_at DESC);
+CREATE INDEX idx_assignments_student ON assignments(center_id, student_id, status);
+CREATE INDEX idx_assignments_class ON assignments(center_id, class_id, status);
+
 CREATE TABLE teachers (
   id                SERIAL PRIMARY KEY,
   name              VARCHAR(150) NOT NULL,
   phone             VARCHAR(20),
   email             VARCHAR(150),
+  is_staff          BOOLEAN NOT NULL DEFAULT FALSE,
   gender            VARCHAR(20),
   qualification     VARCHAR(150),
   assigned_subjects TEXT[] DEFAULT ARRAY[]::TEXT[],
@@ -499,6 +536,7 @@ CREATE TABLE fee_payments (
   center_id      INT REFERENCES coaching_centers(id) ON DELETE CASCADE,
   amount         NUMERIC(10,2) NOT NULL CHECK (amount > 0),
   advance_amount NUMERIC(10,2) NOT NULL DEFAULT 0 CHECK (advance_amount >= 0),
+  admission_amount NUMERIC(10,2) NOT NULL DEFAULT 0 CHECK (admission_amount >= 0),
   tuition_amount NUMERIC(10,2) NOT NULL DEFAULT 0 CHECK (tuition_amount >= 0),
   hostel_amount  NUMERIC(10,2) NOT NULL DEFAULT 0 CHECK (hostel_amount >= 0),
   transport_amount NUMERIC(10,2) NOT NULL DEFAULT 0 CHECK (transport_amount >= 0),
@@ -536,12 +574,12 @@ VALUES ('Admin User', 'admin@brightacademy.in', '$2a$10$Y1QvpH2KVvNq4ZFJbwRtMuJ8
 -- Insert fee definitions
 INSERT INTO fee_structures (
   center_id, name, program_type, board, class_name, academic_year, duration_months,
-  session_start_month, session_end_month, tuition_total, hostel_total, transport_total, description
+  session_start_month, session_end_month, admission_total, tuition_total, hostel_total, transport_total, description
 ) VALUES
-  (1, 'Class IX CBSE', 'academic', 'CBSE', 'Class IX', '2026-2027', 12, 3, 2, 22000, 15000, 12000, 'CBSE academic session'),
-  (1, 'Class X CBSE', 'academic', 'CBSE', 'Class X', '2026-2027', 12, 3, 2, 24000, 18000, 18000, 'CBSE board batch'),
-  (1, 'Class XII State Board', 'academic', 'State Board', 'Class XII', '2026-2027', 12, 3, 2, 26000, 18000, 15000, 'State board senior secondary'),
-  (1, 'PGDCA', 'non_academic', NULL, NULL, NULL, 6, NULL, NULL, 18000, 9000, 0, 'Six month computer course');
+  (1, 'Class IX CBSE', 'academic', 'CBSE', 'Class IX', '2026-2027', 12, 3, 2, 2500, 22000, 15000, 12000, 'CBSE academic session'),
+  (1, 'Class X CBSE', 'academic', 'CBSE', 'Class X', '2026-2027', 12, 3, 2, 3000, 24000, 18000, 18000, 'CBSE board batch'),
+  (1, 'Class XII State Board', 'academic', 'State Board', 'Class XII', '2026-2027', 12, 3, 2, 3000, 26000, 18000, 15000, 'State board senior secondary'),
+  (1, 'PGDCA', 'non_academic', NULL, NULL, NULL, 6, NULL, NULL, 2000, 18000, 9000, 0, 'Six month computer course');
 
 -- ─── Useful Views ─────────────────────────────────────────────────
 DROP VIEW IF EXISTS fee_summary;
@@ -583,6 +621,7 @@ LEFT JOIN hostel_rooms hr ON sa_h.room_id = hr.id;
 CREATE TABLE online_exams (
   id           SERIAL PRIMARY KEY,
   title        VARCHAR(200) NOT NULL,
+  title_translations JSONB NOT NULL DEFAULT '{}'::jsonb,
   subject      VARCHAR(100),
   class        VARCHAR(30),
   duration     INT NOT NULL DEFAULT 60,
@@ -591,6 +630,7 @@ CREATE TABLE online_exams (
   start_time   TIMESTAMPTZ,
   end_time     TIMESTAMPTZ,
   instructions TEXT,
+  instructions_translations JSONB NOT NULL DEFAULT '{}'::jsonb,
   center_id    INT REFERENCES coaching_centers(id) ON DELETE CASCADE,
   created_by   INT REFERENCES users(id),
   created_at   TIMESTAMPTZ DEFAULT NOW(),
@@ -602,10 +642,13 @@ CREATE TABLE exam_questions (
   exam_id        INT REFERENCES online_exams(id) ON DELETE CASCADE,
   type           VARCHAR(20) NOT NULL DEFAULT 'mcq',   -- mcq | subjective
   question_text  TEXT NOT NULL,
+  question_text_translations JSONB NOT NULL DEFAULT '{}'::jsonb,
   options        JSONB,              -- ["A","B","C","D"]  — null for subjective
+  option_translations JSONB NOT NULL DEFAULT '[]'::jsonb,
   correct_option INT,                -- 0-indexed; null for subjective
   marks          INT NOT NULL DEFAULT 2,
   explanation    TEXT,
+  explanation_translations JSONB NOT NULL DEFAULT '{}'::jsonb,
   order_no       INT DEFAULT 0,
   created_at     TIMESTAMPTZ DEFAULT NOW()
 );

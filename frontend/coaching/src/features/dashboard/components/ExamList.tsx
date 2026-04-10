@@ -1,3 +1,5 @@
+import { useI18n } from "../../../shared/i18n/I18nProvider";
+
 type ExamItem = {
   id: number;
   exam_name: string;
@@ -14,8 +16,9 @@ type Props = {
 };
 
 export const ExamList = ({ exams, shortDate }: Props) => {
+  const { t } = useI18n();
   if (!exams?.length) {
-    return <div className="dashboard-empty">No upcoming exams.</div>;
+    return <div className="dashboard-empty">{t("dashboard.noUpcomingExams")}</div>;
   }
 
   return (
@@ -25,7 +28,7 @@ export const ExamList = ({ exams, shortDate }: Props) => {
           <div>
             <div className="dashboard-listTitle">{exam.exam_name}</div>
             <div className="dashboard-listMeta">
-              {exam.subject} | {exam.class} | {exam.board || "No board"}
+              {exam.subject} | {exam.class} | {exam.board || t("dashboard.noBoard")}
             </div>
           </div>
 

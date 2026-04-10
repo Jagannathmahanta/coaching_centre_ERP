@@ -70,6 +70,7 @@ export function TeacherDetailsModal({
             <div style={cardStyle}>
               <div style={{ fontSize: 12, color: "#64748b", textTransform: "uppercase", fontWeight: 700 }}>Status</div>
               <div style={{ marginTop: 6, fontWeight: 700, color: teacher.status === "active" ? "#166534" : "#b45309" }}>{teacher.status}</div>
+              <div style={{ marginTop: 4, color: "#64748b" }}>{teacher.is_staff ? "Non-teaching staff" : "Teaching staff"}</div>
             </div>
             <div style={cardStyle}>
               <div style={{ fontSize: 12, color: "#64748b", textTransform: "uppercase", fontWeight: 700 }}>Join Date</div>

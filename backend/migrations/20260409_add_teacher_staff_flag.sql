@@ -1,0 +1,10 @@
+ALTER TABLE teachers
+  ADD COLUMN IF NOT EXISTS is_staff BOOLEAN NOT NULL DEFAULT FALSE;
+
+ALTER TABLE users
+  ADD COLUMN IF NOT EXISTS is_staff BOOLEAN NOT NULL DEFAULT FALSE;
+
+UPDATE users u
+SET is_staff = COALESCE(t.is_staff, FALSE)
+FROM teachers t
+WHERE u.teacher_id = t.id;
