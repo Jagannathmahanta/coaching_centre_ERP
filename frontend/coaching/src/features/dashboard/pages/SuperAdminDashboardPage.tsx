@@ -10,7 +10,6 @@ import {
   ArrowLeft,
   CheckCircle2,
   XCircle,
-  MoreHorizontal,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../../shared/hooks/AuthContext";

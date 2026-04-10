@@ -19,7 +19,7 @@ import NoticesRoute from "./features/notice/routes/NoticesRoute.tsx";
 import ParentsRoute from "./features/parent/routes/ParentsRoute.tsx";
 import LoginPage from "./features/auth/LoginPage.tsx";
 import CatalogRoute from "./features/catalog/routes/CatalogRoute.tsx";
-import LandingPage from "./features/marketing/pages/LandingPage.tsx";
+import LandingPage from "./features/client-landing/index.tsx";
 import OnlineExamRoute from "./features/onlineExam/routes/OnlineExamRoute.tsx";
 import AssignmentRoute from "./features/assignment/routes/AssignmentRoute.tsx";
 import InstituteSettingsRoute from "./features/settings/routes/InstituteSettingsRoute.tsx";
