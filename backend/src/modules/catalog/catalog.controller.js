@@ -10,6 +10,7 @@ const respond = (fn) => async (req, res) => {
 };
 
 exports.getBootstrap = respond(service.getBootstrap);
+exports.getPublicLanding = respond(service.getPublicLanding);
 exports.getClasses = respond(service.getClasses);
 exports.createClass = respond(service.createClass);
 exports.updateClass = respond(service.updateClass);

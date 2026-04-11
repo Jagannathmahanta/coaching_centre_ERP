@@ -1,5 +1,8 @@
 const pool = require("../../config/db");
 const bcrypt = require("bcryptjs");
+const { deleteObjectByUrl, getSignedObjectUrl, sanitizeSegment, uploadDataUrl } = require("../../utils/s3Upload");
+
+const ALLOWED_TEACHER_IMAGE_TYPES = new Set(["image/png", "image/jpeg", "image/jpg", "image/webp", "image/gif"]);
 
 function badRequest(message) {
   const error = new Error(message);
@@ -41,6 +44,44 @@ function buildTeacherPassword(name, joinDate) {
   return `${letters}${year}`;
 }
 
+async function resolveCenterSlug(client, req) {
+  if (req.user.center_slug) {
+    return String(req.user.center_slug).trim().toLowerCase();
+  }
+
+  const { rows } = await client.query(
+    `
+    SELECT slug
+    FROM coaching_centers
+    WHERE id = $1
+    LIMIT 1
+    `,
+    [req.user.center_id]
+  );
+
+  if (!rows[0] || !rows[0].slug) {
+    throw badRequest("Institute slug not found.");
+  }
+
+  return String(rows[0].slug).trim().toLowerCase();
+}
+
+async function uploadTeacherPhoto(client, req, teacherId, photoPayload) {
+  if (!photoPayload || !photoPayload.content) {
+    return null;
+  }
+
+  const centerSlug = await resolveCenterSlug(client, req);
+  return uploadDataUrl({
+    keyPrefix: `${sanitizeSegment(centerSlug)}/teachers/teacher-${teacherId}`,
+    fileNamePrefix: "profile",
+    dataUrl: photoPayload.content,
+    originalName: photoPayload.name || `teacher-${teacherId}-profile`,
+    allowedMimeTypes: ALLOWED_TEACHER_IMAGE_TYPES,
+    maxBytes: 5 * 1024 * 1024,
+  });
+}
+
 exports.getTeachers = async (req) => {
   const { rows } = await pool.query(
     `
@@ -51,6 +92,8 @@ exports.getTeachers = async (req) => {
       t.email,
       COALESCE(t.is_staff, u.is_staff, FALSE) AS is_staff,
       t.gender,
+      t.photo_url,
+      t.experience,
       t.qualification,
       t.assigned_subjects,
       t.assigned_classes,
@@ -75,7 +118,12 @@ exports.getTeachers = async (req) => {
     [req.user.center_id]
   );
 
-  return rows;
+  return Promise.all(
+    rows.map(async (row) => ({
+      ...row,
+      photo_url: await getSignedObjectUrl(row.photo_url),
+    }))
+  );
 };
 
 exports.createTeacher = async (req) => {
@@ -85,12 +133,14 @@ exports.createTeacher = async (req) => {
     email,
     is_staff,
     gender,
+    experience,
     qualification,
     assigned_subjects,
     assigned_classes,
     join_date,
     status,
     notes,
+    photo,
   } = req.body;
 
   if (!name) {
@@ -105,8 +155,8 @@ exports.createTeacher = async (req) => {
     const { rows } = await client.query(
       `
       INSERT INTO teachers
-      (name, phone, email, is_staff, gender, qualification, assigned_subjects, assigned_classes, join_date, status, notes, center_id)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+      (name, phone, email, is_staff, gender, photo_url, experience, qualification, assigned_subjects, assigned_classes, join_date, status, notes, center_id)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
       RETURNING *
       `,
       [
@@ -115,6 +165,8 @@ exports.createTeacher = async (req) => {
         email || null,
         Boolean(is_staff),
         gender || null,
+        null,
+        experience || null,
         qualification || null,
         normalizeTextArray(assigned_subjects),
         normalizeTextArray(assigned_classes),
@@ -125,7 +177,21 @@ exports.createTeacher = async (req) => {
       ]
     );
 
-    const teacher = rows[0];
+    let teacher = rows[0];
+
+    if (photo && photo.content) {
+      const uploadedPhoto = await uploadTeacherPhoto(client, req, teacher.id, photo);
+      const updatedPhoto = await client.query(
+        `
+        UPDATE teachers
+        SET photo_url = $1, updated_at = NOW()
+        WHERE id = $2 AND center_id = $3
+        RETURNING *
+        `,
+        [uploadedPhoto.url, teacher.id, req.user.center_id]
+      );
+      teacher = updatedPhoto.rows[0];
+    }
 
     const normalizedEmail = String(email || "").trim().toLowerCase() || null;
     const normalizedPhone = String(phone || "").trim() || null;
@@ -159,7 +225,10 @@ exports.createTeacher = async (req) => {
     }
 
     await client.query("COMMIT");
-    return teacher;
+    return {
+      ...teacher,
+      photo_url: await getSignedObjectUrl(teacher.photo_url),
+    };
   } catch (error) {
     await client.query("ROLLBACK");
     throw error;
@@ -170,66 +239,102 @@ exports.createTeacher = async (req) => {
 
 exports.updateTeacher = async (req) => {
   const teacherId = Number(req.params.id);
-  const existing = await getTeacherById(teacherId, req.user.center_id);
-  const payload = { ...existing, ...req.body };
+  const client = await pool.connect();
 
-  if (!payload.name) {
-    throw badRequest("Teacher name is required.");
+  try {
+    await client.query("BEGIN");
+
+    const existing = await getTeacherById(teacherId, req.user.center_id);
+    const payload = { ...existing, ...req.body };
+
+    if (!payload.name) {
+      throw badRequest("Teacher name is required.");
+    }
+
+    const { rows } = await client.query(
+      `
+      UPDATE teachers
+      SET
+        name = $1,
+        phone = $2,
+        email = $3,
+        is_staff = $4,
+        gender = $5,
+        experience = $6,
+        qualification = $7,
+        assigned_subjects = $8,
+        assigned_classes = $9,
+        join_date = $10,
+        status = $11,
+        notes = $12,
+        updated_at = NOW()
+      WHERE id = $13 AND center_id = $14
+      RETURNING *
+      `,
+      [
+        payload.name,
+        payload.phone || null,
+        payload.email || null,
+        Boolean(payload.is_staff),
+        payload.gender || null,
+        payload.experience || null,
+        payload.qualification || null,
+        normalizeTextArray(payload.assigned_subjects),
+        normalizeTextArray(payload.assigned_classes),
+        payload.join_date || null,
+        payload.status || "active",
+        payload.notes || null,
+        teacherId,
+        req.user.center_id,
+      ]
+    );
+
+    let teacher = rows[0];
+
+    if (payload.photo && payload.photo.content) {
+      const uploadedPhoto = await uploadTeacherPhoto(client, req, teacherId, payload.photo);
+      const photoUpdated = await client.query(
+        `
+        UPDATE teachers
+        SET photo_url = $1, updated_at = NOW()
+        WHERE id = $2 AND center_id = $3
+        RETURNING *
+        `,
+        [uploadedPhoto.url, teacherId, req.user.center_id]
+      );
+      teacher = photoUpdated.rows[0];
+      if (existing.photo_url) {
+        await deleteObjectByUrl(existing.photo_url).catch(() => {});
+      }
+    }
+
+    await client.query(
+      `
+      UPDATE users
+      SET
+        name = $1,
+        is_staff = $2
+      WHERE teacher_id = $3 AND center_id = $4
+      `,
+      [payload.name, Boolean(payload.is_staff), teacherId, req.user.center_id]
+    );
+
+    await client.query("COMMIT");
+    return {
+      ...teacher,
+      photo_url: await getSignedObjectUrl(teacher.photo_url),
+    };
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
   }
-
-  const { rows } = await pool.query(
-    `
-    UPDATE teachers
-    SET
-      name = $1,
-      phone = $2,
-      email = $3,
-      is_staff = $4,
-      gender = $5,
-      qualification = $6,
-      assigned_subjects = $7,
-      assigned_classes = $8,
-      join_date = $9,
-      status = $10,
-      notes = $11,
-      updated_at = NOW()
-    WHERE id = $12 AND center_id = $13
-    RETURNING *
-    `,
-    [
-      payload.name,
-      payload.phone || null,
-      payload.email || null,
-      Boolean(payload.is_staff),
-      payload.gender || null,
-      payload.qualification || null,
-      normalizeTextArray(payload.assigned_subjects),
-      normalizeTextArray(payload.assigned_classes),
-      payload.join_date || null,
-      payload.status || "active",
-      payload.notes || null,
-      teacherId,
-      req.user.center_id,
-    ]
-  );
-
-  await pool.query(
-    `
-    UPDATE users
-    SET
-      name = $1,
-      is_staff = $2
-    WHERE teacher_id = $3 AND center_id = $4
-    `,
-    [payload.name, Boolean(payload.is_staff), teacherId, req.user.center_id]
-  );
-
-  return rows[0];
 };
 
 exports.deleteTeacher = async (req) => {
   const teacherId = Number(req.params.id);
-  await getTeacherById(teacherId, req.user.center_id);
+  const teacher = await getTeacherById(teacherId, req.user.center_id);
 
   await pool.query(
     `
@@ -238,6 +343,10 @@ exports.deleteTeacher = async (req) => {
     `,
     [teacherId, req.user.center_id]
   );
+
+  if (teacher.photo_url) {
+    await deleteObjectByUrl(teacher.photo_url).catch(() => {});
+  }
 
   return { success: true };
 };

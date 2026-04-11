@@ -468,6 +468,8 @@ CREATE TABLE teachers (
   email             VARCHAR(150),
   is_staff          BOOLEAN NOT NULL DEFAULT FALSE,
   gender            VARCHAR(20),
+  photo_url         TEXT,
+  experience        VARCHAR(120),
   qualification     VARCHAR(150),
   assigned_subjects TEXT[] DEFAULT ARRAY[]::TEXT[],
   assigned_classes  TEXT[] DEFAULT ARRAY[]::TEXT[],

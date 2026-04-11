@@ -53,6 +53,70 @@ exports.getBootstrap = async (req) => {
   };
 };
 
+exports.getPublicLanding = async (req) => {
+  const slug = String(req.params.slug || "").trim().toLowerCase();
+  if (!slug) {
+    throw createAppError("slug is required.");
+  }
+
+  const tenantRes = await pool.query(
+    `
+    SELECT id, name, slug, city, address, phone, email, logo_url, status, plan
+    FROM coaching_centers
+    WHERE LOWER(slug) = $1
+    LIMIT 1
+    `,
+    [slug]
+  );
+
+  const tenant = tenantRes.rows[0];
+  if (!tenant) {
+    throw createAppError("Institute not found.");
+  }
+
+  const [classesRes, coursesRes, batchesRes] = await Promise.all([
+    pool.query(
+      `
+      SELECT *
+      FROM class_definitions
+      WHERE center_id = $1 AND status = 'active'
+      ORDER BY class_name
+      `,
+      [tenant.id]
+    ),
+    pool.query(
+      `
+      SELECT *
+      FROM course_definitions
+      WHERE center_id = $1 AND status = 'active'
+      ORDER BY course_name
+      `,
+      [tenant.id]
+    ),
+    pool.query(
+      `
+      SELECT
+        b.*,
+        cd.class_name,
+        cr.course_name
+      FROM batch_definitions b
+      LEFT JOIN class_definitions cd ON cd.id = b.class_id
+      LEFT JOIN course_definitions cr ON cr.id = b.course_id
+      WHERE b.center_id = $1 AND b.status = 'active'
+      ORDER BY b.program_type, b.shift, b.start_time
+      `,
+      [tenant.id]
+    ),
+  ]);
+
+  return {
+    tenant,
+    classes: classesRes.rows,
+    courses: coursesRes.rows,
+    batches: batchesRes.rows,
+  };
+};
+
 exports.getClasses = async (req) => {
   const { rows } = await pool.query(
     `

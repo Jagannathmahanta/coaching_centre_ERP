@@ -2,6 +2,7 @@ const router = require("express").Router();
 const controller = require("./catalog.controller");
 const auth = require("../../middleware/auth.middleware");
 
+router.get("/public/:slug", controller.getPublicLanding);
 router.get("/bootstrap", auth, controller.getBootstrap);
 
 router.get("/classes", auth, controller.getClasses);

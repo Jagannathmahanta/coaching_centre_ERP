@@ -7,6 +7,47 @@ const {
 } = require("../fees/fees.shared");
 const { buildStudentPassword, resolveAdmissionSelection } = require("../catalog/catalog.shared");
 const { syncStudentHostelAllocation } = require("../hostel/hostel.service");
+const { deleteObjectByUrl, getSignedObjectUrl, sanitizeSegment, uploadDataUrl } = require("../../utils/s3Upload");
+
+const ALLOWED_STUDENT_IMAGE_TYPES = new Set(["image/png", "image/jpeg", "image/jpg", "image/webp", "image/gif"]);
+
+async function resolveCenterSlug(client, req) {
+  if (req.user.center_slug) {
+    return String(req.user.center_slug).trim().toLowerCase();
+  }
+
+  const { rows } = await client.query(
+    `
+    SELECT slug
+    FROM coaching_centers
+    WHERE id = $1
+    LIMIT 1
+    `,
+    [req.user.center_id]
+  );
+
+  if (!rows[0] || !rows[0].slug) {
+    throw createAppError("Institute slug not found.", 404);
+  }
+
+  return String(rows[0].slug).trim().toLowerCase();
+}
+
+async function uploadStudentPhoto(client, req, studentId, photoPayload) {
+  if (!photoPayload || !photoPayload.content) {
+    return null;
+  }
+
+  const centerSlug = await resolveCenterSlug(client, req);
+  return uploadDataUrl({
+    keyPrefix: `${sanitizeSegment(centerSlug)}/students/student-${studentId}`,
+    fileNamePrefix: "profile",
+    dataUrl: photoPayload.content,
+    originalName: photoPayload.name || `student-${studentId}-profile`,
+    allowedMimeTypes: ALLOWED_STUDENT_IMAGE_TYPES,
+    maxBytes: 5 * 1024 * 1024,
+  });
+}
 
 const createLinkedUser = async (client, req, payload) => {
   const {
@@ -210,7 +251,12 @@ exports.getStudents = async (req) => {
     query,
     params
   );
-  return rows;
+  return Promise.all(
+    rows.map(async (row) => ({
+      ...row,
+      photo_url: await getSignedObjectUrl(row.photo_url),
+    }))
+  );
 };
 
 exports.getStudentById = async (req) => {
@@ -277,12 +323,15 @@ exports.getStudentById = async (req) => {
     throw createAppError("Student not found.", 404);
   }
 
-  return rows[0];
+  return {
+    ...rows[0],
+    photo_url: await getSignedObjectUrl(rows[0].photo_url),
+  };
 };
 
 exports.createStudent = async (req) => {
-  const {
-    name,
+    const {
+      name,
     class: className,
     phone,
     email,
@@ -306,8 +355,9 @@ exports.createStudent = async (req) => {
     class_id,
     course_id,
     batch_id,
-    admission_year,
-  } = req.body;
+      admission_year,
+      photo,
+    } = req.body;
 
   if (!name) {
     throw createAppError("name is required.");
@@ -366,6 +416,7 @@ exports.createStudent = async (req) => {
         phone,
         email,
         gender,
+        photo_url,
         parent_id,
         roll_number,
         join_date,
@@ -377,7 +428,7 @@ exports.createStudent = async (req) => {
         batch_id,
         admission_year
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, COALESCE($8, CURRENT_DATE), $9, $10, $11, $12, $13, $14, $15)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, COALESCE($9, CURRENT_DATE), $10, $11, $12, $13, $14, $15, $16)
       RETURNING *
       `,
       [
@@ -386,6 +437,7 @@ exports.createStudent = async (req) => {
         phone || null,
         String(email || "").trim().toLowerCase() || null,
         gender || null,
+        null,
         parentId,
         admissionNumber,
         join_date || null,
@@ -399,7 +451,21 @@ exports.createStudent = async (req) => {
       ]
     );
 
-    const student = studentRows[0];
+    let student = studentRows[0];
+
+    if (photo && photo.content) {
+      const uploadedPhoto = await uploadStudentPhoto(client, req, student.id, photo);
+      const updatedPhoto = await client.query(
+        `
+        UPDATE students
+        SET photo_url = $1, updated_at = NOW()
+        WHERE id = $2 AND center_id = $3
+        RETURNING *
+        `,
+        [uploadedPhoto.url, student.id, req.user.center_id]
+      );
+      student = updatedPhoto.rows[0];
+    }
 
     let feePlan = null;
     const shouldCreateFeePlan = create_fee_plan !== false && Boolean(billing_cycle) && Boolean(fee_structure_id);
@@ -490,7 +556,10 @@ exports.createStudent = async (req) => {
     await client.query("COMMIT");
 
     return {
-      student,
+      student: {
+        ...student,
+        photo_url: await getSignedObjectUrl(student.photo_url),
+      },
       fee_plan: feePlan,
       parent_id: parentId,
     };
@@ -504,7 +573,7 @@ exports.createStudent = async (req) => {
 
 exports.updateStudent = async (req) => {
   const studentId = Number(req.params.id);
-  const { name, class: className, phone, email, gender, join_date, include_hostel, hostel_id, room_id, parent_name, parent_phone, parent_email, status, left_date, left_reason } = req.body;
+  const { name, class: className, phone, email, gender, join_date, include_hostel, hostel_id, room_id, parent_name, parent_phone, parent_email, status, left_date, left_reason, photo } = req.body;
 
   if (!studentId) {
     throw createAppError("Student id is required.");
@@ -602,20 +671,21 @@ exports.updateStudent = async (req) => {
         phone = $3,
         email = $4,
         gender = $5,
-        parent_id = $6,
-        status = $7,
-        left_date = $8,
-        left_reason = $9,
-        join_date = COALESCE($10, join_date),
-        program_type = COALESCE($11, program_type),
-        board = COALESCE($12, board),
-        class_id = COALESCE($13, class_id),
-        course_id = COALESCE($14, course_id),
-        batch_id = COALESCE($15, batch_id),
-        admission_year = COALESCE($16, admission_year),
+        photo_url = COALESCE($6, photo_url),
+        parent_id = $7,
+        status = $8,
+        left_date = $9,
+        left_reason = $10,
+        join_date = COALESCE($11, join_date),
+        program_type = COALESCE($12, program_type),
+        board = COALESCE($13, board),
+        class_id = COALESCE($14, class_id),
+        course_id = COALESCE($15, course_id),
+        batch_id = COALESCE($16, batch_id),
+        admission_year = COALESCE($17, admission_year),
         updated_at = NOW()
-      WHERE id = $17
-        AND center_id = $18
+      WHERE id = $18
+        AND center_id = $19
       RETURNING *
       `,
       [
@@ -624,6 +694,7 @@ exports.updateStudent = async (req) => {
         phone || null,
         String(email || "").trim().toLowerCase() || null,
         gender || null,
+        null,
         parentId,
         normalizedStatus,
         normalizedStatus === "active" ? null : (left_date || existingStudent.left_date || new Date().toISOString().slice(0, 10)),
@@ -640,18 +711,40 @@ exports.updateStudent = async (req) => {
       ]
     );
 
+    let updatedStudent = rows[0];
+
+    if (photo && photo.content) {
+      const uploadedPhoto = await uploadStudentPhoto(client, req, studentId, photo);
+      const photoUpdated = await client.query(
+        `
+        UPDATE students
+        SET photo_url = $1, updated_at = NOW()
+        WHERE id = $2 AND center_id = $3
+        RETURNING *
+        `,
+        [uploadedPhoto.url, studentId, req.user.center_id]
+      );
+      if (existingStudent.photo_url) {
+        await deleteObjectByUrl(existingStudent.photo_url).catch(() => {});
+      }
+      updatedStudent = photoUpdated.rows[0];
+    }
+
     if (include_hostel !== undefined) {
       await syncStudentHostelAllocation(client, req, {
         studentId,
         includeHostel: Boolean(include_hostel),
         hostelId: hostel_id,
         roomId: room_id,
-        startDate: join_date || rows[0].join_date,
+        startDate: join_date || updatedStudent.join_date,
       });
     }
 
     await client.query("COMMIT");
-    return rows[0];
+    return {
+      ...updatedStudent,
+      photo_url: await getSignedObjectUrl(updatedStudent.photo_url),
+    };
   } catch (error) {
     await client.query("ROLLBACK");
     throw error;
@@ -720,6 +813,21 @@ exports.deleteStudent = async (req) => {
     throw createAppError("Student id is required.");
   }
 
+  const existingStudent = await pool.query(
+    `
+    SELECT photo_url
+    FROM students
+    WHERE id = $1
+      AND center_id = $2
+    LIMIT 1
+    `,
+    [studentId, req.user.center_id]
+  );
+
+  if (!existingStudent.rows[0]) {
+    throw createAppError("Student not found.", 404);
+  }
+
   const paymentCheck = await pool.query(
     `
     SELECT COUNT(*) AS payment_count
@@ -746,6 +854,10 @@ exports.deleteStudent = async (req) => {
 
   if (!rows[0]) {
     throw createAppError("Student not found.", 404);
+  }
+
+  if (existingStudent.rows[0].photo_url) {
+    await deleteObjectByUrl(existingStudent.rows[0].photo_url).catch(() => {});
   }
 
   return { success: true };

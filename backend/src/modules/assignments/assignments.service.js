@@ -1,13 +1,10 @@
 const pool = require("../../config/db");
 const { createAppError } = require("../fees/fees.shared");
-const fs = require("fs");
-const path = require("path");
-const crypto = require("crypto");
+const { deleteObjectByUrl, getSignedObjectUrl, sanitizeSegment, uploadDataUrl } = require("../../utils/s3Upload");
 
 const AUTHOR_ROLES = new Set(["admin", "teacher"]);
 const VIEWER_ROLES = new Set(["admin", "teacher", "student"]);
 const ALLOWED_ATTACHMENT_TYPES = new Set(["application/pdf", "image/png", "image/jpeg", "image/jpg", "image/webp"]);
-const UPLOAD_ROOT = path.join(__dirname, "..", "..", "..", "uploads", "assignments");
 
 const baseSelect = `
   SELECT
@@ -40,36 +37,51 @@ function ensureAuthor(req) {
   }
 }
 
-function ensureUploadDir() {
-  fs.mkdirSync(UPLOAD_ROOT, { recursive: true });
-}
-
 function buildAttachmentUrl(attachmentPath) {
   if (!attachmentPath) return null;
+  if (/^https?:\/\//i.test(String(attachmentPath))) {
+    return String(attachmentPath);
+  }
   return `/${String(attachmentPath).replace(/^\/+/, "")}`;
 }
 
-function removeAttachmentFile(attachmentPath) {
-  if (!attachmentPath) return;
-  const resolved = path.join(__dirname, "..", "..", "..", String(attachmentPath));
-  if (fs.existsSync(resolved)) {
-    fs.unlinkSync(resolved);
-  }
-}
-
-function parseDataUrl(dataUrl) {
-  const match = String(dataUrl || "").match(/^data:([^;]+);base64,(.+)$/);
-  if (!match) {
-    throw createAppError("Invalid attachment payload.");
-  }
-
+async function withSignedAttachment(row) {
   return {
-    mimeType: match[1],
-    buffer: Buffer.from(match[2], "base64"),
+    ...row,
+    attachment_url: await getSignedObjectUrl(buildAttachmentUrl(row.attachment_path)),
   };
 }
 
-function saveAttachment(centerId, payload) {
+async function removeAttachmentFile(attachmentPath) {
+  if (!attachmentPath) return;
+  if (/^https?:\/\//i.test(String(attachmentPath))) {
+    await deleteObjectByUrl(String(attachmentPath)).catch(() => {});
+  }
+}
+
+async function resolveCenterSlug(centerId, fallbackSlug) {
+  if (fallbackSlug) {
+    return String(fallbackSlug).trim().toLowerCase();
+  }
+
+  const { rows } = await pool.query(
+    `
+    SELECT slug
+    FROM coaching_centers
+    WHERE id = $1
+    LIMIT 1
+    `,
+    [centerId]
+  );
+
+  if (!rows[0] || !rows[0].slug) {
+    throw createAppError("Institute slug not found.", 404);
+  }
+
+  return String(rows[0].slug).trim().toLowerCase();
+}
+
+async function saveAttachment(centerId, centerSlug, assignmentId, payload) {
   if (!payload || !payload.content) {
     return {
       attachmentName: null,
@@ -79,35 +91,20 @@ function saveAttachment(centerId, payload) {
     };
   }
 
-  const { mimeType, buffer } = parseDataUrl(payload.content);
-  if (!ALLOWED_ATTACHMENT_TYPES.has(mimeType)) {
-    throw createAppError("Only PDF, PNG, JPG, JPEG, and WEBP files are allowed.");
-  }
-
-  const size = buffer.byteLength;
-  if (size > 5 * 1024 * 1024) {
-    throw createAppError("Attachment size must be 5 MB or less.");
-  }
-
-  const extensionByMime = {
-    "application/pdf": ".pdf",
-    "image/png": ".png",
-    "image/jpeg": ".jpg",
-    "image/jpg": ".jpg",
-    "image/webp": ".webp",
-  };
-
-  ensureUploadDir();
-  const extension = extensionByMime[mimeType] || "";
-  const fileName = `${centerId}-${Date.now()}-${crypto.randomBytes(6).toString("hex")}${extension}`;
-  const filePath = path.join(UPLOAD_ROOT, fileName);
-  fs.writeFileSync(filePath, buffer);
+  const uploaded = await uploadDataUrl({
+    keyPrefix: `${sanitizeSegment(centerSlug)}/assignments/assignment-${assignmentId}`,
+    fileNamePrefix: "attachment",
+    dataUrl: payload.content,
+    originalName: payload.name || `assignment-${assignmentId}-attachment`,
+    allowedMimeTypes: ALLOWED_ATTACHMENT_TYPES,
+    maxBytes: 5 * 1024 * 1024,
+  });
 
   return {
-    attachmentName: String(payload.name || fileName),
-    attachmentMimeType: mimeType,
-    attachmentPath: path.posix.join("uploads", "assignments", fileName),
-    attachmentSize: size,
+    attachmentName: uploaded.name,
+    attachmentMimeType: uploaded.mimeType,
+    attachmentPath: uploaded.url,
+    attachmentSize: uploaded.size,
   };
 }
 
@@ -201,10 +198,7 @@ exports.getAssignments = async (req) => {
       [centerId, studentId, student.class_id || null]
     );
 
-    return rows.map((row) => ({
-      ...row,
-      attachment_url: buildAttachmentUrl(row.attachment_path),
-    }));
+    return Promise.all(rows.map(withSignedAttachment));
   }
 
   const { rows } = await pool.query(
@@ -216,10 +210,7 @@ exports.getAssignments = async (req) => {
     [centerId]
   );
 
-  return rows.map((row) => ({
-    ...row,
-    attachment_url: buildAttachmentUrl(row.attachment_path),
-  }));
+  return Promise.all(rows.map(withSignedAttachment));
 };
 
 exports.createAssignment = async (req) => {
@@ -263,64 +254,98 @@ exports.createAssignment = async (req) => {
     studentId = studentRow.id;
   }
 
-  const attachment = saveAttachment(req.user.center_id, req.body.attachment);
+  const centerSlug = await resolveCenterSlug(req.user.center_id, req.user.center_slug);
+  const client = await pool.connect();
 
-  const { rows } = await pool.query(
-    `
-    INSERT INTO assignments (
-      title,
-      description,
-      target_type,
-      class_id,
-      student_id,
-      due_date,
-      attachment_name,
-      attachment_mime_type,
-      attachment_path,
-      attachment_size,
-      status,
-      center_id,
-      created_by
-    )
-    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
-    RETURNING id
-    `,
-    [
-      title,
-      description,
-      targetType,
-      classId,
-      studentId,
-      dueDate,
-      attachment.attachmentName,
-      attachment.attachmentMimeType,
-      attachment.attachmentPath,
-      attachment.attachmentSize,
-      "active",
-      req.user.center_id,
-      req.user.id,
-    ]
-  );
+  try {
+    await client.query("BEGIN");
 
-  const populated = await pool.query(
-    `
-    ${baseSelect}
-    WHERE a.id = $1 AND a.center_id = $2
-    LIMIT 1
-    `,
-    [rows[0].id, req.user.center_id]
-  );
+    const { rows } = await client.query(
+      `
+      INSERT INTO assignments (
+        title,
+        description,
+        target_type,
+        class_id,
+        student_id,
+        due_date,
+        attachment_name,
+        attachment_mime_type,
+        attachment_path,
+        attachment_size,
+        status,
+        center_id,
+        created_by
+      )
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
+      RETURNING id
+      `,
+      [
+        title,
+        description,
+        targetType,
+        classId,
+        studentId,
+        dueDate,
+        null,
+        null,
+        null,
+        null,
+        "active",
+        req.user.center_id,
+        req.user.id,
+      ]
+    );
 
-  return {
-    ...populated.rows[0],
-    attachment_url: buildAttachmentUrl(populated.rows[0].attachment_path),
-  };
+    if (req.body.attachment && req.body.attachment.content) {
+      const attachment = await saveAttachment(req.user.center_id, centerSlug, rows[0].id, req.body.attachment);
+      await client.query(
+        `
+        UPDATE assignments
+        SET
+          attachment_name = $1,
+          attachment_mime_type = $2,
+          attachment_path = $3,
+          attachment_size = $4,
+          updated_at = NOW()
+        WHERE id = $5 AND center_id = $6
+        `,
+        [
+          attachment.attachmentName,
+          attachment.attachmentMimeType,
+          attachment.attachmentPath,
+          attachment.attachmentSize,
+          rows[0].id,
+          req.user.center_id,
+        ]
+      );
+    }
+
+    const populated = await client.query(
+      `
+      ${baseSelect}
+      WHERE a.id = $1 AND a.center_id = $2
+      LIMIT 1
+      `,
+      [rows[0].id, req.user.center_id]
+    );
+
+    await client.query("COMMIT");
+
+    return withSignedAttachment(populated.rows[0]);
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
 };
 
 exports.updateAssignment = async (req) => {
   ensureAuthor(req);
 
   const existing = await getAssignmentById(req.user.center_id, req.params.id);
+  const centerSlug = await resolveCenterSlug(req.user.center_id, req.user.center_slug);
   const title = String(req.body.title || "").trim();
   const description = String(req.body.description || "").trim();
   const targetType = String(req.body.target_type || "").trim().toLowerCase();
@@ -365,7 +390,7 @@ exports.updateAssignment = async (req) => {
   let attachmentSize = existing.attachment_size;
 
   if (req.body.remove_attachment) {
-    removeAttachmentFile(existing.attachment_path);
+    await removeAttachmentFile(existing.attachment_path);
     attachmentName = null;
     attachmentMimeType = null;
     attachmentPath = null;
@@ -373,8 +398,8 @@ exports.updateAssignment = async (req) => {
   }
 
   if (req.body.attachment && req.body.attachment.content) {
-    const nextAttachment = saveAttachment(req.user.center_id, req.body.attachment);
-    removeAttachmentFile(existing.attachment_path);
+    const nextAttachment = await saveAttachment(req.user.center_id, centerSlug, req.params.id, req.body.attachment);
+    await removeAttachmentFile(existing.attachment_path);
     attachmentName = nextAttachment.attachmentName;
     attachmentMimeType = nextAttachment.attachmentMimeType;
     attachmentPath = nextAttachment.attachmentPath;
@@ -415,10 +440,7 @@ exports.updateAssignment = async (req) => {
   );
 
   const updated = await getAssignmentById(req.user.center_id, req.params.id);
-  return {
-    ...updated,
-    attachment_url: buildAttachmentUrl(updated.attachment_path),
-  };
+  return withSignedAttachment(updated);
 };
 
 exports.deleteAssignment = async (req) => {
@@ -442,7 +464,7 @@ exports.deleteAssignment = async (req) => {
     [Number(req.params.id), req.user.center_id]
   );
 
-  removeAttachmentFile(existing.rows[0]?.attachment_path);
+  await removeAttachmentFile(existing.rows[0] ? existing.rows[0].attachment_path : null);
 
   return { success: true };
 };
