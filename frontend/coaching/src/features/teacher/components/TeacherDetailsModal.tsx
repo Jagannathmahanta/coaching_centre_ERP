@@ -42,11 +42,20 @@ export function TeacherDetailsModal({
     >
       <div style={panelStyle} onClick={(event) => event.stopPropagation()}>
         <div style={{ padding: 24, borderBottom: "1px solid #e5e7eb", display: "flex", justifyContent: "space-between", gap: 16 }}>
-          <div>
+          <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
+            {teacher.photo_url ? (
+              <img
+                src={teacher.photo_url}
+                alt={teacher.name}
+                style={{ width: 84, height: 84, objectFit: "cover", borderRadius: 18, border: "1px solid #e5e7eb" }}
+              />
+            ) : null}
+            <div>
             <h2 style={{ margin: 0, fontSize: 28 }}>{teacher.name}</h2>
             <p style={{ margin: "8px 0 0", color: "#64748b" }}>
-              {teacher.qualification || "No qualification added"}
+              {[teacher.qualification, teacher.experience].filter(Boolean).join(" | ") || "No qualification added"}
             </p>
+            </div>
           </div>
           <button
             type="button"
@@ -75,6 +84,7 @@ export function TeacherDetailsModal({
             <div style={cardStyle}>
               <div style={{ fontSize: 12, color: "#64748b", textTransform: "uppercase", fontWeight: 700 }}>Join Date</div>
               <div style={{ marginTop: 6, fontWeight: 700, color: "#0f172a" }}>{teacher.join_date ? new Date(teacher.join_date).toLocaleDateString() : "-"}</div>
+              <div style={{ marginTop: 4, color: "#64748b" }}>{teacher.experience || "-"}</div>
             </div>
             <div style={cardStyle}>
               <div style={{ fontSize: 12, color: "#64748b", textTransform: "uppercase", fontWeight: 700 }}>Login</div>

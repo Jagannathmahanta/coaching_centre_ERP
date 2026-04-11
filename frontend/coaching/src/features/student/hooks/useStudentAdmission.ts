@@ -77,6 +77,8 @@ export function useStudentAdmission() {
             name: student.name || "",
             phone: student.phone || "",
             email: student.email || "",
+            photo_url: student.photo_url || "",
+            photo: null,
             gender: student.gender || "male",
             status: student.status || "active",
             left_date: student.left_date ? String(student.left_date).slice(0, 10) : "",
@@ -235,7 +237,7 @@ export function useStudentAdmission() {
     };
   }, [selectedDefinition, form.join_date, form.include_hostel, form.include_transport, form.billing_cycle]);
 
-  const handleChange = (key: keyof StudentAdmissionForm, value: string | boolean) => {
+  const handleChange = (key: keyof StudentAdmissionForm, value: string | boolean | File | null) => {
     setForm((current) => {
       let normalizedValue = value;
       if (typeof value === "string") {

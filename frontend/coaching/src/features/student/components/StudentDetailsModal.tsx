@@ -60,11 +60,59 @@ export function StudentDetailsModal({
       onClick={onClose}
     >
       <div style={panelStyle} onClick={(event) => event.stopPropagation()}>
-        <div style={{ padding: 24, borderBottom: "1px solid #e5e7eb", display: "flex", justifyContent: "space-between", gap: 16 }}>
-          <div>
-            <h2 style={{ margin: 0, fontSize: 28 }}>{student.name}</h2>
-            <p style={{ margin: "8px 0 0", color: "#64748b" }}>Admission No: {student.roll_number || "-"}</p>
+        <div
+          style={{
+            padding: 24,
+            borderBottom: "1px solid #e5e7eb",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 16,
+          }}
+        >
+          {/* LEFT SIDE (Photo + Name) */}
+          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+            {/* Student Photo */}
+            {student.photo_url ? (
+              <img
+                src={student.photo_url}
+                alt="student"
+                style={{
+                  width: 64,
+                  height: 64,
+                  borderRadius: "50%",
+                  objectFit: "cover",
+                  border: "2px solid #e5e7eb",
+                }}
+              />
+            ) : (
+              <div
+                style={{
+                  width: 64,
+                  height: 64,
+                  borderRadius: "50%",
+                  background: "#e2e8f0",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontWeight: 700,
+                  color: "#475569",
+                }}
+              >
+                {student.name?.[0] || "?"}
+              </div>
+            )}
+
+            {/* Name + Admission */}
+            <div>
+              <h2 style={{ margin: 0, fontSize: 24 }}>{student.name}</h2>
+              <p style={{ margin: "6px 0 0", color: "#64748b" }}>
+                Admission No: {student.roll_number || "-"}
+              </p>
+            </div>
           </div>
+
+          {/* CLOSE BUTTON */}
           <button
             type="button"
             onClick={onClose}
@@ -75,7 +123,6 @@ export function StudentDetailsModal({
               padding: "10px 14px",
               fontWeight: 700,
               cursor: "pointer",
-              height: "fit-content",
             }}
           >
             Close

@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import Layout from "./layout/Layout";
 import ProtectedRoute from "./modules/auth/ProtectedRoute.tsx";
 import NotFoundPage from "./modules/NotFoundPage";
@@ -19,15 +19,47 @@ import NoticesRoute from "./features/notice/routes/NoticesRoute.tsx";
 import ParentsRoute from "./features/parent/routes/ParentsRoute.tsx";
 import LoginPage from "./features/auth/LoginPage.tsx";
 import CatalogRoute from "./features/catalog/routes/CatalogRoute.tsx";
-import LandingPage from "./features/client-landing/index.tsx";
+import ClientLandingPage from "./features/client-landing/index.tsx";
+import MarketingLandingPage from "./features/marketing/pages/LandingPage.tsx";
 import OnlineExamRoute from "./features/onlineExam/routes/OnlineExamRoute.tsx";
 import AssignmentRoute from "./features/assignment/routes/AssignmentRoute.tsx";
 import InstituteSettingsRoute from "./features/settings/routes/InstituteSettingsRoute.tsx";
+import { resolveLandingSlug } from "./features/client-landing/service";
+
+function shouldUseClientLanding(hostname: string, search: string) {
+  const forcedSlug = resolveLandingSlug(search);
+  if (forcedSlug) {
+    return true;
+  }
+
+  const normalizedHost = hostname.toLowerCase();
+  if (
+    !normalizedHost ||
+    normalizedHost === "localhost" ||
+    normalizedHost === "127.0.0.1" ||
+    normalizedHost === "www.tutorialhub.co.in" ||
+    normalizedHost === "tutorialhub.co.in"
+  ) {
+    return false;
+  }
+
+  return normalizedHost.endsWith(".tutorialhub.co.in");
+}
+
+function PublicLandingRoute() {
+  const location = useLocation();
+  const hostname = typeof window === "undefined" ? "" : window.location.hostname;
+
+  return shouldUseClientLanding(hostname, location.search)
+    ? <ClientLandingPage />
+    : <MarketingLandingPage />;
+}
+
 export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<LandingPage />} />
+        <Route path="/" element={<PublicLandingRoute />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
         <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>

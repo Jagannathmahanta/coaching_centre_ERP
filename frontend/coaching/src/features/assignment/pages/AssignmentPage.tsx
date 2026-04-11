@@ -46,6 +46,7 @@ type AssignmentFormState = {
   student_id: string;
   due_date: string;
   attachment: File | null;
+  remove_attachment: boolean;
 };
 
 const cardStyle: CSSProperties = {
@@ -97,6 +98,7 @@ const initialForm: AssignmentFormState = {
   student_id: "",
   due_date: "",
   attachment: null,
+  remove_attachment: false,
 };
 
 function formatDate(value?: string | null) {
@@ -240,6 +242,7 @@ export default function AssignmentPage() {
       student_id: form.target_type === "student" ? Number(form.student_id) : undefined,
       due_date: form.due_date || undefined,
       attachment: attachmentPayload,
+      remove_attachment: form.remove_attachment || undefined,
     };
   };
 
@@ -275,6 +278,7 @@ export default function AssignmentPage() {
       student_id: assignment.student_id ? String(assignment.student_id) : "",
       due_date: assignment.due_date ? String(assignment.due_date).slice(0, 10) : "",
       attachment: null,
+      remove_attachment: false,
     });
     setEditingAssignmentId(assignment.id);
     setShowForm(true);
@@ -453,13 +457,78 @@ export default function AssignmentPage() {
                 accept="application/pdf,image/png,image/jpeg,image/jpg,image/webp"
                 onChange={(event) => {
                   const nextFile = event.target.files?.[0] || null;
-                  setForm((current) => ({ ...current, attachment: nextFile }));
+                  setForm((current) => ({
+                    ...current,
+                    attachment: nextFile,
+                    remove_attachment: nextFile ? false : current.remove_attachment,
+                  }));
                 }}
                 style={inputStyle}
               />
               <span style={{ color: "#64748b", fontSize: 12 }}>{t("assignment.attachmentHint")}</span>
+              {editingAssignmentId ? (
+                <span style={{ color: "#64748b", fontSize: 12 }}>
+                  {(() => {
+                    const currentAssignment = assignments.find((item) => item.id === editingAssignmentId);
+                    if (!currentAssignment?.attachment_name && !currentAssignment?.attachment_url && !currentAssignment?.attachment_path) {
+                      return "No existing attachment.";
+                    }
+                    if (form.remove_attachment) {
+                      return "Existing attachment will be removed.";
+                    }
+                    return `Current attachment: ${currentAssignment?.attachment_name || "Attached file"}`;
+                  })()}
+                </span>
+              ) : null}
               {form.attachment ? (
                 <span style={{ color: "#334155", fontSize: 13 }}>{form.attachment.name}</span>
+              ) : null}
+              {editingAssignmentId ? (
+                <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                  <button
+                    type="button"
+                    style={{
+                      border: "1px solid #cbd5e1",
+                      background: "#fff",
+                      color: "#0f172a",
+                      borderRadius: 10,
+                      padding: "8px 12px",
+                      fontWeight: 600,
+                      cursor: "pointer",
+                    }}
+                    onClick={() =>
+                      setForm((current) => ({
+                        ...current,
+                        attachment: null,
+                        remove_attachment: true,
+                      }))
+                    }
+                  >
+                    Remove Existing Attachment
+                  </button>
+                  {form.remove_attachment ? (
+                    <button
+                      type="button"
+                      style={{
+                        border: "1px solid #cbd5e1",
+                        background: "#fff",
+                        color: "#0f172a",
+                        borderRadius: 10,
+                        padding: "8px 12px",
+                        fontWeight: 600,
+                        cursor: "pointer",
+                      }}
+                      onClick={() =>
+                        setForm((current) => ({
+                          ...current,
+                          remove_attachment: false,
+                        }))
+                      }
+                    >
+                      Keep Existing Attachment
+                    </button>
+                  ) : null}
+                </div>
               ) : null}
             </label>
 
@@ -537,9 +606,13 @@ export default function AssignmentPage() {
                 <tbody>
               {assignments.map((assignment, index) => {
                 const attachmentHref = assignment.attachment_url
-                  ? `${attachmentBaseUrl}${assignment.attachment_url}`
+                  ? (/^https?:\/\//i.test(String(assignment.attachment_url))
+                      ? assignment.attachment_url
+                      : `${attachmentBaseUrl}${assignment.attachment_url}`)
                   : assignment.attachment_path
-                    ? `${attachmentBaseUrl}/${String(assignment.attachment_path).replace(/^\/+/, "")}`
+                    ? (/^https?:\/\//i.test(String(assignment.attachment_path))
+                        ? assignment.attachment_path
+                        : `${attachmentBaseUrl}/${String(assignment.attachment_path).replace(/^\/+/, "")}`)
                     : null;
                 const targetText =
                   assignment.target_type === "class"

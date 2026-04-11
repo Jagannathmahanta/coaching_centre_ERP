@@ -4,7 +4,7 @@ import { TeacherDetailsModal } from "../components/TeacherDetailsModal";
 import { TeacherList } from "../components/TeacherList";
 import { StatCard } from "../components/TeacherShared";
 import { buttonStyle, cardStyle } from "../components/teacherStyles";
-import type { Teacher } from "../types/teacher.types";
+import { initialTeacherForm, type Teacher } from "../types/teacher.types";
 import { useTeachersData } from "../hooks/useTeachersData";
 import "../styles/teachersPage.css";
 
@@ -29,19 +29,7 @@ export default function TeachersPage() {
           className="teachersPage__primaryAction"
           onClick={() => {
             state.setEditingTeacherId(null);
-            state.setForm({
-              name: "",
-              phone: "",
-              email: "",
-              is_staff: false,
-              gender: "male",
-              qualification: "",
-              assigned_subjects: [],
-              assigned_classes: [],
-              join_date: new Date().toISOString().slice(0, 10),
-              status: "active",
-              notes: "",
-            });
+            state.setForm({ ...initialTeacherForm });
             state.setShowForm((current) => !current);
           }}
         >

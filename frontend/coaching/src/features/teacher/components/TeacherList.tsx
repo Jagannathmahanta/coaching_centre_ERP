@@ -91,7 +91,9 @@ export function TeacherList({
                   <td style={tableCellStyle}>{index + 1}</td>
                   <td style={tableCellStyle}>
                     <div className="dataTable__strong">{teacher.name}</div>
-                    <div className="dataTable__subtle">{teacher.qualification || "No qualification added"}</div>
+                    <div className="dataTable__subtle">
+                      {[teacher.qualification, teacher.experience].filter(Boolean).join(" | ") || "No qualification added"}
+                    </div>
                   </td>
                   <td style={tableCellStyle}>
                     <span style={roleBadgeStyle(isStaff)}>

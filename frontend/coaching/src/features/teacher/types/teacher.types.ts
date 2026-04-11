@@ -5,6 +5,8 @@ export type Teacher = {
   email?: string | null;
   is_staff?: boolean;
   gender?: string | null;
+  photo_url?: string | null;
+  experience?: string | null;
   qualification?: string | null;
   assigned_subjects?: string[] | null;
   assigned_classes?: string[] | null;
@@ -35,6 +37,9 @@ export type TeacherFormState = {
   email: string;
   is_staff: boolean;
   gender: string;
+  photo_url: string;
+  photo: File | null;
+  experience: string;
   qualification: string;
   assigned_subjects: string[];
   assigned_classes: string[];
@@ -73,6 +78,9 @@ export const initialTeacherForm: TeacherFormState = {
   email: "",
   is_staff: false,
   gender: "male",
+  photo_url: "",
+  photo: null,
+  experience: "",
   qualification: "",
   assigned_subjects: [],
   assigned_classes: [],

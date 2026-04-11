@@ -9,6 +9,7 @@ export type StudentRecord = {
   left_reason?: string | null;
   phone?: string | null;
   email?: string | null;
+  photo_url?: string | null;
   roll_number?: string | null;
   join_date?: string | null;
   board?: string | null;
@@ -70,6 +71,7 @@ export type StudentDetail = {
   name: string;
   phone?: string | null;
   email?: string | null;
+  photo_url?: string | null;
   parent_name?: string | null;
   parent_phone?: string | null;
   parent_email?: string | null;
@@ -127,6 +129,8 @@ export type StudentAdmissionForm = {
   name: string;
   phone: string;
   email: string;
+  photo_url: string;
+  photo: File | null;
   gender: string;
   status: string;
   left_date: string;
@@ -194,6 +198,8 @@ export const initialStudentAdmissionForm: StudentAdmissionForm = {
   name: "",
   phone: "",
   email: "",
+  photo_url: "",
+  photo: null,
   gender: "male",
   status: "active",
   left_date: "",

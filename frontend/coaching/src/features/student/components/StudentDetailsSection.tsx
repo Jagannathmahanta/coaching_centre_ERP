@@ -8,7 +8,7 @@ export function StudentDetailsSection({
 }: {
   form: StudentAdmissionForm;
   isEditMode: boolean;
-  onChange: (key: keyof StudentAdmissionForm, value: string | boolean) => void;
+  onChange: (key: keyof StudentAdmissionForm, value: string | boolean | File | null) => void;
 }) {
   return (
     <FormSection title="Student Details">
@@ -21,6 +21,76 @@ export function StudentDetailsSection({
         </Field>
         <Field label="Email">
           <input value={form.email} onChange={(e) => onChange("email", e.target.value)} type="email" placeholder="name@example.com" style={inputStyle} />
+        </Field>
+        <Field label="Student Image">
+          <div
+            style={{
+              borderRadius: 8,
+              maxWidth: 105,
+              textAlign: "center",
+            }}
+          >
+            {/* Hidden Input */}
+            <input
+              type="file"
+              accept="image/*"
+              id="studentImageUpload"
+              style={{ display: "none" }}
+              onChange={(e) => onChange("photo", e.target.files?.[0] || null)}
+            />
+
+            {/* Image */}
+            {form.photo_url || form.photo ? (
+              <img
+                src={
+                  form.photo
+                    ? URL.createObjectURL(form.photo)
+                    : form.photo_url
+                }
+                alt="preview"
+                style={{
+                  width: "100%",
+                  height: 100,
+                  objectFit: "cover",
+                  borderRadius: 10,
+                  marginBottom: 10,
+                }}
+              />
+            ) : (
+              <div
+                style={{
+                  height: 100,
+                  borderRadius: 10,
+                  background: "#f1f5f9",
+                  marginBottom: 10,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: 12,
+                  color: "#94a3b8",
+                }}
+              >
+                No Image
+              </div>
+            )}
+
+            {/* Browse Button */}
+            <label
+              htmlFor="studentImageUpload"
+              style={{
+                display: "inline-block",
+                width: "100%",
+                padding: "6px 0",
+                background: "#2563eb",
+                color: "#fff",
+                borderRadius: 8,
+                fontSize: 13,
+                cursor: "pointer",
+              }}
+            >
+              Browse
+            </label>
+          </div>
         </Field>
         <Field label="Gender">
           <select value={form.gender} onChange={(e) => onChange("gender", e.target.value)} style={inputStyle}>
@@ -41,6 +111,23 @@ export function StudentDetailsSection({
           </Field>
         ) : null}
       </div>
+      {/* 
+      {form.photo_url ? (
+        <div style={{ marginTop: 16 }}>
+          <div style={{ color: "#374151", fontWeight: 600, fontSize: 14, marginBottom: 8 }}>Current Photo</div>
+          <img
+            src={form.photo_url}
+            alt="Student profile"
+            style={{ width: 96, height: 96, objectFit: "cover", borderRadius: 14, border: "1px solid #d1d5db" }}
+          />
+        </div>
+      ) : null}
+
+      {form.photo ? (
+        <div style={{ marginTop: 10, color: "#334155", fontSize: 13 }}>
+          Selected image: {form.photo.name}
+        </div>
+      ) : null} */}
 
       {isEditMode && form.status !== "active" ? (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 16, marginTop: 16 }}>

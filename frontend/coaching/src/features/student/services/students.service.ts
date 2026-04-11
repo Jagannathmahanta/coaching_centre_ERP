@@ -7,6 +7,21 @@ import type {
   StudentFiltersState,
 } from "../types/students.types";
 
+function readFileAsDataUrl(file: File) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ""));
+    reader.onerror = () => reject(new Error("Failed to read student image."));
+    reader.readAsDataURL(file);
+  });
+}
+
+function validatePhotoFile(file: File) {
+  if (file.size > 5 * 1024 * 1024) {
+    throw new Error("Student image must be 5 MB or smaller.");
+  }
+}
+
 export async function getStudents(filters: StudentFiltersState) {
   const response = await api.get("/students", {
     params: {
@@ -67,11 +82,21 @@ export async function getHostelRooms(hostelId: string): Promise<HostelRoomOption
   return response.data || [];
 }
 
-function toStudentPayload(form: StudentAdmissionForm) {
+async function toStudentPayload(form: StudentAdmissionForm) {
+  if (form.photo) {
+    validatePhotoFile(form.photo);
+  }
+
   return {
     name: form.name,
     class: form.class,
     email: form.email || undefined,
+    photo: form.photo
+      ? {
+          name: form.photo.name,
+          content: await readFileAsDataUrl(form.photo),
+        }
+      : undefined,
     program_type: form.program_type,
     board: form.program_type === "academic" ? form.board || undefined : undefined,
     class_id: form.program_type === "academic" && form.class_id ? Number(form.class_id) : undefined,
@@ -97,17 +122,18 @@ function toStudentPayload(form: StudentAdmissionForm) {
 }
 
 export async function createStudentAdmission(form: StudentAdmissionForm) {
-  const response = await api.post("/students", toStudentPayload(form));
+  const response = await api.post("/students", await toStudentPayload(form));
   return response.data;
 }
 
 export async function updateStudentAdmission(studentId: string, form: StudentAdmissionForm) {
-  const payload = toStudentPayload(form);
+  const payload = await toStudentPayload(form);
 
   await api.patch(`/students/${studentId}`, {
     name: payload.name,
     class: payload.class,
     email: payload.email,
+    photo: payload.photo,
     status: form.status,
     left_date: form.status === "active" ? undefined : form.left_date || undefined,
     left_reason: form.status === "active" ? undefined : form.left_reason || undefined,
@@ -131,7 +157,7 @@ export async function updateStudentAdmission(studentId: string, form: StudentAdm
   return payload;
 }
 
-export async function updateStudentFeePlan(studentId: string, payload: ReturnType<typeof toStudentPayload>) {
+export async function updateStudentFeePlan(studentId: string, payload: Awaited<ReturnType<typeof toStudentPayload>>) {
   const response = await api.patch(`/fees/student/${studentId}/plan`, {
     fee_structure_id: payload.fee_structure_id,
     billing_cycle: payload.billing_cycle,

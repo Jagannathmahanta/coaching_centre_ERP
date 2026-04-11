@@ -67,7 +67,96 @@ export function TeacherFormPanel({
             style={inputStyle}
           />
         </Field>
+        <Field label="Profile Image">
+  <div
+    style={{
+      borderRadius: 8,
+      maxWidth: 105,
+      textAlign: "center",
+    }}
+  >
+    {/* Hidden Input */}
+    <input
+      type="file"
+      accept="image/*"
+      id="teacherImageUpload"
+      style={{ display: "none" }}
+      onChange={(e) =>
+        setForm((c) => ({ ...c, photo: e.target.files?.[0] || null }))
+      }
+    />
+
+    {/* Image */}
+    {form.photo_url || form.photo ? (
+      <img
+        src={
+          form.photo
+            ? URL.createObjectURL(form.photo)
+            : form.photo_url
+        }
+        alt="preview"
+        style={{
+          width: "100%",
+          height: 100,
+          objectFit: "cover",
+          borderRadius: 10,
+          marginBottom: 10,
+        }}
+      />
+    ) : (
+      <div
+        style={{
+          height: 100,
+          borderRadius: 10,
+          background: "#f1f5f9",
+          marginBottom: 10,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontSize: 12,
+          color: "#94a3b8",
+        }}
+      >
+        No Image
       </div>
+    )}
+
+    {/* Browse Button */}
+    <label
+      htmlFor="teacherImageUpload"
+      style={{
+        display: "inline-block",
+        width: "100%",
+        padding: "6px 0",
+        background: "#2563eb",
+        color: "#fff",
+        borderRadius: 8,
+        fontSize: 13,
+        cursor: "pointer",
+      }}
+    >
+      Browse
+    </label>
+  </div>
+</Field>
+      </div>
+
+      {/* {form.photo_url ? (
+        <div style={{ marginTop: 14 }}>
+          <div style={{ color: "#374151", fontWeight: 600, fontSize: 14, marginBottom: 8 }}>Current Photo</div>
+          <img
+            src={form.photo_url}
+            alt="Teacher profile"
+            style={{ width: 96, height: 96, objectFit: "cover", borderRadius: 14, border: "1px solid #d1d5db" }}
+          />
+        </div>
+      ) : null}
+
+      {form.photo ? (
+        <div style={{ marginTop: 10, color: "#334155", fontSize: 13 }}>
+          Selected image: {form.photo.name}
+        </div>
+      ) : null} */}
 
       {/* Row 2: Gender, Qualification, Joining Date */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 14, marginTop: 14 }}>
@@ -96,6 +185,14 @@ export function TeacherFormPanel({
           <input
             value={form.qualification}
             onChange={(e) => setForm((c) => ({ ...c, qualification: e.target.value }))}
+            style={inputStyle}
+          />
+        </Field>
+        <Field label="Experience">
+          <input
+            value={form.experience}
+            onChange={(e) => setForm((c) => ({ ...c, experience: e.target.value }))}
+            placeholder="e.g. 5 Years"
             style={inputStyle}
           />
         </Field>
