@@ -7,9 +7,9 @@ import {
   ClipboardList,
   FileText,
   Calendar,
-  Layers3,
   MonitorCheck,
   Settings,
+  LibraryBig,
 } from "lucide-react";
 
 export type UserRole = "admin" | "student" | "parent" | "teacher" | "super_admin";
@@ -23,12 +23,15 @@ export type NavItem = {
 const allMenus: Record<UserRole, NavItem[]> = {
   admin: [
     { path: "/dashboard", labelKey: "nav.dashboard", icon: LayoutDashboard },
-    { path: "/students", labelKey: "nav.students", icon: Users },
-    { path: "/catalog", labelKey: "nav.catalog", icon: Layers3 },
-    { path: "/teachers", labelKey: "nav.staff", icon: GraduationCap },
+  
+    { path: "/classes", labelKey: "nav.classes", icon: GraduationCap },
+    { path: "/courses", labelKey: "nav.courses", icon: BookOpen },
+    { path: "/batches", labelKey: "nav.batches", icon: LibraryBig },
+     { path: "/hostel", labelKey: "nav.hostel", icon: Users },
     { path: "/fees", labelKey: "nav.fees", icon: IndianRupee },
-    { path: "/hostel", labelKey: "nav.hostel", icon: Users },
-    { path: "/teacher-salary", labelKey: "nav.staffSalary", icon: IndianRupee },
+     { path: "/students", labelKey: "nav.students", icon: Users },
+     { path: "/teachers", labelKey: "nav.staff", icon: GraduationCap },
+    { path: "/staff-salary", labelKey: "nav.staffSalary", icon: IndianRupee },
     { path: "/exams", labelKey: "nav.exams", icon: BookOpen },
     { path: "/assignment", labelKey: "nav.assignment", icon: ClipboardList },
     { path: "/online-exam", labelKey: "nav.onlineExam", icon: MonitorCheck },

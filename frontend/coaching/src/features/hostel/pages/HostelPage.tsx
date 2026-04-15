@@ -27,37 +27,39 @@ export default function HostelPage() {
 
   return (
     <div style={{ display: "grid", gap: 20 }}>
-      <div>
-        <h1 style={{ margin: 0, fontSize: 28 }}>Hostel Management</h1>
-        <p style={{ color: "#6b7280", marginTop: 8 }}>
-          Create boys and girls hostels, add rooms, and manage active hostel seat allocations.
-        </p>
-        <button
-            type="button"
-            onClick={() => {
-              state.resetRoomForm();
-              state.setEditingHostelId(null);
-              state.setHostelForm({
-                hostel_name: "",
-                gender_type: "boys",
-                address: "",
-                status: "active",
-              });
-              state.setRoomDrafts([{
-                room_number: "",
-                floor: "",
-                type: "double",
-                capacity: "2",
-                monthly_fee: "",
-                status: "active",
-              }]);
-              state.setShowHostelForm(true);
-            }}
-            style={primaryButton}
-          >
-            Add Hostel
-          </button>
-      </div>
+      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
+  <div>
+    <h1 style={{ margin: 0, fontSize: 28 }}>Hostel Management</h1>
+    <p style={{ color: "#6b7280", marginTop: 8, marginBottom: 0 }}>
+      Create boys and girls hostels, add rooms, and manage active hostel seat allocations.
+    </p>
+  </div>
+  <button
+    type="button"
+    onClick={() => {
+      state.resetRoomForm();
+      state.setEditingHostelId(null);
+      state.setHostelForm({
+        hostel_name: "",
+        gender_type: "boys",
+        address: "",
+        status: "active",
+      });
+      state.setRoomDrafts([{
+        room_number: "",
+        floor: "",
+        type: "double",
+        capacity: "2",
+        monthly_fee: "",
+        status: "active",
+      }]);
+      state.setShowHostelForm(true);
+    }}
+    style={primaryButton}
+  >
+    Add Hostel
+  </button>
+</div>
 
       {state.message && (
         <div style={{ ...cardStyle, color: "#166534", background: "#f0fdf4" }}>

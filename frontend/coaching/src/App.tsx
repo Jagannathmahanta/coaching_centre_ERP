@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation, Navigate } from "react-router-dom";
 import Layout from "./layout/Layout";
 import ProtectedRoute from "./modules/auth/ProtectedRoute.tsx";
 import NotFoundPage from "./modules/NotFoundPage";
@@ -18,7 +18,9 @@ import LeaveRoute from "./features/leave/routes/LeaveRoute.tsx";
 import NoticesRoute from "./features/notice/routes/NoticesRoute.tsx";
 import ParentsRoute from "./features/parent/routes/ParentsRoute.tsx";
 import LoginPage from "./features/auth/LoginPage.tsx";
-import CatalogRoute from "./features/catalog/routes/CatalogRoute.tsx";
+import CatalogClassesPage from "./features/catalog/pages/CatalogClassesPage.tsx";
+import CatalogCoursesPage from "./features/catalog/pages/CatalogCoursesPage.tsx";
+import CatalogBatchesPage from "./features/catalog/pages/CatalogBatchesPage.tsx";
 import ClientLandingPage from "./features/client-landing/index.tsx";
 import MarketingLandingPage from "./features/marketing/pages/LandingPage.tsx";
 import OnlineExamRoute from "./features/onlineExam/routes/OnlineExamRoute.tsx";
@@ -65,14 +67,17 @@ export default function App() {
         <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
           <Route path="/dashboard" element={<DashboardRoute />} />
           <Route path="/students" element={<StudentsRoute />} />
-          <Route path="/catalog" element={<CatalogRoute />} />
+          <Route path="/catalog" element={<Navigate to="/classes" replace />} />
+          <Route path="/classes" element={<CatalogClassesPage />} />
+          <Route path="/courses" element={<CatalogCoursesPage />} />
+          <Route path="/batches" element={<CatalogBatchesPage />} />
           <Route path="/students/new" element={<NewStudentRoute />} />
           <Route path="/students/:id/edit" element={<NewStudentRoute />} />
           <Route path="/fees" element={<FeesRoute />} />
           <Route path="/transport" element={<TransportRoute />} />
           <Route path="/hostel" element={<HostelRoute />} />
           <Route path="/teachers" element={<TeachersRoute />} />
-          <Route path="/teacher-salary" element={<TeacherSalaryRoute />} />
+          <Route path="/staff-salary" element={<TeacherSalaryRoute />} />
           <Route path="/exams" element={<ExamsRoute />} />
           <Route path="/assignment" element={<AssignmentRoute />} />
           <Route path="/online-exam" element={<OnlineExamRoute />} />

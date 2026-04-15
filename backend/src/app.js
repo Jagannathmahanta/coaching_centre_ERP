@@ -19,11 +19,13 @@ const parentRoutes = require("./modules/parents/parents.routes");
 const catalogRoutes = require("./modules/catalog/catalog.routes");
 const onlineExamRoutes = require("./modules/onlineExam/onlineExam.routes");
 const assignmentRoutes = require("./modules/assignments/assignments.routes");
+const seoRoutes = require("./modules/seo/seo.routes");
 const app = express();
 
 app.use(cors());
 app.use(express.json({ limit: "12mb" }));
 app.use("/uploads", express.static(path.join(__dirname, "..", "uploads")));
+app.use("/", seoRoutes);
 app.use("/api/fees", feesRoutes);
 app.use("/api/notices", noticeRoutes);
 app.use("/api/holidays", holidayRoutes);

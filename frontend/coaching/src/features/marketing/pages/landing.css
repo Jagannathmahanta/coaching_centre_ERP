@@ -955,7 +955,7 @@
 
 @media (max-width: 420px) {
   .marketing-nav {
-    /* padding: 0 12px; */
+    padding: 0 8px;
     gap: 8px;
   }
 

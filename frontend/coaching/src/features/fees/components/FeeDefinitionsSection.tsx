@@ -83,7 +83,7 @@ export function FeeDefinitionsSection({
       <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
         <h2 style={{ marginTop: 0, marginBottom: 0 }}>{editingStructureId ? "Edit Fee Definition" : "Create Fee Definition"}</h2>
         <button type="button" onClick={onCancel} style={secondaryButton}>
-          Close
+          Back
         </button>
       </div>
 
@@ -94,9 +94,9 @@ export function FeeDefinitionsSection({
               <option value="non_academic">Course</option>
             </select>
           </Field>
-          <Field label="Fee Name">
+          {/* <Field label="Fee Name">
             <input value={definitionForm.name} onChange={(e) => setDefinitionForm((current) => ({ ...current, name: e.target.value }))} style={inputStyle} />
-          </Field>
+          </Field> */}
           <Field label="Duration (months)">
             <input type="number" min="1" max="24" value={definitionForm.duration_months} onChange={(e) => setDefinitionForm((current) => ({ ...current, duration_months: e.target.value }))} style={inputStyle} />
           </Field>
@@ -171,6 +171,10 @@ export function FeeDefinitionsSection({
           <Field label="Tuition Total">
             <input type="number" min="0" value={definitionForm.tuition_total} onChange={(e) => setDefinitionForm((current) => ({ ...current, tuition_total: e.target.value }))} style={inputStyle} />
           </Field>
+          
+        </div>
+        <div className="formGrid">
+          
           <Field label="Hostel Total">
             <input type="number" min="0" value={definitionForm.hostel_total} onChange={(e) => setDefinitionForm((current) => ({ ...current, hostel_total: e.target.value }))} style={inputStyle} />
           </Field>
@@ -179,9 +183,9 @@ export function FeeDefinitionsSection({
           </Field>
         </div>
 
-        <Field label="Description">
+        {/* <Field label="Description">
           <input value={definitionForm.description} onChange={(e) => setDefinitionForm((current) => ({ ...current, description: e.target.value }))} style={{ ...inputStyle,display:"grid",width:"97%" }} />
-        </Field>
+        </Field> */}
 
       <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
         <button type="submit" style={primaryButton}>
@@ -210,7 +214,7 @@ const secondaryButton = {
   color: "#1f2937",
   border: "1px solid #cbd5e1",
   borderRadius: 10,
-  padding: "12px 18px",
+  padding: "10px 18px",
   fontWeight: 700,
   cursor: "pointer",
 };

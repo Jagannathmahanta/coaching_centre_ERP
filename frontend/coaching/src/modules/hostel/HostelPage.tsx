@@ -242,7 +242,7 @@ export default function HostelPage() {
       {message && <div style={{ ...cardStyle, color: "#166534", background: "#f0fdf4" }}>{message}</div>}
       {error && <div style={{ ...cardStyle, color: "#b91c1c", background: "#fef2f2" }}>{error}</div>}
 
-      <div style={{ ...cardStyle, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+      <div style={{ ...cardStyle, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "nowrap" }}>
         <div>
           <h2 style={{ margin: 0 }}>Hostel Listings</h2>
           <p style={{ margin: "6px 0 0", color: "#6b7280" }}>
@@ -352,57 +352,57 @@ export default function HostelPage() {
           )}
 
           {editingRoomId && (
-          <form onSubmit={handleSaveRoom} style={cardStyle}>
-            <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", marginBottom: 12 }}>
-              <h2 style={{ margin: 0 }}>Edit Room</h2>
-              <button type="button" onClick={resetRoomForm} style={secondaryButton}>
-                Close
-              </button>
-            </div>
-            <Field label="Hostel">
-              <select value={editingRoomForm.hostel_id} onChange={(e) => setEditingRoomForm((s) => ({ ...s, hostel_id: e.target.value }))} required style={inputStyle}>
-                <option value="">Select hostel</option>
-                {hostels.map((hostel) => (
-                  <option key={hostel.id} value={hostel.id}>
-                    {hostel.hostel_name} • {hostel.gender_type}
-                  </option>
-                ))}
-              </select>
-            </Field>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-              <Field label="Room Number">
-                <input value={editingRoomForm.room_number} onChange={(e) => setEditingRoomForm((s) => ({ ...s, room_number: e.target.value }))} required style={inputStyle} />
-              </Field>
-              <Field label="Floor">
-                <input value={editingRoomForm.floor} onChange={(e) => setEditingRoomForm((s) => ({ ...s, floor: e.target.value }))} style={inputStyle} />
-              </Field>
-            </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
-              <Field label="Category">
-                <select value={editingRoomForm.type} onChange={(e) => setEditingRoomForm((s) => ({ ...s, type: e.target.value }))} style={inputStyle}>
-                  <option value="single">Single</option>
-                  <option value="double">Double</option>
-                  <option value="triple">Triple</option>
-                  <option value="dormitory">Dormitory</option>
+            <form onSubmit={handleSaveRoom} style={cardStyle}>
+              <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", marginBottom: 12 }}>
+                <h2 style={{ margin: 0 }}>Edit Room</h2>
+                <button type="button" onClick={resetRoomForm} style={secondaryButton}>
+                  Close
+                </button>
+              </div>
+              <Field label="Hostel">
+                <select value={editingRoomForm.hostel_id} onChange={(e) => setEditingRoomForm((s) => ({ ...s, hostel_id: e.target.value }))} required style={inputStyle}>
+                  <option value="">Select hostel</option>
+                  {hostels.map((hostel) => (
+                    <option key={hostel.id} value={hostel.id}>
+                      {hostel.hostel_name} • {hostel.gender_type}
+                    </option>
+                  ))}
                 </select>
               </Field>
-              <Field label="Capacity">
-                <input type="number" min="1" value={editingRoomForm.capacity} onChange={(e) => setEditingRoomForm((s) => ({ ...s, capacity: e.target.value }))} required style={inputStyle} />
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <Field label="Room Number">
+                  <input value={editingRoomForm.room_number} onChange={(e) => setEditingRoomForm((s) => ({ ...s, room_number: e.target.value }))} required style={inputStyle} />
+                </Field>
+                <Field label="Floor">
+                  <input value={editingRoomForm.floor} onChange={(e) => setEditingRoomForm((s) => ({ ...s, floor: e.target.value }))} style={inputStyle} />
+                </Field>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
+                <Field label="Category">
+                  <select value={editingRoomForm.type} onChange={(e) => setEditingRoomForm((s) => ({ ...s, type: e.target.value }))} style={inputStyle}>
+                    <option value="single">Single</option>
+                    <option value="double">Double</option>
+                    <option value="triple">Triple</option>
+                    <option value="dormitory">Dormitory</option>
+                  </select>
+                </Field>
+                <Field label="Capacity">
+                  <input type="number" min="1" value={editingRoomForm.capacity} onChange={(e) => setEditingRoomForm((s) => ({ ...s, capacity: e.target.value }))} required style={inputStyle} />
+                </Field>
+                <Field label="Monthly Fee">
+                  <input type="number" min="0" value={editingRoomForm.monthly_fee} onChange={(e) => setEditingRoomForm((s) => ({ ...s, monthly_fee: e.target.value }))} style={inputStyle} />
+                </Field>
+              </div>
+              <Field label="Status">
+                <select value={editingRoomForm.status} onChange={(e) => setEditingRoomForm((s) => ({ ...s, status: e.target.value }))} style={inputStyle}>
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                </select>
               </Field>
-              <Field label="Monthly Fee">
-                <input type="number" min="0" value={editingRoomForm.monthly_fee} onChange={(e) => setEditingRoomForm((s) => ({ ...s, monthly_fee: e.target.value }))} style={inputStyle} />
-              </Field>
-            </div>
-            <Field label="Status">
-              <select value={editingRoomForm.status} onChange={(e) => setEditingRoomForm((s) => ({ ...s, status: e.target.value }))} style={inputStyle}>
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-              </select>
-            </Field>
-            <div style={{ display: "flex", gap: 12, marginTop: 18 }}>
-              <button type="submit" style={primaryButton}>Update Room</button>
-            </div>
-          </form>
+              <div style={{ display: "flex", gap: 12, marginTop: 18 }}>
+                <button type="submit" style={primaryButton}>Update Room</button>
+              </div>
+            </form>
           )}
         </div>
       )}

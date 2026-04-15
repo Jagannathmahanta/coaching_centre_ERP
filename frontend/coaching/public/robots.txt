@@ -2,3 +2,4 @@ User-agent: *
 Allow: /
 
 Sitemap: https://www.tutorialhub.co.in/sitemap.xml
+Sitemap: https://home-tuition.tutorialhub.co.in/home-tuition-sitemap.xml

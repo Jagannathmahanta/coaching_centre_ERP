@@ -30,6 +30,7 @@ export type CatalogBatch = {
   start_time: string;
   end_time: string;
   capacity?: number | null;
+  enrolled_count?: number | null;
   status: string;
   created_at?: string;
   updated_at?: string;

@@ -80,7 +80,7 @@ export default function TeacherSalaryPage() {
     <div style={{ display: "grid", gap: 20 }}>
       <div style={{ display: "flex", justifyContent: "space-between", gap: 16, alignItems: "center", flexWrap: "wrap" }}>
         <div>
-          <h1 style={{ margin: 0, fontSize: 28 }}>Teacher Salary Module</h1>
+          <h1 style={{ margin: 0, fontSize: 28 }}>Staff Salary Module</h1>
           <p style={{ color: "#6b7280", marginTop: 8 }}>
             Phase 1 includes salary structures, one paid leave allowed per month, monthly slip generation, and paid or pending tracking.
           </p>

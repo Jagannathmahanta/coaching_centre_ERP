@@ -18,9 +18,9 @@ export default function TeachersPage() {
       {/* Header */}
       <div className="teachersPage__header">
         <div className="teachersPage__hero">
-          <h1 className="teachersPage__title">Teacher Module</h1>
+          <h1 className="teachersPage__title">Staff Module</h1>
           <p className="teachersPage__subtitle">
-            Create teachers, assign real classes, and use a controlled subject list so leave and attendance modules stay clean later.
+            Create staffs, assign real classes, and use a controlled subject list so leave and attendance modules stay clean later.
           </p>
         </div>
         <button
@@ -39,8 +39,8 @@ export default function TeachersPage() {
 
       {!state.showForm ? (
         <div className="teachersPage__stats">
-          <StatCard label="Total Teachers"    value={state.teacherStats.total}    accent="#2563eb" />
-          <StatCard label="Active Teachers"   value={state.teacherStats.active}   accent="#059669" />
+          <StatCard label="Total Staff"    value={state.teacherStats.total}    accent="#2563eb" />
+          <StatCard label="Active Staff"   value={state.teacherStats.active}   accent="#059669" />
           <StatCard label="Absent Today"      value={state.teacherStats.absentToday} accent="#be123c" />
         </div>
       ) : null}

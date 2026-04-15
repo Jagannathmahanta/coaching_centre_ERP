@@ -5,25 +5,39 @@ import { useDashboardQuery } from "../../dashboard/hooks/useDashboardQuery";
 import "../../dashboard/styles/dashboard.css";
 
 function buildInstituteLoginUrl(slug: string) {
-  if (typeof window === "undefined") {
+  if (typeof window === "undefined")
     return `/login?center=${encodeURIComponent(slug)}`;
-  }
 
-  const { origin, hostname, protocol } = window.location;
+  const { protocol, hostname } = window.location;
+
   if (
     hostname === "localhost" ||
     hostname === "127.0.0.1" ||
     hostname.endsWith(".localhost")
   ) {
-    return `${origin}/login?center=${encodeURIComponent(slug)}`;
+    return `${protocol}//${hostname}/login?center=${encodeURIComponent(slug)}`;
   }
 
-  const hostParts = hostname.split(".");
-  if (hostParts.length >= 2) {
-    return `${protocol}//${slug}.${hostParts.slice(-2).join(".")}/login`;
-  }
+  // Always extract the base domain (last 3 parts for co.in, or last 2 for .com)
+  const parts = hostname.split(".");
+    console.log("[buildInstituteLoginUrl]", {
+    slug,
+    hostname,
+    parts,
+    partsLength: parts.length,
+    sliceMinus3: parts.slice(-3).join("."),
+    sliceMinus2: parts.slice(-2).join("."),
+  });
+  
+  // Handle country-code TLDs like co.in, co.uk, com.au (take last 3 parts)
+  // vs simple TLDs like .com, .net (take last 2 parts)
+  const secondLevelShort = ["co", "com", "net", "org", "gov", "edu"];
+  const baseDomain =
+    parts.length >= 4 && secondLevelShort.includes(parts[parts.length - 2])
+      ? parts.slice(-3).join(".")   // e.g. tutorialhub.co.in
+      : parts.slice(-2).join(".");  // e.g. tutorialhub.com
 
-  return `${origin}/login?center=${encodeURIComponent(slug)}`;
+  return `${protocol}//${slug}.${baseDomain}/login`;
 }
 
 export default function InstituteSettingsPage() {

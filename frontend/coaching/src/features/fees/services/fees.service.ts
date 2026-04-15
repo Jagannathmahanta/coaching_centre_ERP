@@ -46,7 +46,7 @@ export async function getStudentPaymentHistory(studentId: string): Promise<FeePa
 
 export async function saveFeeDefinition(editingStructureId: number | null, form: DefinitionFormState) {
   const payload = {
-    name: form.name,
+    name: form.program_type === "non_academic" ?form.course_name:form.name,
     program_type: form.program_type,
     board: form.program_type === "academic" ? form.board : undefined,
     class_id: form.program_type === "academic" && form.class_id ? Number(form.class_id) : undefined,

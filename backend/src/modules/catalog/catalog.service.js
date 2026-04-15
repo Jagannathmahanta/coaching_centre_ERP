@@ -35,10 +35,17 @@ exports.getBootstrap = async (req) => {
       SELECT
         b.*,
         cd.class_name,
-        cr.course_name
+        cr.course_name,
+        COALESCE(s.enrolled_count, 0) AS enrolled_count
       FROM batch_definitions b
       LEFT JOIN class_definitions cd ON cd.id = b.class_id
       LEFT JOIN course_definitions cr ON cr.id = b.course_id
+      LEFT JOIN (
+        SELECT batch_id, COUNT(*) AS enrolled_count
+        FROM students
+        WHERE center_id = $1 AND batch_id IS NOT NULL
+        GROUP BY batch_id
+      ) s ON s.batch_id = b.id
       WHERE b.center_id = $1
       ORDER BY b.program_type, b.shift, b.start_time
       `,
@@ -98,10 +105,17 @@ exports.getPublicLanding = async (req) => {
       SELECT
         b.*,
         cd.class_name,
-        cr.course_name
+        cr.course_name,
+        COALESCE(s.enrolled_count, 0) AS enrolled_count
       FROM batch_definitions b
       LEFT JOIN class_definitions cd ON cd.id = b.class_id
       LEFT JOIN course_definitions cr ON cr.id = b.course_id
+      LEFT JOIN (
+        SELECT batch_id, COUNT(*) AS enrolled_count
+        FROM students
+        WHERE center_id = $1 AND batch_id IS NOT NULL
+        GROUP BY batch_id
+      ) s ON s.batch_id = b.id
       WHERE b.center_id = $1 AND b.status = 'active'
       ORDER BY b.program_type, b.shift, b.start_time
       `,
@@ -227,10 +241,17 @@ exports.getBatches = async (req) => {
     SELECT
       b.*,
       cd.class_name,
-      cr.course_name
+      cr.course_name,
+      COALESCE(s.enrolled_count, 0) AS enrolled_count
     FROM batch_definitions b
     LEFT JOIN class_definitions cd ON cd.id = b.class_id
     LEFT JOIN course_definitions cr ON cr.id = b.course_id
+    LEFT JOIN (
+      SELECT batch_id, COUNT(*) AS enrolled_count
+      FROM students
+      WHERE center_id = $1 AND batch_id IS NOT NULL
+      GROUP BY batch_id
+    ) s ON s.batch_id = b.id
     WHERE b.center_id = $1
     ORDER BY b.program_type, b.shift, b.start_time
     `,

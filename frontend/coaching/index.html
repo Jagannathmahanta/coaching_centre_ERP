@@ -4,22 +4,33 @@
     <meta charset="UTF-8" />
 
     <!-- 🔥 Redirect to www (SEO canonical fix) -->
-    <script>
-      const host = window.location.hostname;
-      if (host === "tutorialhub.co.in") {
-        window.location.replace(
-          "https://www.tutorialhub.co.in" +
-            window.location.pathname +
-            window.location.search
-        );
-      }
-    </script>
+<!-- 🔥 Redirect + 🌐 Canonical -->
+<script>
+  const host = window.location.hostname;
+
+  // Redirect non-www to www
+  if (host === "tutorialhub.co.in") {
+    window.location.replace(
+      "https://www.tutorialhub.co.in" +
+        window.location.pathname +
+        window.location.search
+    );
+  }
+
+  // Dynamic canonical
+  const canonical = document.createElement("link");
+  canonical.rel = "canonical";
+  canonical.href = host === "home-tuition.tutorialhub.co.in"
+    ? "https://home-tuition.tutorialhub.co.in"
+    : "https://www.tutorialhub.co.in";
+  document.head.appendChild(canonical);
+</script>
 
     <!-- 📱 Viewport -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <!-- 🌐 Canonical (VERY IMPORTANT) -->
-    <link rel="canonical" href="https://www.tutorialhub.co.in" />
+    <!-- <link rel="canonical" href="https://www.tutorialhub.co.in" /> -->
 
     <!-- 🤖 Robots -->
     <meta name="robots" content="index, follow" />
@@ -40,7 +51,7 @@
     />
 
     <!-- 🎨 Favicon -->
-    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <link rel="icon" href="/favicon.ico" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 
     <!-- 📣 Open Graph (WhatsApp, Facebook, LinkedIn) -->
@@ -60,7 +71,7 @@
       name="twitter:description"
       content="All-in-one ERP for coaching institutes with role-based login."
     />
-    <meta name="twitter:image" content="https://www.tutorialhub.co.in/og-image.png" />
+    <meta name="twitter:image" content="https://www.tutorialhub.co.in/ogimage.png" />
 
     <!-- ⚡ Schema (BIG SEO BOOST) -->
     <script type="application/ld+json">

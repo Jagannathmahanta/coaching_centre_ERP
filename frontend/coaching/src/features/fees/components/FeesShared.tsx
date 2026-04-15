@@ -11,7 +11,7 @@ export const cardStyle = {
 
 export const inputStyle = {
   width: "90%",
-  padding: "12px 14px",
+  padding: "10px 14px",
   borderRadius: 10,
   border: "1px solid #d1d5db",
   outline: "none",

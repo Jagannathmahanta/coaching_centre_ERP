@@ -41,17 +41,37 @@ function slugifyCenterName(value: string) {
 function buildInstituteLoginUrl(slug: string) {
   if (typeof window === "undefined")
     return `/login?center=${encodeURIComponent(slug)}`;
-  const { origin, hostname } = window.location;
+
+  const { protocol, hostname } = window.location;
+
   if (
     hostname === "localhost" ||
     hostname === "127.0.0.1" ||
     hostname.endsWith(".localhost")
-  )
-    return `${origin}/login?center=${encodeURIComponent(slug)}`;
+  ) {
+    return `${protocol}//${hostname}/login?center=${encodeURIComponent(slug)}`;
+  }
+
+  // Always extract the base domain (last 3 parts for co.in, or last 2 for .com)
   const parts = hostname.split(".");
-  if (parts.length >= 2)
-    return `${window.location.protocol}//${slug}.${parts.slice(-2).join(".")}/login`;
-  return `${origin}/login?center=${encodeURIComponent(slug)}`;
+    console.log("[buildInstituteLoginUrl]", {
+    slug,
+    hostname,
+    parts,
+    partsLength: parts.length,
+    sliceMinus3: parts.slice(-3).join("."),
+    sliceMinus2: parts.slice(-2).join("."),
+  });
+  
+  // Handle country-code TLDs like co.in, co.uk, com.au (take last 3 parts)
+  // vs simple TLDs like .com, .net (take last 2 parts)
+  const secondLevelShort = ["co", "com", "net", "org", "gov", "edu"];
+  const baseDomain =
+    parts.length >= 4 && secondLevelShort.includes(parts[parts.length - 2])
+      ? parts.slice(-3).join(".")   // e.g. tutorialhub.co.in
+      : parts.slice(-2).join(".");  // e.g. tutorialhub.com
+
+  return `${protocol}//${slug}.${baseDomain}/login`;
 }
 
 const initialForm = {
@@ -527,6 +547,7 @@ export default function SuperAdminDashboardPage() {
               <tbody>
                 {data.centers.map((center, idx) => {
                   const loginUrl = buildInstituteLoginUrl(center.slug);
+                  console.log("Institute login URL:", loginUrl);
                   const isActive = center.status === "active";
                   return (
                     <tr
@@ -647,7 +668,7 @@ export default function SuperAdminDashboardPage() {
 
 const styles: Record<string, React.CSSProperties> = {
   page: {
-    padding: "10px 6px",
+    padding: "10px 2px",
     minHeight: "100vh",
     background: "#f4f6f9",
     fontFamily: "'DM Sans', 'Segoe UI', sans-serif",
@@ -965,7 +986,6 @@ const styles: Record<string, React.CSSProperties> = {
     border: "1.5px solid #e5e7eb",
     borderRadius: 14,
     padding: "28px 32px",
-    maxWidth: 760,
   },
   form: {
     display: "flex",

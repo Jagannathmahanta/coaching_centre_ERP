@@ -97,7 +97,9 @@ export default function Sidebar({
       {/* Menu */}
       <nav className="appSidebar__nav">
         {navItems.map((item) => {
-          const active = currentPath === item.path;
+          const active =
+            currentPath === item.path ||
+            (item.path !== "/dashboard" && currentPath.startsWith(`${item.path}/`));
           const Icon = item.icon;
 
           return (

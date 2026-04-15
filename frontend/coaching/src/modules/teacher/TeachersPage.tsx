@@ -332,7 +332,7 @@ export default function TeachersPage() {
           }}
         >
           <div style={{ marginBottom: 18 }}>
-            <h2 style={{ margin: 0 }}>{editingTeacherId ? "Edit Teacher" : "Create Teacher"}</h2>
+            <h2 style={{ margin: 0 }}>{editingTeacherId ? "Edit Staff" : "Create Teacher"}</h2>
             <p style={{ color: "#6b7280", marginTop: 8 }}>Classes come from your actual center data. Subjects use a controlled list for now.</p>
           </div>
 
