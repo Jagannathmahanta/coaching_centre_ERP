@@ -1,3 +1,4 @@
+
 import { FeeDefinitionSection } from "../components/FeeDefinitionSection";
 import { FeePreview } from "../components/FeePreview";
 import { GuardianSection } from "../components/GuardianSection";
@@ -6,6 +7,7 @@ import { ProgramSelectionSection } from "../components/ProgramSelectionSection";
 import { StudentDetailsSection } from "../components/StudentDetailsSection";
 import { Field, FormSection, StudentForm, inputStyle, sectionStyle } from "../components/StudentForm";
 import { useStudentAdmission } from "../hooks/useStudentAdmission";
+import { Button } from "../../../shared/components/Button";
 
 type Props = {
   embedded?: boolean;
@@ -21,33 +23,36 @@ export default function NewStudentPage({ embedded = false, onClose }: Props) {
 
   return (
     <div style={{ display: "grid", gap: 20 }}>
-      <div style={embedded ? { ...sectionStyle, display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16, flexWrap: "wrap" } : undefined}>
-        <div>
-        <h1 style={{ margin: 0, fontSize: 28 }}>{state.isEditMode ? "Edit Admission" : "New Admission"}</h1>
-        <p style={{ color: "#6b7280", marginTop: 8 }}>
-          {state.isEditMode
-            ? "Update admission details here. Fee-plan updates are allowed only when no payment history exists for that plan."
-            : "Enter student and guardian details, then select the program, fee definition, and batch. The system will generate the admission number automatically."}
-        </p>
-        </div>
-        {embedded && onClose ? (
-          <button
-            type="button"
-            onClick={onClose}
-            style={{
-              background: "#f3f4f6",
-              color: "#111827",
-              border: "none",
-              borderRadius: 10,
-              padding: "10px 16px",
-              fontWeight: 700,
-              cursor: "pointer",
-            }}
-          >
-            Close
-          </button>
-        ) : null}
-      </div>
+      <div
+  style={{
+    ...sectionStyle,
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    flexWrap: "wrap",
+  }}
+>
+  {/* LEFT */}
+  <div style={{ maxWidth: "80%" }}>
+    <h1 style={{ margin: 0, fontSize: 28 }}>
+      {state.isEditMode ? "Edit Admission" : "New Admission"}
+    </h1>
+    <p style={{ color: "#6b7280", marginTop: 8 }}>
+      {state.isEditMode
+        ? "Update admission details here. Fee-plan updates are allowed only when no payment history exists for that plan."
+        : "Enter student and guardian details, then select the program, fee definition, and batch. The system will generate the admission number automatically."}
+    </p>
+  </div>
+
+  {/* RIGHT TOP */}
+  <Button
+    type="button"
+    onClick={() => state.navigate("/students")}
+    style={{ height: 40 }}
+  >
+    Back
+  </Button>
+</div>
 
       <StudentForm onSubmit={state.handleSubmit}>
         <StudentDetailsSection form={state.form} isEditMode={state.isEditMode} onChange={state.handleChange} />

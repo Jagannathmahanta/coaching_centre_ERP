@@ -4,6 +4,7 @@ import { useAuth } from "../../shared/hooks/AuthContext";
 import { getUser } from "../../shared/services/auth";
 import type { CatalogBatch, CatalogBootstrap, CatalogClass, CatalogCourse, CatalogProgramType } from "../../shared/types/catalog";
 import { useI18n } from "../../shared/i18n/I18nProvider";
+import { Button } from "../../shared/components/Button";
 
 type NoticeAudience = "all" | "students" | "parents" | "teachers";
 type NoticeScope = "all" | "filtered";
@@ -185,32 +186,57 @@ export default function NoticesPage() {
 
   return (
     <div style={{ display: "grid", gap: 20 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
-        <div>
-          <h1 style={{ margin: 0, fontSize: 28 }}>{t("notice.moduleTitle")}</h1>
-          <p style={{ color: "#6b7280", marginTop: 8 }}>
-            {t("notice.moduleSub")}
-          </p>
-        </div>
+      <div
+  style={{
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    gap: 12,
+    flexWrap: "wrap",
+  }}
+>
+  {/* LEFT */}
+  <div style={{ flex: "1 1 300px" }}>
+    <h1 style={{ margin: 0, fontSize: 28 }}>
+      {t("notice.moduleTitle")}
+    </h1>
+    <p style={{ color: "#6b7280", marginTop: 8 }}>
+      {t("notice.moduleSub")}
+    </p>
+  </div>
 
-        {canManage ? (
-          <button
-            type="button"
-            onClick={() => setShowForm((current) => !current)}
-            style={{
-              background: "linear-gradient(135deg, #7c3aed, #9333ea)",
-              color: "#fff",
-              border: "none",
-              borderRadius: 12,
-              padding: "12px 16px",
-              fontWeight: 700,
-              cursor: "pointer",
-            }}
-          >
-            {showForm ? t("notice.closeForm") : t("notice.createNotice")}
-          </button>
-        ) : null}
-      </div>
+  {/* RIGHT ACTIONS */}
+  {canManage && (
+    <div
+      style={{
+        display: "flex",
+        gap: 8,
+        flexWrap: "wrap",
+        justifyContent: "flex-end",
+      }}
+    >
+      {/* BACK BUTTON (only when form is open) */}
+      {showForm && (
+        <Button
+          type="button"
+          onClick={() => setShowForm(false)}
+        >
+          {t("Back")}
+        </Button>
+      )}
+
+      {/* CREATE BUTTON */}
+      {!showForm && (
+        <Button
+          type="button"
+          onClick={() => setShowForm(true)}
+        >
+          {t("notice.createNotice")}
+        </Button>
+      )}
+    </div>
+  )}
+</div>
 
       {message ? <div style={{ ...cardStyle, background: "#f0fdf4", color: "#166534" }}>{message}</div> : null}
       {error ? <div style={{ ...cardStyle, background: "#fef2f2", color: "#b91c1c" }}>{error}</div> : null}
@@ -341,23 +367,23 @@ export default function NoticesPage() {
           ) : null}
 
           <div style={{ display: "flex", gap: 12, marginTop: 18, flexWrap: "wrap" }}>
-            <button
+            <Button
               type="button"
               onClick={handlePublish}
               disabled={saving}
-              style={{
-                background: "linear-gradient(135deg, #7c3aed, #9333ea)",
-                color: "#fff",
-                border: "none",
-                borderRadius: 12,
-                padding: "12px 16px",
-                fontWeight: 700,
-                cursor: saving ? "wait" : "pointer",
-              }}
+              // style={{
+              //   background: "linear-gradient(135deg, #7c3aed, #9333ea)",
+              //   color: "#fff",
+              //   border: "none",
+              //   borderRadius: 12,
+              //   padding: "12px 16px",
+              //   fontWeight: 700,
+              //   cursor: saving ? "wait" : "pointer",
+              // }}
             >
               {saving ? t("notice.publishing") : t("notice.publishNotice")}
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
               onClick={() => {
                 setForm(initialForm);
@@ -374,7 +400,7 @@ export default function NoticesPage() {
               }}
             >
               {t("notice.cancel")}
-            </button>
+            </Button>
           </div>
         </section>
       ) : null}

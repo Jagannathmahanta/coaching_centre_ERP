@@ -19,7 +19,7 @@ export default function AdminExamList({ exams, onCreateNew, onManage, onViewResu
   return (
     <div>
       {/* Header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 28 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 28 ,flexWrap: "wrap", gap: 16}}>
         <div>
           <h1 style={{ fontSize: 28, fontWeight: 900, color: "#1a1a2e", margin: 0 }}>
             Online Exam System

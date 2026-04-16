@@ -24,7 +24,7 @@ export default function ExamsPage() {
             state.setOpenForm((current) => !current);
           }}
         >
-          {state.openForm ? "Close Form" : "Create Exam"}
+          {state.openForm ? "Back" : "+ Create Exam"}
         </button>
       </div>
 

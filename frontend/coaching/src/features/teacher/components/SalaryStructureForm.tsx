@@ -1,4 +1,5 @@
-import { buttonStyle, cardStyle, inputStyle } from "./teacherStyles";
+import { cardStyle, inputStyle } from "./teacherStyles";
+import { Button } from "../../../shared/components/Button";
 import { Field } from "./TeacherShared";
 import type { SalaryStructureForm as SalaryStructureFormState, TeacherOption } from "../types/teacherSalary.types";
 
@@ -28,9 +29,9 @@ export function SalaryStructureForm({
       <div style={{ marginBottom: 18 }}>
         <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
           <h2 style={{ margin: 0 }}>Salary Structure</h2>
-          <button type="button" style={{ ...buttonStyle, background: "#fff", color: "#1d4ed8", border: "1px solid #bfdbfe" }} onClick={onCancel}>
+          {/* <Button type="button" variant="secondary" onClick={onCancel}>
             Close
-          </button>
+          </Button> */}
         </div>
         <p style={{ color: "#6b7280", marginTop: 8 }}>
           Set monthly, day-wise, or period-wise salary. Paid leave is capped at 1 per month for now.
@@ -140,9 +141,9 @@ export function SalaryStructureForm({
       </div>
 
       <div style={{ marginTop: 18 }}>
-        <button type="submit" style={buttonStyle} disabled={isPending}>
+        <Button type="submit" disabled={isPending}>
           {isPending ? "Saving..." : "Save Salary Structure"}
-        </button>
+        </Button>
       </div>
     </form>
   );

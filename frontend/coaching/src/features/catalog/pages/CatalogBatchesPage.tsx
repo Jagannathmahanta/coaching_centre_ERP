@@ -5,6 +5,7 @@ import { CheckCircle2, Layers3, Plus, Timer, Users2 } from "lucide-react";
 import { CatalogBatchSection } from "../components/CatalogBatchSection";
 import { useCatalogAdmin } from "../hooks/useCatalogAdmin";
 import { initialBatchForm } from "../types/catalog-admin.types";
+import { Button } from "../../../shared/components/Button";
 
 type BatchRouteState = {
   sourceLabel?: string;
@@ -86,32 +87,32 @@ export default function CatalogBatchesPage() {
           </p>
         </div>
 
-        <button
-          type="button"
-          className="catalogHero__action catalogHero__action--batch"
-          onClick={() => {
-            if (showForm) {
-              state.resetBatchForm();
-              if (routeState.backTo) {
-                navigate(routeState.backTo);
-                return;
-              }
-              setShowForm(false);
-              return;
-            }
+      <Button
+  type="button"
+  onClick={() => {
+    if (showForm) {
+      state.resetBatchForm();
+      if (routeState.backTo) {
+        navigate(routeState.backTo);
+        return;
+      }
+      setShowForm(false);
+      return;
+    }
 
-            if (routeState.backTo) {
-              navigate(routeState.backTo);
-              return;
-            }
+    if (routeState.backTo) {
+      navigate(routeState.backTo);
+      return;
+    }
 
-            state.resetBatchForm();
-            setShowForm(true);
-          }}
-        >
-          {!showForm && !routeState.backTo ? <Plus size={18} /> : null}
-          {showForm ? "Back to Batches" : routeState.backTo ? "Back" : "Add Batch"}
-        </button>
+    state.resetBatchForm();
+    setShowForm(true);
+  }}
+  
+>
+  {!showForm && !routeState.backTo ? <Plus size={18} style={{ marginRight: 6 }} /> : null}
+  {showForm ? "Back to Batches" : routeState.backTo ? "Back" : "Add Batch"}
+</Button>
       </section>
 
       {state.error && <div className="catalogPage__alert catalogPage__alert--error">{state.error}</div>}

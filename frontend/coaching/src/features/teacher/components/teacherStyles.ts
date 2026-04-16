@@ -15,31 +15,6 @@ export const inputStyle = {
   marginTop: 6,
 };
 
-export const buttonStyle = {
-  background: "#334155",
-  color: "#fff",
-  border: "none",
-  borderRadius: 12,
-  padding: "12px 16px",
-  fontWeight: 700,
-  cursor: "pointer",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-};
-
-export const secondaryButton = {
-  ...buttonStyle,
-   background: "#334155",
-  color: "#fff",
-};
-
-export const dangerButton = {
-  ...buttonStyle,
-  background: "#fff1f2",
-  color: "#be123c",
-};
-
 export const pickerStyle = {
   marginTop: 6,
   border: "1px solid #d1d5db",

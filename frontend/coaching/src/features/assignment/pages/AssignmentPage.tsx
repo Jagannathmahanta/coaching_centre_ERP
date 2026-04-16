@@ -6,6 +6,7 @@ import { useI18n } from "../../../shared/i18n/I18nProvider";
 import type { CatalogBootstrap } from "../../../shared/types/catalog";
 import Content from "../../../assets/Content.png";
 import "../../../shared/styles/dataTable.css";
+import { Button } from "../../../shared/components/Button";
 
 type AssignmentTargetType = "class" | "student";
 
@@ -319,17 +320,9 @@ export default function AssignmentPage() {
         </div>
 
         {canManage ? (
-          <button
+          <Button
             type="button"
-            style={{
-              background: "#334155",
-              color: "#fff",
-              border: "none",
-              borderRadius: 12,
-              padding: "12px 16px",
-              fontWeight: 700,
-              cursor: "pointer",
-            }}
+            
             onClick={() => {
               if (showForm) {
                 resetEditor();
@@ -342,8 +335,8 @@ export default function AssignmentPage() {
               setError("");
             }}
           >
-            {showForm ? t("assignment.closeForm") : t("assignment.addAssignment")}
-          </button>
+            {showForm ? t("Back") : t("assignment.addAssignment")}
+          </Button>
         ) : null}
       </div>
 
@@ -485,7 +478,7 @@ export default function AssignmentPage() {
               ) : null}
               {editingAssignmentId ? (
                 <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                  <button
+                  <Button
                     type="button"
                     style={{
                       border: "1px solid #cbd5e1",
@@ -505,9 +498,9 @@ export default function AssignmentPage() {
                     }
                   >
                     Remove Existing Attachment
-                  </button>
+                  </Button>
                   {form.remove_attachment ? (
-                    <button
+                    <Button
                       type="button"
                       style={{
                         border: "1px solid #cbd5e1",
@@ -526,14 +519,14 @@ export default function AssignmentPage() {
                       }
                     >
                       Keep Existing Attachment
-                    </button>
+                    </Button>
                   ) : null}
                 </div>
               ) : null}
             </label>
 
             <div style={{ display: "flex", justifyContent: "flex-end", gap: 12, flexWrap: "wrap" }}>
-              <button
+              <Button
                 type="button"
                 style={{
                   border: "1px solid #cbd5e1",
@@ -549,19 +542,19 @@ export default function AssignmentPage() {
                 }}
               >
                 {t("common.cancel")}
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
-                style={{
-                  background: "#4f46e5",
-                  color: "#fff",
-                  border: "none",
-                  borderRadius: 12,
-                  padding: "12px 16px",
-                  fontWeight: 700,
-                  cursor: saving ? "not-allowed" : "pointer",
-                  opacity: saving ? 0.7 : 1,
-                }}
+                // style={{
+                //   background: "#4f46e5",
+                //   color: "#fff",
+                //   border: "none",
+                //   borderRadius: 12,
+                //   padding: "12px 16px",
+                //   fontWeight: 700,
+                //   cursor: saving ? "not-allowed" : "pointer",
+                //   opacity: saving ? 0.7 : 1,
+                // }}
                 disabled={
                   saving ||
                   !form.title.trim() ||
@@ -572,7 +565,7 @@ export default function AssignmentPage() {
                 onClick={handleSave}
               >
                 {saving ? t("common.loading") : editingAssignmentId ? t("assignment.updateAction") : t("assignment.createAction")}
-              </button>
+              </Button>
             </div>
           </div>
         </section>
@@ -588,7 +581,7 @@ export default function AssignmentPage() {
           {loading ? (
             <div style={{ color: "#6b7280" }}>{t("common.loading")}</div>
           ) : assignments.length === 0 ? (
-            <div style={{ color: "#6b7280" }}>{t("assignment.noAssignments")}</div>
+            <div style={{ color: "#6b7280",display:"flex",justifyContent:"center" }}>{t("assignment.noAssignments")}</div>
           ) : (
             <div className="dataTableWrap" style={{ padding: 0, overflowX: "auto" }}>
               <table className="dataTable">

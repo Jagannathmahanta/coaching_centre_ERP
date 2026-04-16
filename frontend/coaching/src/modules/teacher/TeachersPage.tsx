@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import api from "../../services/api";
+import { Button } from "../../shared/components/Button";
 
 type Teacher = {
   id: number;
@@ -62,28 +63,6 @@ const inputStyle = {
   borderRadius: 12,
   border: "1px solid #d1d5db",
   marginTop: 6,
-};
-
-const buttonStyle = {
-  background: "#1d4ed8",
-  color: "#fff",
-  border: "none",
-  borderRadius: 12,
-  padding: "12px 16px",
-  fontWeight: 700,
-  cursor: "pointer",
-};
-
-const secondaryButton = {
-  ...buttonStyle,
-  background: "#eff6ff",
-  color: "#1d4ed8",
-};
-
-const dangerButton = {
-  ...buttonStyle,
-  background: "#fff1f2",
-  color: "#be123c",
 };
 
 const pickerStyle = {
@@ -259,9 +238,9 @@ export default function TeachersPage() {
             Create teachers, assign real classes, and use a controlled subject list so leave and attendance modules stay clean later.
           </p>
         </div>
-        <button
+        <Button
           type="button"
-          style={buttonStyle}
+          variant="primary"
           onClick={() => {
             setEditingTeacherId(null);
             setForm(initialForm);
@@ -269,7 +248,7 @@ export default function TeachersPage() {
           }}
         >
           {showForm ? "Close Form" : "Add Teacher"}
-        </button>
+        </Button>
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 16 }}>
@@ -310,12 +289,12 @@ export default function TeachersPage() {
               <input type="password" value={accountDraft.password} onChange={(event) => setAccountDraft((current) => ({ ...current, password: event.target.value }))} style={inputStyle} />
             </Field>
             <div style={{ display: "flex", gap: 12, justifyContent: "flex-end", marginTop: 18 }}>
-              <button type="button" style={secondaryButton} onClick={() => setAccountDraft({ open: false, teacherId: 0, teacherName: "", email: "", phone: "", password: "" })}>
+              <Button type="button" variant="secondary" onClick={() => setAccountDraft({ open: false, teacherId: 0, teacherName: "", email: "", phone: "", password: "" })}>
                 Cancel
-              </button>
-              <button type="button" style={buttonStyle} onClick={() => createAccountMutation.mutate()} disabled={createAccountMutation.isPending}>
+              </Button>
+              <Button type="button" variant="primary" onClick={() => createAccountMutation.mutate()} disabled={createAccountMutation.isPending}>
                 {createAccountMutation.isPending ? "Saving..." : "Create Login"}
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -456,12 +435,12 @@ export default function TeachersPage() {
           )}
 
           <div style={{ display: "flex", gap: 12, marginTop: 18 }}>
-            <button type="submit" style={buttonStyle} disabled={saveTeacherMutation.isPending}>
+            <Button type="submit" variant="primary" disabled={saveTeacherMutation.isPending}>
               {saveTeacherMutation.isPending ? "Saving..." : editingTeacherId ? "Update Teacher" : "Save Teacher"}
-            </button>
-            <button type="button" style={secondaryButton} onClick={resetForm}>
+            </Button>
+            <Button type="button" variant="secondary" onClick={resetForm}>
               Cancel
-            </button>
+            </Button>
           </div>
         </form>
       )}
@@ -512,9 +491,9 @@ export default function TeachersPage() {
                 </div>
 
                 <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                  <button
+                  <Button
                     type="button"
-                    style={secondaryButton}
+                    variant="secondary"
                     onClick={() =>
                       setAccountDraft({
                         open: true,
@@ -528,10 +507,10 @@ export default function TeachersPage() {
                     disabled={Boolean(teacher.has_login_account)}
                   >
                     {teacher.has_login_account ? "Login Ready" : "Create Login"}
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     type="button"
-                    style={secondaryButton}
+                    variant="secondary"
                     onClick={() => {
                       setEditingTeacherId(teacher.id);
                       setForm({
@@ -554,17 +533,17 @@ export default function TeachersPage() {
                     }}
                   >
                     Edit
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     type="button"
-                    style={dangerButton}
+                    variant="danger"
                     onClick={() => {
                       if (!window.confirm("Delete this teacher?")) return;
                       deleteTeacherMutation.mutate(teacher.id);
                     }}
                   >
                     Delete
-                  </button>
+                  </Button>
                 </div>
               </div>
             ))}

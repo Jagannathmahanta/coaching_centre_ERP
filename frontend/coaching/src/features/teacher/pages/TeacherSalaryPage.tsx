@@ -3,9 +3,10 @@ import { SalaryPaymentModal } from "../components/SalaryPaymentModal";
 import { SalarySlipList } from "../components/SalarySlipList";
 import { SalaryStructureForm } from "../components/SalaryStructureForm";
 import { StatCard } from "../components/TeacherShared";
-import { cardStyle, inputStyle, secondaryButton } from "../components/teacherStyles";
+import { cardStyle, inputStyle } from "../components/teacherStyles";
 import { useTeacherSalaryData } from "../hooks/useTeacherSalaryData";
 import type { SalarySlip } from "../types/teacherSalary.types";
+import { Button } from "../../../shared/components/Button";
 
 function printSalarySlip(slip: SalarySlip, currency: (value: number | string | null | undefined) => string, setError: (value: string) => void) {
   const printWindow = window.open("", "_blank", "width=980,height=760");
@@ -78,18 +79,44 @@ export default function TeacherSalaryPage() {
 
   return (
     <div style={{ display: "grid", gap: 20 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", gap: 16, alignItems: "center", flexWrap: "wrap" }}>
-        <div>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "flex-start",
+          flexWrap: "wrap",
+          gap: 12,
+        }}
+      >
+        {/* LEFT CONTENT */}
+        <div style={{ flex: "1 1 300px" }}>
           <h1 style={{ margin: 0, fontSize: 28 }}>Staff Salary Module</h1>
           <p style={{ color: "#6b7280", marginTop: 8 }}>
-            Phase 1 includes salary structures, one paid leave allowed per month, monthly slip generation, and paid or pending tracking.
+            Phase 1 includes salary structures, one paid leave allowed per month,
+            monthly slip generation, and paid or pending tracking.
           </p>
         </div>
-        {!showStructureForm ? (
-          <button type="button" style={secondaryButton} onClick={() => setShowStructureForm(true)}>
-            Add Salary
-          </button>
-        ) : null}
+
+        {/* RIGHT ACTIONS */}
+        <div
+          style={{
+            display: "flex",
+            gap: 8,
+            flexWrap: "wrap",
+            justifyContent: "flex-end",
+          }}
+        >
+
+
+          {/* ADD BUTTON */}
+          {!showStructureForm ? (
+            <Button type="button" onClick={() => setShowStructureForm(true)}>
+              + Add Salary
+            </Button>
+          ) : (<Button type="button" onClick={() => setShowStructureForm(false)}>
+            Back
+          </Button>)}
+        </div>
       </div>
 
       {!showStructureForm ? (
@@ -130,33 +157,33 @@ export default function TeacherSalaryPage() {
           isPending={state.saveStructureMutation.isPending}
         />
       ) : (
-      <section style={cardStyle}>
-        <div style={{ display: "flex", justifyContent: "space-between", gap: 16, alignItems: "center", flexWrap: "wrap", marginBottom: 18 }}>
-          <div>
-            <h2 style={{ margin: 0 }}>Monthly Salary Slips</h2>
-            <p style={{ color: "#6b7280", marginTop: 8 }}>Generate slips month-wise, then mark them paid from the same list.</p>
+        <section style={cardStyle}>
+          <div style={{ display: "flex", justifyContent: "space-between", gap: 16, alignItems: "center", flexWrap: "wrap", marginBottom: 18 }}>
+            <div>
+              <h2 style={{ margin: 0 }}>Monthly Salary Slips</h2>
+              <p style={{ color: "#6b7280", marginTop: 8 }}>Generate slips month-wise, then mark them paid from the same list.</p>
+            </div>
+            <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+              <input type="month" value={state.month} onChange={(event) => state.setMonth(event.target.value)} style={{ ...inputStyle, marginTop: 0 }} />
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => state.generateSlipsMutation.mutate()}
+                disabled={state.generateSlipsMutation.isPending}
+              >
+                {state.generateSlipsMutation.isPending ? "Generating..." : "Generate Slips"}
+              </Button>
+            </div>
           </div>
-          <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-            <input type="month" value={state.month} onChange={(event) => state.setMonth(event.target.value)} style={{ ...inputStyle, marginTop: 0 }} />
-            <button
-              type="button"
-              style={secondaryButton}
-              onClick={() => state.generateSlipsMutation.mutate()}
-              disabled={state.generateSlipsMutation.isPending}
-            >
-              {state.generateSlipsMutation.isPending ? "Generating..." : "Generate Slips"}
-            </button>
-          </div>
-        </div>
 
-        <SalarySlipList
-          slips={state.slipsQuery.data || []}
-          loading={state.slipsQuery.isLoading}
-          currency={state.currency}
-          onPay={state.openPaymentModal}
-          onPrint={(slip) => printSalarySlip(slip, state.currency, state.setError)}
-        />
-      </section>
+          <SalarySlipList
+            slips={state.slipsQuery.data || []}
+            loading={state.slipsQuery.isLoading}
+            currency={state.currency}
+            onPay={state.openPaymentModal}
+            onPrint={(slip) => printSalarySlip(slip, state.currency, state.setError)}
+          />
+        </section>
       )}
     </div>
   );

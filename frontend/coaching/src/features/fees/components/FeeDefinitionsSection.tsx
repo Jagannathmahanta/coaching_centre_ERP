@@ -46,7 +46,7 @@ export function FeeDefinitionsSection({
             <h2 style={{ marginTop: 0, marginBottom: 6 }}>Saved Fee Definitions</h2>
             <p style={{ color: "#6b7280", margin: 0 }}>Manage existing fee definitions or open the create form when you need a new one.</p>
           </div>
-          <button type="button" onClick={onStartCreate} style={primaryButton}>Create Fee Definition</button>
+          {/* <button type="button" onClick={onStartCreate} style={primaryButton}>Create Fee Definition</button> */}
         </div>
         {definitions.length === 0 ? (
           <p style={{ color: "#6b7280" }}>No fee definitions found.</p>
@@ -80,12 +80,12 @@ export function FeeDefinitionsSection({
 
   return (
     <form onSubmit={onSubmit} style={cardStyle}>
-      <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+      {/* <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
         <h2 style={{ marginTop: 0, marginBottom: 0 }}>{editingStructureId ? "Edit Fee Definition" : "Create Fee Definition"}</h2>
         <button type="button" onClick={onCancel} style={secondaryButton}>
           Back
         </button>
-      </div>
+      </div> */}
 
       <div className="formGrid">
           <Field label="Program Type">

@@ -5,6 +5,7 @@ import { StudentFeeReview } from "../components/StudentFeeReview";
 import { useFeesData } from "../hooks/useFeesData";
 import { currency } from "../services/fees.service";
 import type { FeePaymentRecord, Installment } from "../types/fees.types";
+import { Button } from "../../../shared/components/Button";
 
 function openPrintWindow(title: string, body: string) {
   const printWindow = window.open("", "_blank", "width=900,height=700");
@@ -177,12 +178,47 @@ export default function FeesPage() {
 
   return (
     <div style={{ display: "grid", gap: 20 }}>
-      <div>
-        <h1 style={{ margin: 0, fontSize: 28 }}>Fees And Fee Definitions</h1>
-        <p style={{ color: "#6b7280", marginTop: 8 }}>
-          Create academic or course fee definitions with tuition, hostel, and transport together. Admission applies only the selected parts for each student.
-        </p>
-      </div>
+    <div style={{ display: "grid", gap: 8 }}>
+  {/* Row 1: Title + Button */}
+  <div
+    style={{
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      flexWrap: "wrap",
+      gap: 12,
+    }}
+  >
+    <h1 style={{ margin: 0, fontSize: 28 }}>
+      Fees And Fee Definitions
+    </h1>
+
+    {!showDefinitionForm && state.editingStructureId === null ? (
+      <Button
+        type="button"
+        onClick={() => setShowDefinitionForm(true)}
+      >
+        + Create Fee Definition
+      </Button>
+    ) : (
+      <Button
+        type="button"
+        onClick={() => {
+          state.setEditingStructureId(null);
+          setShowDefinitionForm(false);
+        }}
+      >
+        Back
+      </Button>
+    )}
+  </div>
+
+  {/* Row 2: Description */}
+  <p style={{ color: "#6b7280", margin: 0 }}>
+    Create academic or course fee definitions with tuition, hostel, and transport together.
+    Admission applies only the selected parts for each student.
+  </p>
+</div>
 
       <FeeDefinitionsSection
         showForm={showDefinitionForm}

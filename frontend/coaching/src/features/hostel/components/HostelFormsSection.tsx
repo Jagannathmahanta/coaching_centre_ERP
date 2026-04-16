@@ -90,149 +90,314 @@ export function HostelFormsSection({
     }}>
 
       {/* ── Hostel Form ── */}
-      {(showHostelForm || editingHostelId) && (
-        <form
-          onSubmit={(e) => { e.preventDefault(); onSaveHostel(); }}
-          style={cardStyle}
+  
+
+{(showHostelForm || editingHostelId) && (
+  <form
+    onSubmit={(e) => {
+      e.preventDefault();
+      onSaveHostel();
+    }}
+    style={cardStyle}
+  >
+    {/* Header */}
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "space-between",
+        gap: 12,
+        alignItems: "center",
+        marginBottom: 16,
+      }}
+    >
+      <h2 style={{ margin: 0 }}>
+        {editingHostelId ? "Edit Hostel" : "Create Hostel With Rooms"}
+      </h2>
+    </div>
+
+    {/* Hostel fields */}
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+        gap: 14,
+      }}
+    >
+      <Field label="Hostel Name">
+        <input
+          value={hostelForm.hostel_name}
+          onChange={(e) =>
+            setHostelForm((s) => ({
+              ...s,
+              hostel_name: e.target.value,
+            }))
+          }
+          required
+          style={inputStyle}
+        />
+      </Field>
+
+      <Field label="Hostel Type">
+        <select
+          value={hostelForm.gender_type}
+          onChange={(e) =>
+            setHostelForm((s) => ({
+              ...s,
+              gender_type: e.target.value as "boys" | "girls",
+            }))
+          }
+          style={inputStyle}
         >
-          {/* Header */}
-          <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", marginBottom: 16 }}>
-            <h2 style={{ margin: 0 }}>{editingHostelId ? "Edit Hostel" : "Create Hostel With Rooms"}</h2>
-            <button type="button" onClick={resetHostelForm} style={secondaryButton}>Close</button>
-          </div>
+          <option value="boys">Boys</option>
+          <option value="girls">Girls</option>
+        </select>
+      </Field>
 
-          {/* Hostel fields — 2 col on wide, 1 col on small */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 14 }}>
-            <Field label="Hostel Name">
-              <input
-                value={hostelForm.hostel_name}
-                onChange={(e) => setHostelForm((s) => ({ ...s, hostel_name: e.target.value }))}
-                required
-                style={inputStyle}
-              />
-            </Field>
-            <Field label="Hostel Type">
-              <select
-                value={hostelForm.gender_type}
-                onChange={(e) => setHostelForm((s) => ({ ...s, gender_type: e.target.value as "boys" | "girls" }))}
-                style={inputStyle}
-              >
-                <option value="boys">Boys</option>
-                <option value="girls">Girls</option>
-              </select>
-            </Field>
-            <Field label="Address">
-              <input
-                value={hostelForm.address}
-                onChange={(e) => setHostelForm((s) => ({ ...s, address: e.target.value }))}
-                style={inputStyle}
-              />
-            </Field>
-            <Field label="Status">
-              <select
-                value={hostelForm.status}
-                onChange={(e) => setHostelForm((s) => ({ ...s, status: e.target.value }))}
-                style={inputStyle}
-              >
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-              </select>
-            </Field>
-          </div>
+      <Field label="Address">
+        <input
+          value={hostelForm.address}
+          onChange={(e) =>
+            setHostelForm((s) => ({
+              ...s,
+              address: e.target.value,
+            }))
+          }
+          style={inputStyle}
+        />
+      </Field>
 
-          <div style={{ marginTop: 18 }}>
-            <button type="submit" style={primaryButton}>
-              {editingHostelId ? "Update Hostel" : "Save Hostel And Rooms"}
-            </button>
-          </div>
+      <Field label="Status">
+        <select
+          value={hostelForm.status}
+          onChange={(e) =>
+            setHostelForm((s) => ({
+              ...s,
+              status: e.target.value,
+            }))
+          }
+          style={inputStyle}
+        >
+          <option value="active">Active</option>
+          <option value="inactive">Inactive</option>
+        </select>
+      </Field>
+    </div>
 
-          {/* Room Drafts */}
-          {!editingHostelId && (
-            <div style={{ marginTop: 24, display: "grid", gap: 12 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <h3 style={{ margin: 0 }}>Rooms To Create</h3>
+    {/* Rooms Section */}
+    {!editingHostelId && (
+      <div style={{ marginTop: 24, display: "grid", gap: 12 }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
+          <h3 style={{ margin: 0 }}>Rooms To Create</h3>
+
+          <button
+            type="button"
+            onClick={() =>
+              setRoomDrafts((c) => [
+                ...c,
+                {
+                  room_number: "",
+                  floor: "",
+                  type: "double",
+                  capacity: "2",
+                  monthly_fee: "",
+                  status: "active",
+                },
+              ])
+            }
+            style={secondaryButton}
+          >
+            Add Room
+          </button>
+        </div>
+
+        {roomDrafts.map((room, index) => (
+          <div
+            key={index}
+            style={{
+              border: "1px solid #e5e7eb",
+              borderRadius: 12,
+              padding: 14,
+              background: "#f8fafc",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: 12,
+              }}
+            >
+              <strong>Room {index + 1}</strong>
+
+              {roomDrafts.length > 1 && (
                 <button
                   type="button"
-                  onClick={() => setRoomDrafts((c) => [...c, {
-                    room_number: "", floor: "", type: "double",
-                    capacity: "2", monthly_fee: "", status: "active",
-                  }])}
-                  style={secondaryButton}
+                  onClick={() =>
+                    setRoomDrafts((c) =>
+                      c.filter((_, i) => i !== index)
+                    )
+                  }
+                  style={dangerMiniButton}
                 >
-                  Add Room
+                  Remove
                 </button>
-              </div>
-
-              {roomDrafts.map((room, index) => (
-                <div key={index} style={{ border: "1px solid #e5e7eb", borderRadius: 12, padding: 14, background: "#f8fafc" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-                    <strong>Room {index + 1}</strong>
-                    {roomDrafts.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => setRoomDrafts((c) => c.filter((_, i) => i !== index))}
-                        style={dangerMiniButton}
-                      >
-                        Remove
-                      </button>
-                    )}
-                  </div>
-
-                  {/* Room Number + Floor */}
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 12 }}>
-                    <Field label="Room Number">
-                      <input
-                        value={room.room_number}
-                        onChange={(e) => setRoomDrafts((c) => c.map((item, i) => i === index ? { ...item, room_number: e.target.value } : item))}
-                        style={inputStyle}
-                      />
-                    </Field>
-                    <Field label="Floor">
-                      <input
-                        value={room.floor}
-                        onChange={(e) => setRoomDrafts((c) => c.map((item, i) => i === index ? { ...item, floor: e.target.value } : item))}
-                        style={inputStyle}
-                      />
-                    </Field>
-                  </div>
-
-                  {/* Category + Capacity + Fee */}
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: 12, marginTop: 12 }}>
-                    <Field label="Category">
-                      <select
-                        value={room.type}
-                        onChange={(e) => setRoomDrafts((c) => c.map((item, i) => i === index ? { ...item, type: e.target.value } : item))}
-                        style={inputStyle}
-                      >
-                        <option value="single">Single</option>
-                        <option value="double">Double</option>
-                        <option value="triple">Triple</option>
-                        <option value="dormitory">Dormitory</option>
-                      </select>
-                    </Field>
-                    <Field label="Capacity">
-                      <input
-                        type="number" min="1"
-                        value={room.capacity}
-                        onChange={(e) => setRoomDrafts((c) => c.map((item, i) => i === index ? { ...item, capacity: e.target.value } : item))}
-                        style={inputStyle}
-                      />
-                    </Field>
-                    <Field label="Monthly Fee">
-                      <input
-                        type="number" min="0"
-                        value={room.monthly_fee}
-                        onChange={(e) => setRoomDrafts((c) => c.map((item, i) => i === index ? { ...item, monthly_fee: e.target.value } : item))}
-                        style={inputStyle}
-                      />
-                    </Field>
-                  </div>
-                </div>
-              ))}
+              )}
             </div>
-          )}
-        </form>
-      )}
+
+            {/* Room fields */}
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns:
+                  "repeat(auto-fit, minmax(140px, 1fr))",
+                gap: 12,
+              }}
+            >
+              <Field label="Room Number">
+                <input
+                  value={room.room_number}
+                  onChange={(e) =>
+                    setRoomDrafts((c) =>
+                      c.map((item, i) =>
+                        i === index
+                          ? { ...item, room_number: e.target.value }
+                          : item
+                      )
+                    )
+                  }
+                  style={inputStyle}
+                />
+              </Field>
+
+              <Field label="Floor">
+                <input
+                  value={room.floor}
+                  onChange={(e) =>
+                    setRoomDrafts((c) =>
+                      c.map((item, i) =>
+                        i === index
+                          ? { ...item, floor: e.target.value }
+                          : item
+                      )
+                    )
+                  }
+                  style={inputStyle}
+                />
+              </Field>
+
+              <Field label="Category">
+                <select
+                  value={room.type}
+                  onChange={(e) =>
+                    setRoomDrafts((c) =>
+                      c.map((item, i) =>
+                        i === index
+                          ? { ...item, type: e.target.value }
+                          : item
+                      )
+                    )
+                  }
+                  style={inputStyle}
+                >
+                  <option value="single">Single</option>
+                  <option value="double">Double</option>
+                  <option value="triple">Triple</option>
+                  <option value="dormitory">Dormitory</option>
+                </select>
+              </Field>
+
+              <Field label="Capacity">
+                <input
+                  type="number"
+                  min="1"
+                  value={room.capacity}
+                  onChange={(e) =>
+                    setRoomDrafts((c) =>
+                      c.map((item, i) =>
+                        i === index
+                          ? { ...item, capacity: e.target.value }
+                          : item
+                      )
+                    )
+                  }
+                  style={inputStyle}
+                />
+              </Field>
+
+              {/* <Field label="Monthly Fee">
+                <input
+                  type="number"
+                  min="0"
+                  value={room.monthly_fee}
+                  onChange={(e) =>
+                    setRoomDrafts((c) =>
+                      c.map((item, i) =>
+                        i === index
+                          ? { ...item, monthly_fee: e.target.value }
+                          : item
+                      )
+                    )
+                  }
+                  style={inputStyle}
+                />
+              </Field> */}
+            </div>
+          </div>
+        ))}
+
+        {/* 🔥 FINAL SAVE BUTTON */}
+        <div style={{ marginTop: 20 }}>
+          <button
+            type="submit"
+            style={{
+              ...primaryButton,
+              width: "250px",
+              fontSize: 16,
+              padding: "14px",
+            }}
+          >
+            Create Hostel & All Rooms
+          </button>
+
+          <p
+            style={{
+              fontSize: 13,
+              color: "#6b7280",
+              marginTop: 6,
+              textAlign: "center",
+            }}
+          >
+            This will create the hostel along with all rooms at once.
+          </p>
+        </div>
+      </div>
+    )}
+
+    {/* EDIT MODE BUTTON */}
+    {editingHostelId && (
+      <div style={{ marginTop: 20 }}>
+        <button
+          type="submit"
+          style={{
+            ...primaryButton,
+            width: "100%",
+            fontSize: 16,
+            padding: "14px",
+          }}
+        >
+          Update Hostel
+        </button>
+      </div>
+    )}
+  </form>
+)}
 
       {/* ── Edit Room Form ── */}
       {editingRoomId && (

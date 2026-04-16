@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { BookOpen, CheckCircle2, Layers3, Plus, Sparkles } from "lucide-react";
 import { CatalogCourseSection } from "../components/CatalogCourseSection";
 import { useCatalogAdmin } from "../hooks/useCatalogAdmin";
+import { Button } from "../../../shared/components/Button";
 
 export default function CatalogCoursesPage() {
   const navigate = useNavigate();
@@ -30,23 +31,23 @@ export default function CatalogCoursesPage() {
               : "Show the course form separately and return to the list with the back action."}
           </p>
         </div>
-        <button
-          type="button"
-          className="catalogHero__action catalogHero__action--course"
-          onClick={() => {
-            if (view === "form") {
-              state.resetCourseForm();
-              setView("list");
-              return;
-            }
+        <Button
+  type="button"
+  variant={view === "list" ? "primary" : "secondary"}
+  onClick={() => {
+    if (view === "form") {
+      state.resetCourseForm();
+      setView("list");
+      return;
+    }
 
-            state.resetCourseForm();
-            setView("form");
-          }}
-        >
-          {view === "list" ? <Plus size={18} /> : null}
-          {view === "list" ? "Add Course" : "Back"}
-        </button>
+    state.resetCourseForm();
+    setView("form");
+  }}
+>
+  {view === "list" ? <Plus size={18} style={{ marginRight: 6 }} /> : null}
+  {view === "list" ? "Add Course" : "Back"}
+</Button>
       </section>
 
       {state.error ? <div className="catalogPage__alert catalogPage__alert--error">{state.error}</div> : null}

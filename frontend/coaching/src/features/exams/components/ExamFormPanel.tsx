@@ -26,9 +26,9 @@ export default function ExamFormPanel({
           <h2>{editingExamId ? "Edit exam" : "Create exam"}</h2>
           <p>Set the exam type, subject, class, marks, and exam timing in one place.</p>
         </div>
-        <button className="exams-button exams-buttonSecondary" type="button" onClick={onCancel}>
+        {/* <button className="exams-button exams-buttonSecondary" type="button" onClick={onCancel}>
           Cancel
-        </button>
+        </button> */}
       </div>
 
       <div className="exams-formGrid exams-formGrid--three">

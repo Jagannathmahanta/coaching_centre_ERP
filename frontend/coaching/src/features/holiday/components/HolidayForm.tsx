@@ -45,9 +45,9 @@ export function HolidayForm({
       <div style={{ marginBottom: 18 }}>
         <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
           <h2 style={{ margin: 0 }}>{t("holiday.createTitle")}</h2>
-          <button type="button" onClick={onCancel} style={{ ...buttonStyle, background: "#fff", color: "#1d4ed8", border: "1px solid #bfdbfe" }}>
+          {/* <button type="button" onClick={onCancel} style={{ ...buttonStyle, background: "#fff", color: "#1d4ed8", border: "1px solid #bfdbfe" }}>
             {t("holiday.close")}
-          </button>
+          </button> */}
         </div>
         <p style={{ color: "#6b7280", marginTop: 8 }}>{t("holiday.createSub")}</p>
       </div>

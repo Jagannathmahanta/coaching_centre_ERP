@@ -1,6 +1,8 @@
+import { Plus } from "lucide-react";
+import { Button } from "../../../shared/components/Button";
 import { AllocationTable } from "../components/AllocationTable";
-import { HostelFormsSection } from "../components/HostelFormsSection";
-import { RoomAvailabilityTable } from "../components/RoomAvailabilityTable";
+import { HostelFormsSectionWithRoomManager } from "../components/HostelFormsSectionWithRoomManager";
+import { HostelListTable } from "../components/HostelListTable";
 import { useHostelData } from "../hooks/useHostelData";
 
 const cardStyle = {
@@ -9,16 +11,6 @@ const cardStyle = {
   padding: 20,
   boxShadow: "0 10px 30px rgba(15, 23, 42, 0.06)",
   border: "1px solid #e5e7eb",
-};
-
-const primaryButton = {
-   background: "#334155",
-  color: "#fff",
-  border: "none",
-  borderRadius: 10,
-  padding: "12px 16px",
-  fontWeight: 700,
-  cursor: "pointer",
 };
 
 export default function HostelPage() {
@@ -34,8 +26,28 @@ export default function HostelPage() {
       Create boys and girls hostels, add rooms, and manage active hostel seat allocations.
     </p>
   </div>
-  <button
+ {showFormOnly ? (
+  <Button
     type="button"
+    variant="primary"
+    onClick={() => {
+      state.setShowHostelForm(false);
+      state.setEditingHostelId(null);
+      state.setEditingRoomId(null);
+    }}
+    style={{
+      borderRadius: 12,
+      display: "inline-flex",
+      alignItems: "center",
+      gap: 6,
+    }}
+  >
+    Back
+  </Button>
+) : (
+  <Button
+    type="button"
+    variant="primary"
     onClick={() => {
       state.resetRoomForm();
       state.setEditingHostelId(null);
@@ -45,20 +57,29 @@ export default function HostelPage() {
         address: "",
         status: "active",
       });
-      state.setRoomDrafts([{
-        room_number: "",
-        floor: "",
-        type: "double",
-        capacity: "2",
-        monthly_fee: "",
-        status: "active",
-      }]);
+      state.setRoomDrafts([
+        {
+          room_number: "",
+          floor: "",
+          type: "double",
+          capacity: "2",
+          monthly_fee: "",
+          status: "active",
+        },
+      ]);
       state.setShowHostelForm(true);
     }}
-    style={primaryButton}
+    style={{
+      borderRadius: 12,
+      display: "inline-flex",
+      alignItems: "center",
+      gap: 6,
+    }}
   >
+    <Plus size={18} />
     Add Hostel
-  </button>
+  </Button>
+)}
 </div>
 
       {state.message && (
@@ -115,8 +136,9 @@ export default function HostelPage() {
         </div>
       ) : null} */}
 
-      <HostelFormsSection
+      <HostelFormsSectionWithRoomManager
         hostels={state.hostels}
+        rooms={state.rooms}
         showHostelForm={state.showHostelForm}
         editingHostelId={state.editingHostelId}
         editingRoomId={state.editingRoomId}
@@ -126,30 +148,28 @@ export default function HostelPage() {
         setRoomDrafts={state.setRoomDrafts}
         editingRoomForm={state.editingRoomForm}
         setEditingRoomForm={state.setEditingRoomForm}
-        resetHostelForm={state.resetHostelForm}
+        setEditingRoomId={state.setEditingRoomId}
         resetRoomForm={state.resetRoomForm}
         onSaveHostel={state.handleSaveHostel}
         onSaveRoom={state.handleSaveRoom}
+        onDeleteRoom={state.handleDeleteRoom}
       />
 
       {!showFormOnly && state.loading ? (
         <div style={cardStyle}>Loading hostel data...</div>
       ) : !showFormOnly ? (
         <>
-          {/* RoomAvailabilityTable card */}
+          {/* HostelListTable card */}
           <div style={{ ...cardStyle, minWidth: 0, overflow: "hidden" }}>
-            <RoomAvailabilityTable
+            <HostelListTable
               hostels={state.hostels}
-              rooms={state.filteredRooms}
-              selectedHostelFilter={state.selectedHostelFilter}
-              setSelectedHostelFilter={state.setSelectedHostelFilter}
-              openRoomActionId={state.openRoomActionId}
-              setOpenRoomActionId={state.setOpenRoomActionId}
+              rooms={state.rooms}
               onEditHostel={(hostelId) => {
                 const hostel = state.hostels.find((item) => item.id === hostelId);
                 if (!hostel) return;
                 state.setShowHostelForm(true);
                 state.setEditingHostelId(hostel.id);
+                state.resetRoomForm();
                 state.setHostelForm({
                   hostel_name: hostel.hostel_name,
                   gender_type: hostel.gender_type,
@@ -158,7 +178,18 @@ export default function HostelPage() {
                 });
               }}
               onEditRoom={(room) => {
+                const hostel = state.hostels.find((item) => item.id === room.hostel_id);
+                state.setShowHostelForm(true);
+                state.setEditingHostelId(room.hostel_id);
                 state.setEditingRoomId(room.id);
+                if (hostel) {
+                  state.setHostelForm({
+                    hostel_name: hostel.hostel_name,
+                    gender_type: hostel.gender_type,
+                    address: hostel.address || "",
+                    status: hostel.status,
+                  });
+                }
                 state.setEditingRoomForm({
                   hostel_id: String(room.hostel_id),
                   room_number: room.room_number,

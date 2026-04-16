@@ -3,10 +3,11 @@ import { TeacherFormPanel } from "../components/TeacherFormPanel";
 import { TeacherDetailsModal } from "../components/TeacherDetailsModal";
 import { TeacherList } from "../components/TeacherList";
 import { StatCard } from "../components/TeacherShared";
-import { buttonStyle, cardStyle } from "../components/teacherStyles";
+import { cardStyle } from "../components/teacherStyles";
 import { initialTeacherForm, type Teacher } from "../types/teacher.types";
 import { useTeachersData } from "../hooks/useTeachersData";
 import "../styles/teachersPage.css";
+import { Button } from "../../../shared/components/Button";
 
 export default function TeachersPage() {
   const state = useTeachersData();
@@ -23,9 +24,8 @@ export default function TeachersPage() {
             Create staffs, assign real classes, and use a controlled subject list so leave and attendance modules stay clean later.
           </p>
         </div>
-        <button
+        <Button
           type="button"
-          style={buttonStyle}
           className="teachersPage__primaryAction"
           onClick={() => {
             state.setEditingTeacherId(null);
@@ -33,8 +33,8 @@ export default function TeachersPage() {
             state.setShowForm((current) => !current);
           }}
         >
-          {state.showForm ? "Close Form" : "Add Staff"}
-        </button>
+          {state.showForm ? "Back" : "+ Add Staff"}
+        </Button>
       </div>
 
       {!state.showForm ? (

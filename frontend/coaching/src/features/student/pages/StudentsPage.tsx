@@ -10,6 +10,7 @@ import { useStudentsQuery } from "../hooks/useStudentsQuery";
 import { deleteStudent as deleteStudentRequest } from "../services/students.service";
 import { initialStudentLoginDraft, type StudentRecord } from "../types/students.types";
 import { validateOptionalEmail, validateOptionalPhone } from "../../../shared/utils/contact";
+import { Button } from "../../../shared/components/Button";
 
 const cardStyle = {
   background: "#fff",
@@ -25,6 +26,8 @@ export default function StudentsPage() {
   const createLoginMutation = useCreateStudentLogin();
   const allStudents = state.students;
   const [selectedStudent, setSelectedStudent] = useState<StudentRecord | null>(null);
+  const [isCreating, setIsCreating] = useState(false);
+  const [editingStudentId, setEditingStudentId] = useState<number | null>(null);
 
   const startOfThisMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
   const startOfLastMonth = new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1);
@@ -118,10 +121,11 @@ export default function StudentsPage() {
       state.setMessage("");
     }
   };
+  
 
   return (
     <div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 ,flexWrap: "wrap"}}>
         
         <div>
           <h1 style={{ margin: 0, fontSize: 28 }}>Student Admissions</h1>
@@ -130,20 +134,11 @@ export default function StudentsPage() {
           </p>
         </div>
 
-        <button
+        <Button
           onClick={() => navigate("/students/new")}
-          style={{
-            background: "#334155",
-            color: "#ffffff",
-            border: "none",
-            borderRadius: 10,
-            padding: "12px 18px",
-            fontWeight: 700,
-            cursor: "pointer",
-          }}
         >
-          New Admission
-        </button>
+          + New Admission
+        </Button>
       </div>
 
       <div

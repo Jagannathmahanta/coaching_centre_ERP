@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import api from "../../shared/services/api";
+import { Button } from "../../shared/components/Button";
 
 
 type Teacher = {
@@ -60,22 +61,6 @@ const inputStyle = {
   borderRadius: 12,
   border: "1px solid #d1d5db",
   marginTop: 6,
-};
-
-const buttonStyle = {
-  background: "#1d4ed8",
-  color: "#fff",
-  border: "none",
-  borderRadius: 12,
-  padding: "12px 16px",
-  fontWeight: 700,
-  cursor: "pointer",
-};
-
-const secondaryButton = {
-  ...buttonStyle,
-  background: "#eff6ff",
-  color: "#1d4ed8",
 };
 
 function currency(value: number | string | null | undefined) {
@@ -326,9 +311,9 @@ export default function TeacherSalaryPage() {
                   Record payment details for {paymentDraft.teacherName} and keep the slip ready for printing or sharing later.
                 </p>
               </div>
-              <button type="button" style={{ ...secondaryButton, padding: "10px 14px" }} onClick={closePaymentModal}>
+              <Button type="button" variant="secondary" style={{ padding: "10px 14px" }} onClick={closePaymentModal}>
                 Close
-              </button>
+              </Button>
             </div>
 
             <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 14, marginBottom: 18 }}>
@@ -365,12 +350,12 @@ export default function TeacherSalaryPage() {
             </Field>
 
             <div style={{ display: "flex", gap: 12, marginTop: 18, justifyContent: "flex-end", flexWrap: "wrap" }}>
-              <button type="button" style={secondaryButton} onClick={closePaymentModal}>
+              <Button type="button" variant="secondary" onClick={closePaymentModal}>
                 Cancel
-              </button>
-              <button type="submit" style={buttonStyle} disabled={paySlipMutation.isPending}>
+              </Button>
+              <Button type="submit" variant="primary" disabled={paySlipMutation.isPending}>
                 {paySlipMutation.isPending ? "Saving..." : "Confirm Payment"}
-              </button>
+              </Button>
             </div>
           </form>
         </div>
@@ -441,9 +426,9 @@ export default function TeacherSalaryPage() {
         </div>
 
         <div style={{ marginTop: 18 }}>
-          <button type="submit" style={buttonStyle} disabled={saveStructureMutation.isPending}>
+          <Button type="submit" variant="primary" disabled={saveStructureMutation.isPending}>
             {saveStructureMutation.isPending ? "Saving..." : "Save Salary Structure"}
-          </button>
+          </Button>
         </div>
       </form>
 
@@ -455,9 +440,9 @@ export default function TeacherSalaryPage() {
           </div>
           <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
             <input type="month" value={month} onChange={(event) => setMonth(event.target.value)} style={{ ...inputStyle, marginTop: 0 }} />
-            <button type="button" style={secondaryButton} onClick={() => generateSlipsMutation.mutate()} disabled={generateSlipsMutation.isPending}>
+            <Button type="button" variant="secondary" onClick={() => generateSlipsMutation.mutate()} disabled={generateSlipsMutation.isPending}>
               {generateSlipsMutation.isPending ? "Generating..." : "Generate Slips"}
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -500,9 +485,9 @@ export default function TeacherSalaryPage() {
 
                 <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
                 {slip.status !== "paid" && (
-                  <button
+                  <Button
                     type="button"
-                    style={buttonStyle}
+                    variant="primary"
                     onClick={() => setPaymentDraft({
                         slipId: slip.id,
                         teacherName: slip.teacher_name,
@@ -515,11 +500,11 @@ export default function TeacherSalaryPage() {
                       })}
                     >
                       Pay
-                    </button>
+                    </Button>
                   )}
-                  <button type="button" style={secondaryButton} onClick={() => printSalarySlip(slip)}>
+                  <Button type="button" variant="secondary" onClick={() => printSalarySlip(slip)}>
                     Print Slip
-                  </button>
+                  </Button>
                 </div>
               </div>
             ))}

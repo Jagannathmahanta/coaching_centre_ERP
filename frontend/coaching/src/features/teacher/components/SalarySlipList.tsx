@@ -1,4 +1,4 @@
-import { buttonStyle, secondaryButton } from "./teacherStyles";
+import { Button } from "../../../shared/components/Button";
 import type { SalarySlip } from "../types/teacherSalary.types";
 
 export function SalarySlipList({
@@ -53,13 +53,13 @@ export function SalarySlipList({
 
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
             {slip.status !== "paid" && (
-              <button type="button" style={buttonStyle} onClick={() => onPay(slip)}>
+              <Button type="button" onClick={() => onPay(slip)}>
                 Pay
-              </button>
+              </Button>
             )}
-            <button type="button" style={secondaryButton} onClick={() => onPrint(slip)}>
+            <Button type="button" variant="secondary" onClick={() => onPrint(slip)}>
               Print Slip
-            </button>
+            </Button>
           </div>
         </div>
       ))}

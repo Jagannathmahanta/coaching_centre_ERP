@@ -285,12 +285,21 @@ exports.getDashboard = async (req) => {
     pool.query(
       `
       SELECT 
-        COALESCE(SUM(paid_amount),0) as collected_this_month,
-        COALESCE(SUM(balance),0) as pending_this_month,
-        COUNT(*) FILTER (WHERE status IN ('pending', 'partial') AND balance > 0) as pending_fee_count
+        COALESCE(SUM(paid_amount) FILTER (
+          WHERE date_trunc('month', due_date) = date_trunc('month', CURRENT_DATE)
+        ),0) as collected_this_month,
+        COALESCE(SUM(balance) FILTER (
+          WHERE status IN ('pending', 'partial')
+            AND balance > 0
+            AND due_date <= CURRENT_DATE
+        ), 0) as pending_this_month,
+        COUNT(*) FILTER (
+          WHERE status IN ('pending', 'partial')
+            AND balance > 0
+            AND due_date <= CURRENT_DATE
+        ) as pending_fee_count
       FROM fees 
-      WHERE center_id=$1 
-      AND date_trunc('month', due_date) = date_trunc('month', CURRENT_DATE)
+      WHERE center_id=$1
       `,
       [cid]
     ),
@@ -393,6 +402,7 @@ exports.getDashboard = async (req) => {
       WHERE f.center_id = $1
         AND f.status IN ('pending', 'partial')
         AND f.balance > 0
+        AND f.due_date <= CURRENT_DATE
       ORDER BY f.due_date ASC, f.balance DESC
       LIMIT 8
       `,
@@ -914,7 +924,7 @@ exports.getStudentDashboard = async (req) => {
         AND f.student_id = $2
         AND f.status IN ('pending', 'partial')
         AND f.balance > 0
-        AND f.due_date < date_trunc('month', CURRENT_DATE) + INTERVAL '1 month'
+        AND f.due_date <= CURRENT_DATE
       ORDER BY f.due_date ASC, f.balance DESC
       LIMIT 8
       `,
@@ -929,7 +939,9 @@ exports.getStudentDashboard = async (req) => {
       FROM fees
       WHERE center_id = $1
         AND student_id = $2
-        AND due_date < date_trunc('month', CURRENT_DATE) + INTERVAL '1 month'
+        AND status IN ('pending', 'partial')
+        AND balance > 0
+        AND due_date <= CURRENT_DATE
       `,
       [centerId, studentId]
     ),
@@ -1101,7 +1113,7 @@ exports.getParentDashboard = async (req) => {
         AND s.parent_id = $2
         AND f.status IN ('pending', 'partial')
         AND f.balance > 0
-        AND f.due_date < date_trunc('month', CURRENT_DATE) + INTERVAL '1 month'
+        AND f.due_date <= CURRENT_DATE
       ORDER BY f.due_date ASC, f.balance DESC
       LIMIT 10
       `,
@@ -1117,7 +1129,9 @@ exports.getParentDashboard = async (req) => {
       JOIN students s ON s.id = f.student_id
       WHERE f.center_id = $1
         AND s.parent_id = $2
-        AND f.due_date < date_trunc('month', CURRENT_DATE) + INTERVAL '1 month'
+        AND f.status IN ('pending', 'partial')
+        AND f.balance > 0
+        AND f.due_date <= CURRENT_DATE
       `,
       [centerId, parentId]
     ),

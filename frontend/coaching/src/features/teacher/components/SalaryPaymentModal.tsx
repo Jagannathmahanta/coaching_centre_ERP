@@ -1,4 +1,5 @@
-import { buttonStyle, cardStyle, inputStyle, secondaryButton } from "./teacherStyles";
+import { cardStyle, inputStyle } from "./teacherStyles";
+import { Button } from "../../../shared/components/Button";
 import { Field } from "./TeacherShared";
 import type { SalaryPaymentDraft } from "../types/teacherSalary.types";
 
@@ -45,9 +46,9 @@ export function SalaryPaymentModal({
               Record payment details for {draft.teacherName} and keep the slip ready for printing or sharing later.
             </p>
           </div>
-          <button type="button" style={{ ...secondaryButton, padding: "10px 14px" }} onClick={onClose}>
+          <Button type="button" variant="secondary" style={{ padding: "10px 14px" }} onClick={onClose}>
             Close
-          </button>
+          </Button>
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 14, marginBottom: 18 }}>
@@ -84,12 +85,12 @@ export function SalaryPaymentModal({
         </Field>
 
         <div style={{ display: "flex", gap: 12, marginTop: 18, justifyContent: "flex-end", flexWrap: "wrap" }}>
-          <button type="button" style={secondaryButton} onClick={onClose}>
+          <Button type="button" variant="secondary" onClick={onClose}>
             Cancel
-          </button>
-          <button type="submit" style={buttonStyle} disabled={isPending}>
+          </Button>
+          <Button type="submit" disabled={isPending}>
             {isPending ? "Saving..." : "Confirm Payment"}
-          </button>
+          </Button>
         </div>
       </form>
     </div>

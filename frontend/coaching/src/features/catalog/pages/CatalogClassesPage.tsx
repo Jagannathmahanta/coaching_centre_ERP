@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { CalendarRange, CheckCircle2, Clock3, Plus, Presentation } from "lucide-react";
 import { CatalogClassSection } from "../components/CatalogClassSection";
 import { useCatalogAdmin } from "../hooks/useCatalogAdmin";
+import { Button } from "../../../shared/components/Button";
 
 export default function CatalogClassesPage() {
   const navigate = useNavigate();
@@ -30,23 +31,23 @@ export default function CatalogClassesPage() {
               : "Open the class form separately, then return back to the list when done."}
           </p>
         </div>
-        <button
-          type="button"
-          className="catalogHero__action"
-          onClick={() => {
-            if (view === "form") {
-              state.resetClassForm();
-              setView("list");
-              return;
-            }
+        <Button
+  type="button"
+  variant={view === "list" ? "primary" : "secondary"}
+  onClick={() => {
+    if (view === "form") {
+      state.resetClassForm();
+      setView("list");
+      return;
+    }
 
-            state.resetClassForm();
-            setView("form");
-          }}
-        >
-          {view === "list" ? <Plus size={18} /> : null}
-          {view === "list" ? "Add New Class" : "Back to Classes"}
-        </button>
+    state.resetClassForm();
+    setView("form");
+  }}
+>
+  {view === "list" ? <Plus size={18} style={{ marginRight: 6 }} /> : null}
+  {view === "list" ? "Add New Class" : "Back to Classes"}
+</Button>
       </section>
 
       {state.error ? <div className="catalogPage__alert catalogPage__alert--error">{state.error}</div> : null}

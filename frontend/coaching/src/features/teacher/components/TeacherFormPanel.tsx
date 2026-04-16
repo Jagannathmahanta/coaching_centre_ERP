@@ -1,7 +1,8 @@
-import { buttonStyle, cardStyle, inputStyle, pickerGridStyle, pickerStyle, secondaryButton } from "./teacherStyles";
+import { cardStyle, inputStyle, pickerGridStyle, pickerStyle } from "./teacherStyles";
 import { Field } from "./TeacherShared";
 import { toggleSelection } from "../hooks/useTeachersData";
 import type { TeacherFormState } from "../types/teacher.types";
+import { Button } from "../../../shared/components/Button";
 import { sanitizeEmailInput, sanitizePhoneInput } from "../../../shared/utils/contact";
 
 export function TeacherFormPanel({
@@ -296,12 +297,12 @@ export function TeacherFormPanel({
 
       {/* Actions */}
       <div style={{ display: "flex", gap: 12, marginTop: 18, flexWrap: "wrap" }}>
-        <button type="submit" style={buttonStyle} disabled={isPending}>
+        <Button type="submit" disabled={isPending}>
           {isPending ? "Saving..." : editingTeacherId ? "Update Staff" : "Save Staff"}
-        </button>
-        <button type="button" style={secondaryButton} onClick={onCancel}>
+        </Button>
+        <Button type="button" variant="secondary" onClick={onCancel}>
           Cancel
-        </button>
+        </Button>
       </div>
     </form>
   );

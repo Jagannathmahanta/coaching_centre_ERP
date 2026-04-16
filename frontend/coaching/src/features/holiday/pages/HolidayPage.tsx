@@ -76,10 +76,9 @@ export default function HolidayPage() {
         </div>
       
 
-{!isDisabled ? (
+{!showForm ? (
   <button
     type="button"
-    disabled={isDisabled}
     style={{
       background: "#334155",
       color: "#fff",
@@ -92,9 +91,25 @@ export default function HolidayPage() {
     }}
     onClick={() => setShowForm(true)}
   >
-    {t("holiday.addHoliday")}
+   +  {t("holiday.addHoliday")}
   </button>
-) : null}
+) : ( <button
+    type="button"
+  
+    style={{
+      background: "#334155",
+      color: "#fff",
+      border: "none",
+      borderRadius: 12,
+      padding: "12px 16px",
+      fontWeight: 700,
+      cursor: isDisabled ? "not-allowed" : "pointer",
+      opacity: isDisabled ? 0.5 : 1,
+    }}
+    onClick={() => setShowForm(false)}
+  >
+   Back
+  </button>)}
       </div>
 
       {message && <div style={{ ...cardStyle, background: "#f0fdf4", color: "#166534" }}>{message}</div>}
