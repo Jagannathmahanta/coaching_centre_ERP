@@ -609,6 +609,48 @@ exports.updateStudent = async (req) => {
       throw createAppError("Student not found.", 404);
     }
 
+    const requestedProgramType = selection.isStructured
+      ? selection.programType
+      : String(existingStudent.program_type || "academic").trim().toLowerCase();
+    const requestedClassId = selection.isStructured && selection.programType === "academic"
+      ? Number(selection.classRow && selection.classRow.id ? selection.classRow.id : 0) || null
+      : null;
+    const requestedCourseId = selection.isStructured && selection.programType === "non_academic"
+      ? Number(selection.courseRow && selection.courseRow.id ? selection.courseRow.id : 0) || null
+      : null;
+    const isProgramChanged = requestedProgramType !== String(existingStudent.program_type || "academic").trim().toLowerCase();
+    const isClassChanged = requestedProgramType === "academic"
+      && Number(existingStudent.class_id || 0) !== Number(requestedClassId || 0);
+    const isCourseChanged = requestedProgramType === "non_academic"
+      && Number(existingStudent.course_id || 0) !== Number(requestedCourseId || 0);
+    const isProgramSelectionChanged = selection.isStructured && (isProgramChanged || isClassChanged || isCourseChanged);
+
+    if (isProgramSelectionChanged) {
+      const switchStartDate = new Date();
+      switchStartDate.setDate(1);
+      const effectiveSwitchDate = switchStartDate.toISOString().slice(0, 10);
+      const pendingFeeCheck = await client.query(
+        `
+        SELECT COUNT(*) AS pending_count
+        FROM fees f
+        JOIN student_fee_profiles fp
+          ON fp.id = f.fee_profile_id
+         AND fp.center_id = f.center_id
+        WHERE fp.student_id = $1
+          AND fp.center_id = $2
+          AND fp.status = 'active'
+          AND f.period_start < $3
+          AND f.status IN ('pending', 'partial')
+          AND COALESCE(f.balance, 0) > 0
+        `,
+        [studentId, req.user.center_id, effectiveSwitchDate]
+      );
+
+      if (Number(pendingFeeCheck.rows[0] ? pendingFeeCheck.rows[0].pending_count : 0) > 0) {
+        throw createAppError("This student has pending fees before the switch month. Clear the previous class/course dues before switching.");
+      }
+    }
+
     let parentId = existingStudent.parent_id || null;
     const normalizedParentName = String(parent_name || "").trim();
     const normalizedParentPhone = String(parent_phone || "").trim();

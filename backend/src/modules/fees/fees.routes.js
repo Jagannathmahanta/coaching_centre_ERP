@@ -25,5 +25,7 @@ router.get("/:id/payments", auth, controller.getPaymentHistory);
 router.patch("/:id/pay", auth, controller.payFee);
 router.post("/:id/use-advance", auth, controller.useAdvanceForFee);
 router.patch("/:id/adjust", auth, controller.adjustFee);
+router.post("/payments/:id/reverse", auth, controller.reversePayment);
+router.post("/payments/:id/reassign", auth, controller.reassignPayment);
 
 module.exports = router;

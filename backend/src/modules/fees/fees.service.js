@@ -153,6 +153,38 @@ const resolveAdjustedStatus = (totalAmount, paidAmount, waivedAmount) => {
   return resolveStatus(totalAmount, paidAmount);
 };
 
+const getSwitchPlanStartDate = (value) => {
+  const date = value ? new Date(value) : new Date();
+  if (Number.isNaN(date.getTime())) {
+    throw createAppError("Invalid plan_start_date.");
+  }
+  return formatDate(new Date(date.getFullYear(), date.getMonth(), 1));
+};
+
+const applyStudentAdvanceToPlan = async (client, req, studentId, plan) => {
+  const student = await getStudentWithCharges(client, req.user.center_id, studentId);
+  if (Number(student.advance_fee_balance || 0) > 0 && plan.installments.length) {
+    const appliedAdvance = await applyStoredAdvanceToFees(
+      client,
+      req,
+      studentId,
+      plan.installments,
+      Number(student.advance_fee_balance),
+      "Applied from student advance balance during fee plan creation."
+    );
+
+    plan.installments = plan.installments.map((installment) => {
+      const updated = appliedAdvance.appliedInstallments.find((item) => item.id === installment.id);
+      return updated || installment;
+    });
+    plan.advance_balance = appliedAdvance.remainingAdvanceBalance;
+  } else {
+    plan.advance_balance = Number(student.advance_fee_balance || 0);
+  }
+
+  return plan;
+};
+
 exports.getFeeStructures = async (req) => {
   const { program_type, academic_year, class_id, course_id, batch_id } = req.query;
   let query = `
@@ -438,6 +470,14 @@ exports.updateStudentFeePlan = async (req) => {
       throw createAppError("No active fee plan found for this student.", 404);
     }
 
+    const nextFeeStructureId = req.body.fee_structure_id || profile.fee_structure_id;
+    const nextBillingCycle = req.body.billing_cycle || profile.billing_cycle;
+    const nextAcademicYear = req.body.academic_year || profile.academic_year;
+    const nextDueDay = req.body.due_day || profile.due_day;
+    const nextIncludeTransport = req.body.include_transport !== undefined ? req.body.include_transport : profile.include_transport;
+    const nextIncludeHostel = req.body.include_hostel !== undefined ? req.body.include_hostel : profile.include_hostel;
+    const nextNotes = req.body.notes !== undefined ? req.body.notes : profile.notes;
+    const switchStartDate = getSwitchPlanStartDate(req.body.plan_start_date);
     const paidCheck = await client.query(
       `
       SELECT COUNT(*) AS paid_count
@@ -448,9 +488,139 @@ exports.updateStudentFeePlan = async (req) => {
       `,
       [profile.id, req.user.center_id]
     );
+    const hasPaidInstallments = Number(paidCheck.rows[0] ? paidCheck.rows[0].paid_count : 0) > 0;
 
-    if (Number(paidCheck.rows[0] ? paidCheck.rows[0].paid_count : 0) > 0) {
-      throw createAppError("This fee plan already has payments. Edit is blocked to protect fee history. Use installment adjustment instead.");
+    if (hasPaidInstallments) {
+      const pastPendingCheck = await client.query(
+        `
+        SELECT COUNT(*) AS pending_count
+        FROM fees
+        WHERE fee_profile_id = $1
+          AND center_id = $2
+          AND period_start < $3
+          AND status IN ('pending', 'partial')
+          AND COALESCE(balance, 0) > 0
+        `,
+        [profile.id, req.user.center_id, switchStartDate]
+      );
+
+      if (Number(pastPendingCheck.rows[0] ? pastPendingCheck.rows[0].pending_count : 0) > 0) {
+        throw createAppError("Clear all pending fees before the switch month before changing class or course.");
+      }
+
+      const { rows: futureFees } = await client.query(
+        `
+        SELECT *
+        FROM fees
+        WHERE fee_profile_id = $1
+          AND center_id = $2
+          AND period_start >= $3
+        ORDER BY period_start ASC, installment_no ASC
+        FOR UPDATE
+        `,
+        [profile.id, req.user.center_id, switchStartDate]
+      );
+
+      const futureFeeIds = futureFees.map((fee) => fee.id);
+
+      if (futureFeeIds.length) {
+        const { rows: futurePayments } = await client.query(
+          `
+          SELECT *
+          FROM fee_payments
+          WHERE center_id = $1
+            AND fee_id = ANY($2::int[])
+          ORDER BY payment_date ASC, created_at ASC
+          FOR UPDATE
+          `,
+          [req.user.center_id, futureFeeIds]
+        );
+
+        const transferredCredit = roundMoney(
+          futurePayments.reduce((sum, payment) => sum + Number(payment.amount || 0), 0)
+        );
+
+        if (transferredCredit > 0) {
+          const student = await getStudentWithCharges(client, req.user.center_id, studentId);
+          await updateStudentAdvanceBalance(
+            client,
+            req.user.center_id,
+            studentId,
+            Number(student.advance_fee_balance || 0) + transferredCredit
+          );
+
+          await client.query(
+            `
+            UPDATE fee_payments
+            SET
+              fee_id = NULL,
+              advance_amount = amount,
+              admission_amount = 0,
+              tuition_amount = 0,
+              hostel_amount = 0,
+              transport_amount = 0,
+              adjustment_amount = 0,
+              payment_mode = COALESCE(payment_mode, 'advance_credit'),
+              notes = CASE
+                WHEN COALESCE(notes, '') = '' THEN $1
+                ELSE notes || ' | ' || $1
+              END
+            WHERE center_id = $2
+              AND fee_id = ANY($3::int[])
+            `,
+            [
+              `Transferred to advance during fee plan switch effective ${switchStartDate}.`,
+              req.user.center_id,
+              futureFeeIds,
+            ]
+          );
+        }
+
+        await client.query(
+          `
+          DELETE FROM fees
+          WHERE center_id = $1
+            AND fee_profile_id = $2
+            AND id = ANY($3::int[])
+          `,
+          [req.user.center_id, profile.id, futureFeeIds]
+        );
+      }
+
+      await client.query(
+        `
+        UPDATE student_fee_profiles
+        SET status = 'cancelled',
+            notes = CASE
+              WHEN COALESCE(notes, '') = '' THEN $1
+              ELSE notes || ' | ' || $1
+            END,
+            updated_at = NOW()
+        WHERE id = $2
+          AND center_id = $3
+        `,
+        [
+          `Plan switched effective ${switchStartDate}.`,
+          profile.id,
+          req.user.center_id,
+        ]
+      );
+
+      const switchedPlan = await createStudentFeePlan(client, req, {
+        studentId,
+        billing_cycle: nextBillingCycle,
+        academic_year: nextAcademicYear,
+        fee_structure_id: nextFeeStructureId,
+        due_day: nextDueDay,
+        include_transport: nextIncludeTransport,
+        include_hostel: nextIncludeHostel,
+        plan_start_date: switchStartDate,
+        notes: nextNotes,
+      });
+
+      await applyStudentAdvanceToPlan(client, req, studentId, switchedPlan);
+      await client.query("COMMIT");
+      return switchedPlan;
     }
 
     await client.query(
@@ -473,15 +643,17 @@ exports.updateStudentFeePlan = async (req) => {
 
     const plan = await createStudentFeePlan(client, req, {
       studentId,
-      billing_cycle: req.body.billing_cycle || profile.billing_cycle,
-      academic_year: req.body.academic_year || profile.academic_year,
-      fee_structure_id: req.body.fee_structure_id || profile.fee_structure_id,
-      due_day: req.body.due_day || profile.due_day,
-      include_transport: req.body.include_transport !== undefined ? req.body.include_transport : profile.include_transport,
-      include_hostel: req.body.include_hostel !== undefined ? req.body.include_hostel : profile.include_hostel,
+      billing_cycle: nextBillingCycle,
+      academic_year: nextAcademicYear,
+      fee_structure_id: nextFeeStructureId,
+      due_day: nextDueDay,
+      include_transport: nextIncludeTransport,
+      include_hostel: nextIncludeHostel,
       plan_start_date: req.body.plan_start_date || profile.plan_start_date,
-      notes: req.body.notes !== undefined ? req.body.notes : profile.notes,
+      notes: nextNotes,
     });
+
+    await applyStudentAdvanceToPlan(client, req, studentId, plan);
 
     await client.query("COMMIT");
     return plan;
@@ -816,6 +988,311 @@ const applyStoredAdvanceToFees = async (client, req, studentId, fees, advanceBal
   };
 };
 
+const getLockedPayment = async (client, centerId, paymentId) => {
+  const { rows } = await client.query(
+    `
+    SELECT *
+    FROM fee_payments
+    WHERE id = $1
+      AND center_id = $2
+    FOR UPDATE
+    `,
+    [paymentId, centerId]
+  );
+
+  if (!rows[0]) {
+    throw createAppError("Payment record not found.", 404);
+  }
+
+  return rows[0];
+};
+
+const buildPaymentNote = (baseNote, systemNote) => {
+  const note = String(baseNote || "").trim();
+  return note ? `${note} | ${systemNote}` : systemNote;
+};
+
+const reversePaymentEffect = async (client, req, payment, reason) => {
+  const paymentAmount = roundMoney(Number(payment.amount || 0));
+  const admissionAmount = roundMoney(Number(payment.admission_amount || 0));
+  const tuitionAmount = roundMoney(Number(payment.tuition_amount || 0));
+  const hostelAmount = roundMoney(Number(payment.hostel_amount || 0));
+  const transportAmount = roundMoney(Number(payment.transport_amount || 0));
+  const adjustmentAmount = roundMoney(Number(payment.adjustment_amount || 0));
+  const advanceAmount = roundMoney(Number(payment.advance_amount || 0));
+
+  if (payment.fee_id) {
+    const { rows: feeRows } = await client.query(
+      `
+      SELECT *
+      FROM fees
+      WHERE id = $1
+        AND center_id = $2
+      FOR UPDATE
+      `,
+      [payment.fee_id, req.user.center_id]
+    );
+
+    const fee = feeRows[0];
+    if (!fee) {
+      throw createAppError("Linked fee installment not found for this payment.", 404);
+    }
+
+    const newPaidAmount = roundMoney(Number(fee.paid_amount || 0) - paymentAmount);
+    const newPaidAdmissionAmount = roundMoney(Number(fee.paid_admission_amount || 0) - admissionAmount);
+    const newPaidTuitionAmount = roundMoney(Number(fee.paid_tuition_amount || 0) - tuitionAmount);
+    const newPaidHostelAmount = roundMoney(Number(fee.paid_hostel_amount || 0) - hostelAmount);
+    const newPaidTransportAmount = roundMoney(Number(fee.paid_transport_amount || 0) - transportAmount);
+    const newPaidAdjustmentAmount = roundMoney(Number(fee.paid_adjustment_amount || 0) - adjustmentAmount);
+
+    if (
+      newPaidAmount < 0 ||
+      newPaidAdmissionAmount < 0 ||
+      newPaidTuitionAmount < 0 ||
+      newPaidHostelAmount < 0 ||
+      newPaidTransportAmount < 0 ||
+      newPaidAdjustmentAmount < 0
+    ) {
+      throw createAppError("Payment reversal would make paid totals negative. Review fee history before retrying.");
+    }
+
+    await client.query(
+      `
+      DELETE FROM fee_payments
+      WHERE id = $1
+        AND center_id = $2
+      `,
+      [payment.id, req.user.center_id]
+    );
+
+    const { rows: latestRows } = await client.query(
+      `
+      SELECT MAX(payment_date) AS last_payment_date
+      FROM fee_payments
+      WHERE fee_id = $1
+        AND center_id = $2
+      `,
+      [fee.id, req.user.center_id]
+    );
+
+    const newBalance = roundMoney(Number(fee.total_amount || 0) - newPaidAmount);
+    const status = resolveAdjustedStatus(
+      Number(fee.total_amount || 0),
+      newPaidAmount,
+      Number(fee.waived_amount || 0)
+    );
+
+    await client.query(
+      `
+      UPDATE fees
+      SET paid_amount = $1,
+          paid_admission_amount = $2,
+          paid_tuition_amount = $3,
+          paid_hostel_amount = $4,
+          paid_transport_amount = $5,
+          paid_adjustment_amount = $6,
+          balance = $7,
+          status = $8,
+          last_payment_date = $9,
+          updated_at = NOW()
+      WHERE id = $10
+        AND center_id = $11
+      `,
+      [
+        newPaidAmount,
+        newPaidAdmissionAmount,
+        newPaidTuitionAmount,
+        newPaidHostelAmount,
+        newPaidTransportAmount,
+        newPaidAdjustmentAmount,
+        newBalance,
+        status,
+        latestRows[0] ? latestRows[0].last_payment_date : null,
+        fee.id,
+        req.user.center_id,
+      ]
+    );
+
+    if (payment.payment_mode === "advance_credit") {
+      const student = await getStudentWithCharges(client, req.user.center_id, fee.student_id);
+      await updateStudentAdvanceBalance(
+        client,
+        req.user.center_id,
+        fee.student_id,
+        Number(student.advance_fee_balance || 0) + paymentAmount
+      );
+    }
+
+    return {
+      type: "fee_payment",
+      fee_id: fee.id,
+      student_id: fee.student_id,
+      reversed_amount: paymentAmount,
+      reason: reason || null,
+    };
+  }
+
+  const student = await getStudentWithCharges(client, req.user.center_id, payment.student_id);
+  const amountToRemoveFromAdvance = roundMoney(advanceAmount || paymentAmount);
+  if (amountToRemoveFromAdvance > Number(student.advance_fee_balance || 0)) {
+    throw createAppError("This advance payment has already been used or adjusted. Reverse the dependent advance usage first.");
+  }
+
+  await updateStudentAdvanceBalance(
+    client,
+    req.user.center_id,
+    payment.student_id,
+    Number(student.advance_fee_balance || 0) - amountToRemoveFromAdvance
+  );
+
+  await client.query(
+    `
+    DELETE FROM fee_payments
+    WHERE id = $1
+      AND center_id = $2
+    `,
+    [payment.id, req.user.center_id]
+  );
+
+  return {
+    type: "advance_payment",
+    fee_id: null,
+    student_id: payment.student_id,
+    reversed_amount: paymentAmount,
+    reason: reason || null,
+  };
+};
+
+const applyReassignedPayment = async (client, req, originalPayment, options) => {
+  const paymentDate = options.payment_date || originalPayment.payment_date || formatDate(new Date());
+  const paymentMode = options.payment_mode !== undefined
+    ? options.payment_mode
+    : (
+      originalPayment.payment_mode === "advance_credit" ||
+      originalPayment.payment_mode === "advance_deposit"
+        ? "reassigned_payment"
+        : originalPayment.payment_mode || null
+    );
+  const transactionId = options.transaction_id !== undefined
+    ? options.transaction_id
+    : originalPayment.transaction_id || null;
+  const note = buildPaymentNote(
+    options.notes !== undefined ? options.notes : originalPayment.notes,
+    `Reassigned from payment #${originalPayment.id}${options.reason ? `: ${options.reason}` : ""}`
+  );
+
+  if (options.target_fee_id) {
+    const { rows } = await client.query(
+      `
+      SELECT *
+      FROM fees
+      WHERE id = $1
+        AND center_id = $2
+      FOR UPDATE
+      `,
+      [Number(options.target_fee_id), req.user.center_id]
+    );
+
+    const targetFee = rows[0];
+    if (!targetFee) {
+      throw createAppError("Target fee installment not found.", 404);
+    }
+    if (options.target_student_id && Number(options.target_student_id) !== Number(targetFee.student_id)) {
+      throw createAppError("target_student_id does not match the selected target fee installment.");
+    }
+
+    const updatedFee = await applyPaymentToFee(
+      client,
+      targetFee,
+      {
+        amount: roundMoney(Number(originalPayment.amount || 0)),
+        payment_date: paymentDate,
+        payment_mode: paymentMode,
+        transaction_id: transactionId,
+        notes: note,
+      },
+      req
+    );
+
+    return {
+      mode: "fee",
+      student_id: targetFee.student_id,
+      fee_id: targetFee.id,
+      applied_installments: [updatedFee],
+      advance_added: 0,
+    };
+  }
+
+  const targetStudentId = Number(options.target_student_id);
+  if (!targetStudentId) {
+    throw createAppError("target_fee_id or target_student_id is required for payment reassignment.");
+  }
+
+  const studentPaymentMode = normalizeStudentPaymentMode(options.student_payment_mode || "adjust_pending");
+  const student = await getStudentWithCharges(client, req.user.center_id, targetStudentId);
+  const paymentAmount = roundMoney(Number(originalPayment.amount || 0));
+
+  const { rows: pendingFees } = await client.query(
+    `
+    SELECT *
+    FROM fees
+    WHERE student_id = $1
+      AND center_id = $2
+      AND status IN ('pending', 'partial')
+    ORDER BY due_date ASC, installment_no ASC
+    FOR UPDATE
+    `,
+    [targetStudentId, req.user.center_id]
+  );
+
+  let paymentResult = { appliedInstallments: [], remaining: paymentAmount };
+  if (studentPaymentMode === "adjust_pending") {
+    paymentResult = await applyAmountAcrossFees(
+      client,
+      pendingFees,
+      paymentAmount,
+      req,
+      {
+        payment_date: paymentDate,
+        payment_mode: paymentMode,
+        transaction_id: transactionId,
+        notes: note,
+      }
+    );
+  }
+
+  let availableAdvanceBalance = Number(student.advance_fee_balance || 0);
+  let advanceAdded = 0;
+
+  if (paymentResult.remaining > 0) {
+    advanceAdded = paymentResult.remaining;
+    availableAdvanceBalance = await updateStudentAdvanceBalance(
+      client,
+      req.user.center_id,
+      targetStudentId,
+      Number(student.advance_fee_balance || 0) + advanceAdded
+    );
+
+    await createAdvancePaymentRecord(client, req, targetStudentId, {
+      amount: advanceAdded,
+      advance_amount: advanceAdded,
+      payment_date: paymentDate,
+      payment_mode: paymentMode || (studentPaymentMode === "store_as_advance" ? "advance_deposit" : "advance_credit"),
+      transaction_id: transactionId,
+      notes: note,
+    });
+  }
+
+  return {
+    mode: studentPaymentMode,
+    student_id: targetStudentId,
+    fee_id: null,
+    applied_installments: paymentResult.appliedInstallments,
+    advance_added: advanceAdded,
+    available_advance_balance: availableAdvanceBalance,
+  };
+};
+
 exports.payFee = async (req) => {
   const feeId = Number(req.params.id);
   const client = await pool.connect();
@@ -1054,6 +1531,70 @@ exports.adjustFee = async (req) => {
 
     await client.query("COMMIT");
     return updatedRows[0];
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+};
+
+exports.reversePayment = async (req) => {
+  const paymentId = Number(req.params.id);
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+    const payment = await getLockedPayment(client, req.user.center_id, paymentId);
+    const result = await reversePaymentEffect(client, req, payment, req.body.reason || null);
+    await client.query("COMMIT");
+    return {
+      success: true,
+      payment_id: paymentId,
+      ...result,
+    };
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+};
+
+exports.reassignPayment = async (req) => {
+  const paymentId = Number(req.params.id);
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    const payment = await getLockedPayment(client, req.user.center_id, paymentId);
+    if (
+      !req.body.target_fee_id &&
+      !req.body.target_student_id
+    ) {
+      throw createAppError("target_fee_id or target_student_id is required for payment reassignment.");
+    }
+
+    const reversal = await reversePaymentEffect(client, req, payment, req.body.reason || null);
+    const reassigned = await applyReassignedPayment(client, req, payment, {
+      target_fee_id: req.body.target_fee_id,
+      target_student_id: req.body.target_student_id,
+      student_payment_mode: req.body.student_payment_mode,
+      payment_date: req.body.payment_date,
+      payment_mode: req.body.payment_mode,
+      transaction_id: req.body.transaction_id,
+      notes: req.body.notes,
+      reason: req.body.reason || null,
+    });
+
+    await client.query("COMMIT");
+    return {
+      success: true,
+      payment_id: paymentId,
+      reversed: reversal,
+      reassigned,
+    };
   } catch (error) {
     await client.query("ROLLBACK");
     throw error;

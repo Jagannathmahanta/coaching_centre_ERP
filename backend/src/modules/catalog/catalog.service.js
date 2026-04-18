@@ -300,7 +300,7 @@ exports.createBatch = async (req) => {
       classId,
       courseId,
       normalizeShift(req.body.shift),
-      String(req.body.batch_name || "").trim() || "Default Batch",
+      String(req.body.batch_name || "").trim(),
       ensureTime(req.body.start_time, "start_time"),
       ensureTime(req.body.end_time, "end_time"),
       req.body.capacity ? Number(req.body.capacity) : null,
@@ -352,7 +352,9 @@ exports.updateBatch = async (req) => {
       classId,
       courseId,
       normalizeShift(req.body.shift || existing.shift),
-      String(req.body.batch_name || existing.batch_name || "").trim(),
+      req.body.batch_name !== undefined
+        ? String(req.body.batch_name || "").trim()
+        : String(existing.batch_name || "").trim(),
       ensureTime(req.body.start_time || existing.start_time, "start_time"),
       ensureTime(req.body.end_time || existing.end_time, "end_time"),
       req.body.capacity !== undefined ? Number(req.body.capacity || 0) || null : existing.capacity,
