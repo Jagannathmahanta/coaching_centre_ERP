@@ -15,7 +15,6 @@ export default function ExamFormPanel({
   classOptions,
   editingExamId,
   examForm,
-  onCancel,
   onSubmit,
   setExamForm,
 }: ExamFormPanelProps) {

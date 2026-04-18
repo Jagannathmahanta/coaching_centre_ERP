@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../services/api";
 import "./DashboardPage.css";
@@ -99,6 +99,7 @@ function isNewBatch(value: string | null | undefined) {
 
 export default function DashboardPage() {
   const navigate = useNavigate();
+  const [showAllPendingFees, setShowAllPendingFees] = useState(false);
   const dashboardQuery = useQuery({
     queryKey: ["dashboard-command-center"],
     queryFn: async () => {
@@ -109,6 +110,8 @@ export default function DashboardPage() {
 
   const data = dashboardQuery.data;
   const stats = data?.stats;
+  const pendingFees = data?.pending_fees || [];
+  const pendingFeesPreview = pendingFees.slice(0, 5);
 
   const downloadResultBatch = async (examId: number) => {
     const [examRes, resultRes] = await Promise.all([
@@ -262,7 +265,7 @@ export default function DashboardPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {data?.pending_fees?.length ? data.pending_fees.map((item) => (
+                      {pendingFeesPreview.length ? pendingFeesPreview.map((item) => (
                         <tr key={item.fee_id}>
                           <td>
                             <strong>{item.student_name}</strong>
@@ -285,11 +288,84 @@ export default function DashboardPage() {
                     </tbody>
                   </table>
                 </div>
+                {pendingFees.length > 5 ? (
+                  <div className="dashboard-tableFooter">
+                    <button
+                      className="dashboard-actionLink secondary"
+                      type="button"
+                      onClick={() => setShowAllPendingFees(true)}
+                    >
+                      View All
+                    </button>
+                  </div>
+                ) : null}
               </Panel>
             </div>
           </section>
         </>
       )}
+
+      {showAllPendingFees ? (
+        <div
+          className="dashboard-modalOverlay"
+          onClick={() => setShowAllPendingFees(false)}
+          role="presentation"
+        >
+          <div
+            className="dashboard-modal"
+            onClick={(event) => event.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-label="All pending fees"
+          >
+            <div className="dashboard-cardHeader">
+              <div>
+                <h2>All Pending Fees</h2>
+                <p>Full pending student fee list for the current month.</p>
+              </div>
+              <button
+                className="dashboard-actionLink secondary"
+                type="button"
+                onClick={() => setShowAllPendingFees(false)}
+              >
+                Close
+              </button>
+            </div>
+
+            <div className="dashboard-tableWrap">
+              <table className="dashboard-table">
+                <thead>
+                  <tr>
+                    <th>Student</th>
+                    <th>Installment</th>
+                    <th>Due</th>
+                    <th>Balance</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {pendingFees.map((item) => (
+                    <tr key={item.fee_id}>
+                      <td>
+                        <strong>{item.student_name}</strong>
+                        <div className="dashboard-listMeta">{item.class}{item.roll_number ? ` | ${item.roll_number}` : ""}</div>
+                      </td>
+                      <td>{item.installment_label}</td>
+                      <td>{shortDate(item.due_date)}</td>
+                      <td>{currency(item.balance)}</td>
+                      <td>
+                        <span className={`dashboard-badge ${item.status}`}>
+                          {item.status}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

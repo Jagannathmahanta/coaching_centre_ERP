@@ -1,8 +1,21 @@
+import type { CatalogBatch, CatalogClass, CatalogCourse } from "../../../shared/types/catalog";
 import { currency } from "../services/fees.service";
 import type { DefinitionFormState, FeeDefinition } from "../types/fees.types";
 import { boardOptions } from "../types/fees.types";
 import { cardStyle, Field, inputStyle } from "./FeesShared";
 import "../styles/fees.css";
+
+function formatTime(value?: string | null) {
+  return value ? value.slice(0, 5) : "";
+}
+
+function getBatchOptionLabel(batch: CatalogBatch) {
+  const programLabel = batch.class_name || batch.course_name || batch.batch_name || "Batch";
+  const start = formatTime(batch.start_time);
+  const end = formatTime(batch.end_time);
+  return `${programLabel} • ${start} - ${end}`;
+}
+
 export function FeeDefinitionsSection({
   showForm,
   editingStructureId,
@@ -11,17 +24,15 @@ export function FeeDefinitionsSection({
   definitions,
   catalog,
   onSubmit,
-  onStartCreate,
   onEdit,
   onDelete,
-  onCancel,
 }: {
   showForm: boolean;
   editingStructureId: number | null;
   definitionForm: DefinitionFormState;
   setDefinitionForm: React.Dispatch<React.SetStateAction<DefinitionFormState>>;
   definitions: FeeDefinition[];
-  catalog: { classes: Array<{ id: number; class_name: string; status: string }>; courses: Array<{ id: number; course_name: string; status: string }>; batches: Array<{ id: number; program_type: string; class_id?: number | null; course_id?: number | null; board?: string | null; batch_name: string; shift: string; start_time: string; end_time: string; status: string }> };
+  catalog: { classes: CatalogClass[]; courses: CatalogCourse[]; batches: CatalogBatch[] };
   onSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
   onStartCreate: () => void;
   onEdit: (definition: FeeDefinition) => void;
@@ -133,7 +144,7 @@ export function FeeDefinitionsSection({
                 <option value="">Select batch</option>
                 {filteredBatches.map((batch) => (
                   <option key={batch.id} value={batch.id}>
-                    {batch.batch_name} • {batch.shift} • {batch.start_time.slice(0, 5)} - {batch.end_time.slice(0, 5)}
+                    {getBatchOptionLabel(batch)}
                   </option>
                 ))}
               </select>
@@ -156,7 +167,7 @@ export function FeeDefinitionsSection({
                 <option value="">Select batch</option>
                 {filteredBatches.map((batch) => (
                   <option key={batch.id} value={batch.id}>
-                    {batch.batch_name} • {batch.shift} • {batch.start_time.slice(0, 5)} - {batch.end_time.slice(0, 5)}
+                    {getBatchOptionLabel(batch)}
                   </option>
                 ))}
               </select>
@@ -207,17 +218,7 @@ const primaryButton = {
   cursor: "pointer",
 };
 
-const secondaryButton = {
-  marginTop: 18,
-  marginLeft: 12,
-  background: "#fff",
-  color: "#1f2937",
-  border: "1px solid #cbd5e1",
-  borderRadius: 10,
-  padding: "10px 18px",
-  fontWeight: 700,
-  cursor: "pointer",
-};
+
 
 const secondaryActionButton = {
   background: "#fff",

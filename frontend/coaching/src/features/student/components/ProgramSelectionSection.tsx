@@ -11,6 +11,11 @@ function formatTime(value?: string | null) {
   return value.slice(0, 5);
 }
 
+function getBatchOptionLabel(batch: CatalogBatch) {
+  const programLabel = batch.class_name || batch.course_name || batch.batch_name || "Batch";
+  return `${programLabel} • ${formatTime(batch.start_time)} - ${formatTime(batch.end_time)}`;
+}
+
 export function ProgramSelectionSection({
   form,
   classes,
@@ -73,7 +78,7 @@ export function ProgramSelectionSection({
             <option value="">Select batch</option>
             {batches.map((batch) => (
               <option key={batch.id} value={batch.id}>
-                {batch.batch_name} • {batch.shift} • {formatTime(batch.start_time)} - {formatTime(batch.end_time)}
+                {getBatchOptionLabel(batch)}
               </option>
             ))}
           </select>

@@ -162,6 +162,8 @@ export function useStudentAdmission() {
 
   const filteredDefinitions = useMemo(() => {
     return definitions.filter((definition) => {
+      const isCurrentDefinition = isEditMode && String(definition.id) === form.fee_structure_id;
+
       if (definition.program_type !== form.program_type) return false;
       if (form.program_type === "academic") {
         if (form.board && definition.board && definition.board !== form.board) return false;
@@ -170,10 +172,10 @@ export function useStudentAdmission() {
         return false;
       }
 
-      if (form.batch_id && String(definition.batch_id || "") !== form.batch_id) return false;
+      if (form.batch_id && String(definition.batch_id || "") !== form.batch_id && !isCurrentDefinition) return false;
       return true;
     });
-  }, [definitions, form.program_type, form.board, form.class_id, form.course_id, form.batch_id]);
+  }, [definitions, form.program_type, form.board, form.class_id, form.course_id, form.batch_id, form.fee_structure_id, isEditMode]);
 
   const filteredHostels = useMemo(() => {
     const targetGender = form.gender === "female" ? "girls" : "boys";
@@ -290,7 +292,9 @@ export function useStudentAdmission() {
       }
 
       if (key === "batch_id") {
-        next.fee_structure_id = "";
+        if (!isEditMode) {
+          next.fee_structure_id = "";
+        }
       }
 
       if (key === "fee_structure_id") {

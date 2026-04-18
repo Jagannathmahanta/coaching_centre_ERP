@@ -277,6 +277,13 @@ export default function FeesPage() {
             setStudentInstallmentView={state.setStudentInstallmentView}
             filteredInstallments={state.filteredInstallments}
             paymentHistory={state.paymentHistory}
+            activePaymentActionId={state.activePaymentActionId}
+            activePaymentActionType={state.activePaymentActionType}
+            paymentCorrectionDraft={state.paymentCorrectionDraft}
+            setPaymentCorrectionDraft={state.setPaymentCorrectionDraft}
+            paymentCorrectionLoading={state.paymentCorrectionLoading}
+            reassignTargetInstallments={state.reassignTargetInstallments}
+            reassignTargetLoading={state.reassignTargetLoading}
             getRemainingByHead={state.getRemainingByHead}
             getAdjustmentPreview={state.getAdjustmentPreview}
             getAdjustmentDraft={state.getAdjustmentDraft}
@@ -290,6 +297,12 @@ export default function FeesPage() {
             onGenerateBill={handleGenerateBill}
             onGenerateReceipt={handleGenerateReceipt}
             onGenerateHistoryReceipt={handleGenerateHistoryReceipt}
+            onOpenReversePayment={state.openReversePayment}
+            onOpenReassignPayment={state.openReassignPayment}
+            onCorrectionTargetStudentChange={state.handleCorrectionTargetStudentChange}
+            onReversePayment={state.handleReversePayment}
+            onReassignPayment={state.handleReassignPayment}
+            onClosePaymentAction={state.closePaymentAction}
           />
         </>
       ) : null}

@@ -4,6 +4,7 @@ import type {
   AdjustmentDraftState,
   DefinitionFormState,
   FeePaymentRecord,
+  PaymentCorrectionDraft,
   FeeSummary,
   Installment,
   StudentFeeResponse,
@@ -131,6 +132,23 @@ export async function payInstallment(installmentId: number, payload: {
 
 export async function useAdvanceOnInstallment(installmentId: number) {
   const response = await api.post(`/fees/${installmentId}/use-advance`);
+  return response.data;
+}
+
+export async function reverseRecordedPayment(paymentId: number, reason?: string) {
+  const response = await api.post(`/fees/payments/${paymentId}/reverse`, {
+    reason: reason?.trim() || undefined,
+  });
+  return response.data;
+}
+
+export async function reassignRecordedPayment(paymentId: number, payload: PaymentCorrectionDraft) {
+  const response = await api.post(`/fees/payments/${paymentId}/reassign`, {
+    target_student_id: payload.target_student_id ? Number(payload.target_student_id) : undefined,
+    target_fee_id: payload.target_fee_id ? Number(payload.target_fee_id) : undefined,
+    student_payment_mode: payload.student_payment_mode,
+    reason: payload.reason?.trim() || undefined,
+  });
   return response.data;
 }
 

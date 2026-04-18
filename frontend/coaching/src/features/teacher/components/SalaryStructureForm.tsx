@@ -8,7 +8,6 @@ export function SalaryStructureForm({
   setForm,
   teachers,
   onSubmit,
-  onCancel,
   isPending,
 }: {
   form: SalaryStructureFormState;

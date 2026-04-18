@@ -25,7 +25,6 @@ export function HolidayForm({
   form,
   onChange,
   onSubmit,
-  onCancel,
   isPending,
 }: {
   form: HolidayFormValues;

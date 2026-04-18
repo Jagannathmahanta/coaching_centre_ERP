@@ -60,7 +60,6 @@ export function HostelFormsSection({
   setRoomDrafts,
   editingRoomForm,
   setEditingRoomForm,
-  resetHostelForm,
   resetRoomForm,
   onSaveHostel,
   onSaveRoom,

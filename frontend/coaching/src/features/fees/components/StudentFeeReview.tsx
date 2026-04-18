@@ -25,6 +25,13 @@ export function StudentFeeReview({
   setStudentInstallmentView,
   filteredInstallments,
   paymentHistory,
+  activePaymentActionId,
+  activePaymentActionType,
+  paymentCorrectionDraft,
+  setPaymentCorrectionDraft,
+  paymentCorrectionLoading,
+  reassignTargetInstallments,
+  reassignTargetLoading,
   getRemainingByHead,
   getAdjustmentPreview,
   getAdjustmentDraft,
@@ -38,6 +45,12 @@ export function StudentFeeReview({
   onGenerateBill,
   onGenerateReceipt,
   onGenerateHistoryReceipt,
+  onOpenReversePayment,
+  onOpenReassignPayment,
+  onCorrectionTargetStudentChange,
+  onReversePayment,
+  onReassignPayment,
+  onClosePaymentAction,
 }: any) {
   return (
     <div style={cardStyle}>
@@ -254,9 +267,123 @@ export function StudentFeeReview({
                     <div style={{ marginTop: 8, color: "#64748b" }}>
                       Admission {currency(payment.admission_amount)} | Tuition {currency(payment.tuition_amount)} | Hostel {currency(payment.hostel_amount)} | Transport {currency(payment.transport_amount)} | Advance {currency(payment.advance_amount)}
                     </div>
-                    <div style={{ marginTop: 10 }}>
+                    {payment.notes ? (
+                      <div style={{ marginTop: 8, color: "#475569" }}>
+                        Note: {payment.notes}
+                      </div>
+                    ) : null}
+                    <div style={{ marginTop: 10, display: "flex", gap: 10, flexWrap: "wrap" }}>
                       <button type="button" onClick={() => onGenerateHistoryReceipt(payment)} style={buttonSecondary}>Print Receipt</button>
+                      <button type="button" onClick={() => onOpenReversePayment(payment.id)} style={buttonDangerSoft}>Reverse Payment</button>
+                      <button type="button" onClick={() => onOpenReassignPayment(payment.id)} style={buttonAccentOutline}>Reassign Payment</button>
                     </div>
+                    {activePaymentActionId === payment.id ? (
+                      <div style={{ marginTop: 14, padding: 14, borderRadius: 12, background: "#f8fafc", border: "1px solid #dbeafe", display: "grid", gap: 12 }}>
+                        <div style={{ fontWeight: 700 }}>
+                          {activePaymentActionType === "reverse" ? "Reverse Recorded Payment" : "Reassign Recorded Payment"}
+                        </div>
+                        {activePaymentActionType === "reverse" ? (
+                          <>
+                            <div style={{ color: "#64748b" }}>
+                              Reverse this payment if it was recorded on the wrong installment or student. This will remove its effect from fee balances.
+                            </div>
+                            <Field label="Reason">
+                              <input
+                                value={paymentCorrectionDraft.reason}
+                                onChange={(e) =>
+                                  setPaymentCorrectionDraft((current: any) => ({ ...current, reason: e.target.value }))
+                                }
+                                style={{ ...inputStyle, marginTop: 0 }}
+                                placeholder="Optional reason for audit trail"
+                              />
+                            </Field>
+                            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                              <button type="button" onClick={() => onReversePayment(payment.id)} style={buttonDanger} disabled={paymentCorrectionLoading}>
+                                {paymentCorrectionLoading ? "Reversing..." : "Confirm Reverse"}
+                              </button>
+                              <button type="button" onClick={onClosePaymentAction} style={buttonSecondary} disabled={paymentCorrectionLoading}>
+                                Cancel
+                              </button>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <div style={{ color: "#64748b" }}>
+                              Reassign this payment to another student or directly to a target installment. Leave installment blank to auto-adjust the target student&apos;s pending dues.
+                            </div>
+                            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12 }}>
+                              <Field label="Target Student">
+                                <select
+                                  value={paymentCorrectionDraft.target_student_id}
+                                  onChange={(e) => onCorrectionTargetStudentChange(e.target.value)}
+                                  style={{ ...inputStyle, marginTop: 0 }}
+                                >
+                                  <option value="">Choose target student</option>
+                                  {students.map((student: any) => (
+                                    <option key={student.id} value={student.id}>
+                                      {student.name} • {student.class}
+                                    </option>
+                                  ))}
+                                </select>
+                              </Field>
+                              <Field label="Target Installment">
+                                <select
+                                  value={paymentCorrectionDraft.target_fee_id}
+                                  onChange={(e) =>
+                                    setPaymentCorrectionDraft((current: any) => ({ ...current, target_fee_id: e.target.value }))
+                                  }
+                                  style={{ ...inputStyle, marginTop: 0 }}
+                                  disabled={!paymentCorrectionDraft.target_student_id || reassignTargetLoading}
+                                >
+                                  <option value="">{reassignTargetLoading ? "Loading installments..." : "Auto-adjust pending installments"}</option>
+                                  {reassignTargetInstallments
+                                    .filter((installment: Installment) => installment.status === "pending" || installment.status === "partial")
+                                    .map((installment: Installment) => (
+                                      <option key={installment.id} value={installment.id}>
+                                        {installment.installment_label} • Due {new Date(installment.due_date).toLocaleDateString()} • Pending {currency(installment.balance)}
+                                      </option>
+                                    ))}
+                                </select>
+                              </Field>
+                              <Field label="Reassign Mode">
+                                <select
+                                  value={paymentCorrectionDraft.student_payment_mode}
+                                  onChange={(e) =>
+                                    setPaymentCorrectionDraft((current: any) => ({
+                                      ...current,
+                                      student_payment_mode: e.target.value,
+                                    }))
+                                  }
+                                  style={{ ...inputStyle, marginTop: 0 }}
+                                  disabled={Boolean(paymentCorrectionDraft.target_fee_id)}
+                                >
+                                  <option value="adjust_pending">Adjust Pending Dues</option>
+                                  <option value="store_as_advance">Store As Advance</option>
+                                </select>
+                              </Field>
+                              <Field label="Reason">
+                                <input
+                                  value={paymentCorrectionDraft.reason}
+                                  onChange={(e) =>
+                                    setPaymentCorrectionDraft((current: any) => ({ ...current, reason: e.target.value }))
+                                  }
+                                  style={{ ...inputStyle, marginTop: 0 }}
+                                  placeholder="Why this payment is being moved"
+                                />
+                              </Field>
+                            </div>
+                            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                              <button type="button" onClick={() => onReassignPayment(payment.id)} style={buttonPrimary} disabled={paymentCorrectionLoading || reassignTargetLoading}>
+                                {paymentCorrectionLoading ? "Reassigning..." : "Confirm Reassign"}
+                              </button>
+                              <button type="button" onClick={onClosePaymentAction} style={buttonSecondary} disabled={paymentCorrectionLoading}>
+                                Cancel
+                              </button>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    ) : null}
                   </div>
                 ))}
               </div>
@@ -300,8 +427,38 @@ const buttonAccent = {
   cursor: "pointer",
 };
 
+const buttonAccentOutline = {
+  background: "#f0fdfa",
+  color: "#0f766e",
+  border: "1px solid #99f6e4",
+  borderRadius: 10,
+  padding: "10px 14px",
+  fontWeight: 700,
+  cursor: "pointer",
+};
+
 const buttonPrimary = {
   background: "#2563eb",
+  color: "#fff",
+  border: "none",
+  borderRadius: 10,
+  padding: "12px 18px",
+  fontWeight: 700,
+  cursor: "pointer",
+};
+
+const buttonDangerSoft = {
+  background: "#fff1f2",
+  color: "#be123c",
+  border: "1px solid #fecdd3",
+  borderRadius: 10,
+  padding: "10px 14px",
+  fontWeight: 700,
+  cursor: "pointer",
+};
+
+const buttonDanger = {
+  background: "#be123c",
   color: "#fff",
   border: "none",
   borderRadius: 10,

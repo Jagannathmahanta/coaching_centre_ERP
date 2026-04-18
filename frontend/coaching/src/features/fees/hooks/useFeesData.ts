@@ -12,6 +12,8 @@ import {
   getStudentPaymentHistory,
   getStudents,
   payInstallment,
+  reassignRecordedPayment,
+  reverseRecordedPayment,
   saveFeeDefinition,
   updateInstallmentAdjustments,
   updateStudentPlan,
@@ -22,6 +24,7 @@ import type {
   DefinitionFormState,
   FeeCatalogOptions,
   Installment,
+  PaymentCorrectionDraft,
   PaymentDraftState,
 } from "../types/fees.types";
 import {
@@ -33,6 +36,12 @@ import {
 } from "../types/fees.types";
 
 export function useFeesData() {
+  const initialPaymentCorrectionDraft: PaymentCorrectionDraft = {
+    target_student_id: "",
+    target_fee_id: "",
+    student_payment_mode: "adjust_pending",
+    reason: "",
+  };
   const [definitions, setDefinitions] = useState<any[]>([]);
   const [students, setStudents] = useState<any[]>([]);
   const [catalog, setCatalog] = useState<FeeCatalogOptions>({ classes: [], courses: [], batches: [] });
@@ -48,6 +57,12 @@ export function useFeesData() {
   const [studentPaymentAmount, setStudentPaymentAmount] = useState("");
   const [studentPaymentMode, setStudentPaymentMode] = useState<"adjust_pending" | "store_as_advance">("adjust_pending");
   const [paymentHistory, setPaymentHistory] = useState<any[]>([]);
+  const [activePaymentActionId, setActivePaymentActionId] = useState<number | null>(null);
+  const [activePaymentActionType, setActivePaymentActionType] = useState<"reverse" | "reassign" | null>(null);
+  const [paymentCorrectionDraft, setPaymentCorrectionDraft] = useState<PaymentCorrectionDraft>(initialPaymentCorrectionDraft);
+  const [paymentCorrectionLoading, setPaymentCorrectionLoading] = useState(false);
+  const [reassignTargetInstallments, setReassignTargetInstallments] = useState<Installment[]>([]);
+  const [reassignTargetLoading, setReassignTargetLoading] = useState(false);
   const [adjustmentStates, setAdjustmentStates] = useState<AdjustmentDraftState>({});
   const [editingStructureId, setEditingStructureId] = useState<number | null>(null);
   const [planForm, setPlanForm] = useState(initialPlanForm);
@@ -403,6 +418,116 @@ export function useFeesData() {
     }
   };
 
+  const closePaymentAction = () => {
+    setActivePaymentActionId(null);
+    setActivePaymentActionType(null);
+    setPaymentCorrectionDraft(initialPaymentCorrectionDraft);
+    setReassignTargetInstallments([]);
+    setReassignTargetLoading(false);
+  };
+
+  const loadTargetInstallments = async (studentId: string) => {
+    if (!studentId) {
+      setReassignTargetInstallments([]);
+      return;
+    }
+
+    setReassignTargetLoading(true);
+    try {
+      if (studentId === selectedStudentId) {
+        setReassignTargetInstallments(studentFees?.installments || []);
+        return;
+      }
+
+      const targetFees = await getStudentFeeDetails(studentId);
+      setReassignTargetInstallments(targetFees?.installments || []);
+    } catch (loadError: any) {
+      setError(loadError.response?.data?.error || "Failed to load target student installments.");
+      setReassignTargetInstallments([]);
+    } finally {
+      setReassignTargetLoading(false);
+    }
+  };
+
+  const openReversePayment = (paymentId: number) => {
+    setMessage("");
+    setError("");
+    setActivePaymentActionId(paymentId);
+    setActivePaymentActionType("reverse");
+    setPaymentCorrectionDraft(initialPaymentCorrectionDraft);
+    setReassignTargetInstallments([]);
+  };
+
+  const openReassignPayment = async (paymentId: number) => {
+    setMessage("");
+    setError("");
+    setActivePaymentActionId(paymentId);
+    setActivePaymentActionType("reassign");
+    const nextDraft = {
+      ...initialPaymentCorrectionDraft,
+      target_student_id: selectedStudentId,
+    };
+    setPaymentCorrectionDraft(nextDraft);
+    await loadTargetInstallments(nextDraft.target_student_id);
+  };
+
+  const handleCorrectionTargetStudentChange = async (studentId: string) => {
+    setPaymentCorrectionDraft((current) => ({
+      ...current,
+      target_student_id: studentId,
+      target_fee_id: "",
+    }));
+    await loadTargetInstallments(studentId);
+  };
+
+  const handleReversePayment = async (paymentId: number) => {
+    setMessage("");
+    setError("");
+    setPaymentCorrectionLoading(true);
+    try {
+      const response = await reverseRecordedPayment(paymentId, paymentCorrectionDraft.reason);
+      setMessage(`Payment reversed successfully. ₹${Number(response?.reversed_amount || 0).toFixed(2)} removed from the original record.`);
+      closePaymentAction();
+      await loadPage(selectedStudentId, summaryScope);
+    } catch (actionError: any) {
+      setError(actionError.response?.data?.error || "Failed to reverse payment.");
+    } finally {
+      setPaymentCorrectionLoading(false);
+    }
+  };
+
+  const handleReassignPayment = async (paymentId: number) => {
+    if (!paymentCorrectionDraft.target_student_id && !paymentCorrectionDraft.target_fee_id) {
+      setError("Choose a target student or installment for reassignment.");
+      return;
+    }
+
+    setMessage("");
+    setError("");
+    setPaymentCorrectionLoading(true);
+    try {
+      const response = await reassignRecordedPayment(paymentId, paymentCorrectionDraft);
+      const targetStudentId = Number(response?.reassigned?.student_id || paymentCorrectionDraft.target_student_id || 0);
+      const targetStudentName = students.find((student) => student.id === targetStudentId)?.name || "selected target";
+      const installmentCount = Array.isArray(response?.reassigned?.applied_installments) ? response.reassigned.applied_installments.length : 0;
+      const advanceAdded = Number(response?.reassigned?.advance_added || 0);
+      const targetFeeId = Number(response?.reassigned?.fee_id || paymentCorrectionDraft.target_fee_id || 0);
+      setMessage(
+        targetFeeId
+          ? `Payment reassigned to installment #${targetFeeId} for ${targetStudentName}.`
+          : installmentCount > 0
+            ? `Payment reassigned to ${targetStudentName} and applied across ${installmentCount} installment(s).${advanceAdded > 0 ? ` ₹${advanceAdded.toFixed(2)} moved to advance.` : ""}`
+            : `Payment reassigned to ${targetStudentName}.${advanceAdded > 0 ? ` ₹${advanceAdded.toFixed(2)} moved to advance.` : ""}`
+      );
+      closePaymentAction();
+      await loadPage(selectedStudentId, summaryScope);
+    } catch (actionError: any) {
+      setError(actionError.response?.data?.error || "Failed to reassign payment.");
+    } finally {
+      setPaymentCorrectionLoading(false);
+    }
+  };
+
   return {
     definitions,
     students,
@@ -423,6 +548,13 @@ export function useFeesData() {
     studentPaymentMode,
     setStudentPaymentMode,
     paymentHistory,
+    activePaymentActionId,
+    activePaymentActionType,
+    paymentCorrectionDraft,
+    setPaymentCorrectionDraft,
+    paymentCorrectionLoading,
+    reassignTargetInstallments,
+    reassignTargetLoading,
     editingStructureId,
     setEditingStructureId,
     planForm,
@@ -453,6 +585,12 @@ export function useFeesData() {
     handleApplyStudentPayment,
     handlePayInstallment,
     handleUseAdvance,
+    openReversePayment,
+    openReassignPayment,
+    handleCorrectionTargetStudentChange,
+    handleReversePayment,
+    handleReassignPayment,
+    closePaymentAction,
     persistAdjustmentIfNeeded,
     loadPage,
     boardOptions,

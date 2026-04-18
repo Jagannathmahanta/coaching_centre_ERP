@@ -26,8 +26,6 @@ export default function StudentsPage() {
   const createLoginMutation = useCreateStudentLogin();
   const allStudents = state.students;
   const [selectedStudent, setSelectedStudent] = useState<StudentRecord | null>(null);
-  const [isCreating, setIsCreating] = useState(false);
-  const [editingStudentId, setEditingStudentId] = useState<number | null>(null);
 
   const startOfThisMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
   const startOfLastMonth = new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1);

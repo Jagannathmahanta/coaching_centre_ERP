@@ -96,6 +96,7 @@ export type StudentFeeResponse = {
 
 export type FeePaymentRecord = {
   id: number;
+  student_id?: number;
   fee_id?: number | null;
   amount: string | number;
   advance_amount?: string | number;
@@ -106,9 +107,11 @@ export type FeePaymentRecord = {
   adjustment_amount?: string | number;
   payment_date: string;
   payment_mode?: string | null;
+  transaction_id?: string | null;
   notes?: string | null;
   installment_label?: string | null;
   billing_cycle?: string | null;
+  installment_no?: number | null;
 };
 
 export type CollectionBoard = {
@@ -135,6 +138,12 @@ export type CollectionBoard = {
 
 export type PaymentDraftState = Record<number, { admission: string; tuition: string; hostel: string; transport: string; adjustment: string }>;
 export type AdjustmentDraftState = Record<number, { late_fee_amount: string; discount_amount: string; waived_amount: string }>;
+export type PaymentCorrectionDraft = {
+  target_student_id: string;
+  target_fee_id: string;
+  student_payment_mode: "adjust_pending" | "store_as_advance";
+  reason: string;
+};
 
 export type PlanFormState = {
   fee_structure_id: string;

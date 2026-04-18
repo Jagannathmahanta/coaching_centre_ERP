@@ -52,6 +52,17 @@ export default function CatalogBatchesPage() {
     return `${hour12}${minute > 0 ? `:${minute.toString().padStart(2, "0")}` : ""} ${suffix}`;
   };
 
+  const isDefaultBatchName = (value?: string | null) => {
+    const normalized = String(value || "").trim().toLowerCase();
+    return !normalized || normalized === "default batch";
+  };
+
+  const formatShiftLabel = (value?: string | null) => {
+    const normalized = String(value || "").trim();
+    if (!normalized) return "-";
+    return normalized.charAt(0).toUpperCase() + normalized.slice(1);
+  };
+
   const visibleBatches = state.batches.filter((item) => {
     if (routeState.programType && item.program_type !== routeState.programType) return false;
     if (routeState.classId && item.class_id !== routeState.classId) return false;
@@ -185,8 +196,8 @@ export default function CatalogBatchesPage() {
               <div className="catalogTableV2">
                 <div className="catalogTableV2__head">
                 <span>SL No</span>
-                <span>Batch Name</span>
-                <span>Course</span>
+                <span>Batch</span>
+                <span>Course/Class</span>
                 <span>Type</span>
                 <span>Timing</span>
                 <span>Capacity</span>
@@ -205,8 +216,8 @@ export default function CatalogBatchesPage() {
 
                     <div className="catalogTableV2__cell catalogTableV2__name">
                       <div>
-                        <strong>{item.batch_name}</strong>
-                        <p>ID: #{item.id}</p>
+                        <strong>{formatShiftLabel(item.shift)}</strong>
+                        <p> ID: #{item.id}</p>
                       </div>
                     </div>
 
@@ -216,7 +227,7 @@ export default function CatalogBatchesPage() {
 
                     <div className="catalogTableV2__timing">
                       <span>⏱ {formatBatchTime(item.start_time)} to {formatBatchTime(item.end_time)}</span>
-                      <p>{item.shift}</p>
+                      <p>{formatShiftLabel(item.shift)}</p>
                     </div>
 
                     <div className="catalogTableV2__capacity">
@@ -244,7 +255,7 @@ export default function CatalogBatchesPage() {
                             class_id: item.class_id ? String(item.class_id) : "",
                             course_id: item.course_id ? String(item.course_id) : "",
                             shift: item.shift,
-                            batch_name: item.batch_name,
+                            batch_name: isDefaultBatchName(item.batch_name) ? "" : item.batch_name,
                             start_time: item.start_time,
                             end_time: item.end_time,
                             capacity: item.capacity ? String(item.capacity) : "",
